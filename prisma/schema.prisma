@@ -1,0 +1,403 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// MÓDULO DE USUARIOS
+// ==========================================
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  email          String    @unique @db.VarChar(255)
+  passwordHash   String?   @map("password_hash") 
+  firstName      String    @map("first_name") @db.VarChar(100)
+  lastName       String    @map("last_name") @db.VarChar(100)
+  documentNumber String?   @map("document_number") @db.VarChar(20) // Requerido para AFIP
+  phone          String?   @db.VarChar(30)
+  role           Role      @default(CUSTOMER)
+  isActive       Boolean   @default(true) @map("is_active")
+  emailVerified  DateTime? @map("email_verified")
+
+  addresses      Address[]
+  cart           Cart?          // Relación 1:1 (un carrito activo por usuario registrado)
+  orders         Order[]        // Relación 1:N (historial de compras del usuario)
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Address {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  alias       String?  @db.VarChar(50)  
+  recipient   String   @db.VarChar(150) 
+  street      String   @db.VarChar(255)
+  number      String   @db.VarChar(20)
+  apartment   String?  @db.VarChar(50)  
+  city        String   @db.VarChar(100)
+  state       String   @db.VarChar(100) 
+  postalCode  String   @map("postal_code") @db.VarChar(20)
+  country     String   @default("AR") @db.VarChar(2) 
+  phone       String   @db.VarChar(30)
+  isDefault   Boolean  @default(false) @map("is_default")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ==========================================
+// MÓDULO DE CATÁLOGO Y PRODUCTOS
+// ==========================================
+
+enum ProductStatus {
+  DRAFT      
+  ACTIVE     
+  ARCHIVED   
+}
+
+model Collection {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(120)
+  description String?   @db.Text
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  products    Product[]
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("collections")
+}
+
+model Category {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @db.VarChar(100)
+  slug        String     @unique @db.VarChar(120)
+  description String?    @db.Text
+  imageUrl    String?    @map("image_url")
+  isActive    Boolean    @default(true) @map("is_active")
+
+  parentId    String?    @map("parent_id") @db.Uuid
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+
+  products    Product[]
+
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Product {
+  id             String         @id @default(uuid()) @db.Uuid
+  name           String         @db.VarChar(200)
+  slug           String         @unique @db.VarChar(220)
+  description    String         @db.Text
+  careGuide      String?        @map("care_guide") @db.Text 
+  composition    String?        @db.VarChar(255)            
+  sizeGuideUrl   String?        @map("size_guide_url") // Imagen o link a la guía de talles
+
+  basePrice          Decimal        @map("base_price") @db.Decimal(10, 2)
+  compareAtPrice     Decimal?       @map("compare_at_price") @db.Decimal(10, 2) 
+  discountPercentage Int            @default(0) @map("discount_percentage")
+
+  status             ProductStatus  @default(DRAFT)
+  isFeatured         Boolean        @default(false) @map("is_featured")
+
+  // Logística para cotización de envíos volumétricos
+  weightInGrams      Int            @default(0) @map("weight_in_grams") // Peso físico en gramos para cotización de correo
+  weight             Decimal?       @db.Decimal(8, 2) // en kg
+  length             Decimal?       @db.Decimal(8, 2) // en cm
+  width              Decimal?       @db.Decimal(8, 2) // en cm
+  height             Decimal?       @db.Decimal(8, 2) // en cm
+
+  categoryId     String         @map("category_id") @db.Uuid
+  category       Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  
+  collectionId   String?        @map("collection_id") @db.Uuid
+  collection     Collection?    @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  variants       ProductVariant[]
+  images         ProductImage[]
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([categoryId, status])
+  @@index([status, isFeatured])
+  @@map("products")
+}
+
+model Size {
+  id        String           @id @default(uuid()) @db.Uuid
+  name      String           @unique @db.VarChar(20) 
+  sortOrder Int              @default(0) @map("sort_order") 
+  variants  ProductVariant[]
+
+  @@map("sizes")
+}
+
+model Color {
+  id        String           @id @default(uuid()) @db.Uuid
+  name      String           @unique @db.VarChar(50) 
+  hexCode   String           @map("hex_code") @db.VarChar(7) 
+  variants  ProductVariant[]
+  images    ProductImage[]
+
+  @@map("colors")
+}
+
+model ProductVariant {
+  id             String   @id @default(uuid()) @db.Uuid
+  sku            String   @unique @db.VarChar(100) 
+
+  productId      String   @map("product_id") @db.Uuid
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  sizeId         String   @map("size_id") @db.Uuid
+  size           Size     @relation(fields: [sizeId], references: [id], onDelete: Restrict)
+
+  colorId        String   @map("color_id") @db.Uuid
+  color          Color    @relation(fields: [colorId], references: [id], onDelete: Restrict)
+
+  stock          Int      @default(0)
+  reservedStock  Int      @default(0) @map("reserved_stock") 
+
+  imageUrl       String?  @map("image_url") @db.Text
+  priceOverride  Decimal? @map("price_override") @db.Decimal(10, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([productId, sizeId, colorId])
+  @@index([productId, isActive])
+  @@index([sku])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  url       String   @db.Text
+  altText   String?  @map("alt_text") @db.VarChar(255)
+  position  Int      @default(0) 
+
+  productId String   @map("product_id") @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  colorId   String?  @map("color_id") @db.Uuid
+  color     Color?   @relation(fields: [colorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId, colorId, position])
+  @@map("product_images")
+}
+
+// ==========================================
+// MÓDULO DE VENTAS: CARRITO, ÓRDENES Y PAGOS
+// ==========================================
+
+enum OrderStatus {
+  PENDING     // Orden creada, esperando confirmación de pago
+  PAID        // Pago acreditado (confirmado por Webhook de MercadoPago)
+  PROCESSING  // En armado/empaque en depósito
+  SHIPPED     // Despachada al correo (Andreani / Correo Argentino)
+  DELIVERED   // Entregada a la clienta
+  CANCELLED   // Cancelada (por falta de pago, rechazo o solicitud; libera reservedStock)
+}
+
+enum PaymentProvider {
+  MERCADOPAGO
+  BANK_TRANSFER // Muy común en indumentaria en Argentina (ej. 15% OFF por transferencia)
+}
+
+// Estados alineados con la nomenclatura oficial de la API de MercadoPago
+enum PaymentStatus {
+  PENDING      // El usuario aún no completó el proceso de pago (ej. Rapipago/PagoFácil o checkout abierto)
+  APPROVED     // El pago fue aprobado y acreditado
+  AUTHORIZED   // Autorizado pero aún no capturado
+  IN_PROCESS   // En revisión por análisis antifraude de MP
+  REJECTED     // Rechazado por tarjeta/banco
+  CANCELLED    // Expiró el tiempo o fue cancelado por alguna de las partes
+  REFUNDED     // Dinero devuelto a la compradora
+  CHARGED_BACK // Contracargo / desconocimiento de compra
+}
+
+// ------------------------------------------
+// 1. CARRITO DE COMPRAS (Sesiones Activas)
+// ------------------------------------------
+
+model Cart {
+  id           String     @id @default(uuid()) @db.Uuid
+
+  // Opcional para permitir "Guest Cart" (usuaria navegando sin iniciar sesión aún)
+  userId       String?    @unique @map("user_id") @db.Uuid
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Token almacenado en Cookie HTTP-Only para identificar carritos de visitantes anónimos
+  sessionToken String?    @unique @map("session_token") @db.VarChar(255)
+
+  items        CartItem[]
+
+  expiresAt    DateTime?  @map("expires_at") // Útil para limpieza periódica de carritos abandonados
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@index([sessionToken])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String         @id @default(uuid()) @db.Uuid
+
+  cartId    String         @map("cart_id") @db.Uuid
+  cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  variantId String         @map("variant_id") @db.Uuid
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  quantity  Int            @default(1)
+
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  // Evita filas duplicadas del mismo SKU dentro del mismo carrito (solo se incrementa quantity)
+  @@unique([cartId, variantId])
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+// ------------------------------------------
+// 2. ÓRDENES DE COMPRA
+// ------------------------------------------
+
+model Order {
+  id               String      @id @default(uuid()) @db.Uuid
+  // Número de orden legible para atención al cliente (ej: #1001, #1002)
+  orderNumber      Int         @unique @default(autoincrement()) @map("order_number")
+
+  userId           String      @map("user_id") @db.Uuid
+  user             User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  status           OrderStatus @default(PENDING)
+
+  // Desglose financiero en moneda local (ARS)
+  subtotal         Decimal     @db.Decimal(12, 2) // Suma de (precio unitario * cantidad)
+  discountAmount   Decimal     @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  shippingCost     Decimal     @default(0) @map("shipping_cost") @db.Decimal(12, 2)
+  totalAmount      Decimal     @map("total_amount") @db.Decimal(12, 2)
+
+  // Snapshot Inmutable de Facturación y Envío (protege el historial si el usuario edita su Address luego)
+  customerDocument String      @map("customer_document") @db.VarChar(20) // DNI/CUIT al momento de la compra
+  shippingAddress  Json        @map("shipping_address") @db.JsonB        // Copia exacta de calle, CP, localidad, destinatario
+  shippingCarrier  String?     @map("shipping_carrier") @db.VarChar(80)  // Ej: "Andreani Domicilio", "Correo Argentino Sucursal"
+  trackingNumber   String?     @map("tracking_number") @db.VarChar(100)  // Código de seguimiento logístico
+  notes            String?     @db.Text                                  // Notas de la clienta para el envío
+
+  items            OrderItem[]
+  payment          Payment?
+
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String         @id @default(uuid()) @db.Uuid
+
+  orderId     String         @map("order_id") @db.Uuid
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  variantId   String         @map("variant_id") @db.Uuid
+  variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  // Snapshot comercial inmutable al momento de la compra
+  productName String         @map("product_name") @db.VarChar(200) // Ej: "Blazer Sastrero Roma"
+  variantSku  String         @map("variant_sku") @db.VarChar(100)  // Ej: "BLZ-ROM-NEG-M"
+  sizeName    String         @map("size_name") @db.VarChar(20)     // Ej: "M"
+  colorName   String         @map("color_name") @db.VarChar(50)    // Ej: "Negro"
+
+  quantity    Int
+  unitPrice   Decimal        @map("unit_price") @db.Decimal(10, 2) // Precio real pagado por unidad
+  subtotal    Decimal        @db.Decimal(12, 2)                    // quantity * unitPrice
+
+  @@index([orderId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+// ------------------------------------------
+// 3. PAGOS E INTEGRACIÓN CON MERCADOPAGO
+// ------------------------------------------
+
+model Payment {
+  id              String          @id @default(uuid()) @db.Uuid
+
+  orderId         String          @unique @map("order_id") @db.Uuid
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider        PaymentProvider @default(MERCADOPAGO)
+  status          PaymentStatus   @default(PENDING)
+
+  // Identificadores específicos de MercadoPago
+  preferenceId    String?         @unique @map("preference_id") @db.VarChar(150) // ID generado al crear el Checkout Pro / Bricks
+  paymentId       String?         @unique @map("payment_id") @db.VarChar(100)    // ID de transacción devuelto por el Webhook de MP (data.id)
+  merchantOrderId String?         @map("merchant_order_id") @db.VarChar(100)     // ID de orden comercial interna de MP
+
+  // Detalles del medio de pago (informados por MercadoPago al aprobar/rechazar)
+  paymentMethod   String?         @map("payment_method") @db.VarChar(50) // Ej: "visa", "master", "account_money", "rapipago"
+  paymentType     String?         @map("payment_type") @db.VarChar(50)   // Ej: "credit_card", "debit_card", "account_money"
+  installments    Int             @default(1)                            // Cantidad de cuotas elegidas (ej: 3 o 6 cuotas Simple)
+  transactionAmount Decimal       @map("transaction_amount") @db.Decimal(12, 2)
+  statusDetail    String?         @map("status_detail") @db.VarChar(100) // Ej: "accredited", "cc_rejected_insufficient_amount"
+
+  // Payload crudo del Webhook para auditoría y resolución de disputas
+  rawWebhookData  Json?           @map("raw_webhook_data") @db.JsonB
+
+  paidAt          DateTime?       @map("paid_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@index([preferenceId])
+  @@index([paymentId])
+  @@index([status])
+  @@map("payments")
+}
