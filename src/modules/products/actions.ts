@@ -23,6 +23,8 @@ export interface ProductCatalogFilters {
   searchQuery?: string;
   sizeName?: string;
   sortBy?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 /**
@@ -46,6 +48,10 @@ export interface ProductListItemDTO {
     slug: string;
   } | null;
   primaryImage: {
+    url: string;
+    altText: string | null;
+  } | null;
+  secondaryImage?: {
     url: string;
     altText: string | null;
   } | null;
@@ -166,6 +172,18 @@ export async function getActiveProducts(
   const q = normalizedFilters.searchQuery?.trim();
   const sizeName = normalizedFilters.sizeName?.trim();
   const sortBy = normalizedFilters.sortBy?.trim();
+  const minPrice =
+    typeof normalizedFilters.minPrice === "number" &&
+    !Number.isNaN(normalizedFilters.minPrice) &&
+    normalizedFilters.minPrice > 0
+      ? normalizedFilters.minPrice
+      : undefined;
+  const maxPrice =
+    typeof normalizedFilters.maxPrice === "number" &&
+    !Number.isNaN(normalizedFilters.maxPrice) &&
+    normalizedFilters.maxPrice > 0
+      ? normalizedFilters.maxPrice
+      : undefined;
 
   const whereClause: Prisma.ProductWhereInput = {
     status: ProductStatus.ACTIVE,
@@ -221,7 +239,7 @@ export async function getActiveProducts(
       },
       images: {
         orderBy: { position: "asc" },
-        take: 1,
+        take: 2,
         select: { url: true, altText: true },
       },
       variants: {
@@ -231,6 +249,74 @@ export async function getActiveProducts(
       },
     },
     orderBy: orderByClause,
+  });
+
+  const mapped = products.map((product) => {
+    const basePrice = Number(product.basePrice);
+    const discountPercentage = product.discountPercentage ?? 0;
+    const finalPrice =
+      discountPercentage > 0
+        ? Math.round(basePrice * (1 - discountPercentage / 100))
+        : basePrice;
+
+    const fallbackVariantImg = product.variants[0]?.imageUrl
+      ? { url: product.variants[0].imageUrl, altText: product.name }
+      : null;
+
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      basePrice,
+      compareAtPrice: product.compareAtPrice
+        ? Number(product.compareAtPrice)
+        : null,
+      discountPercentage,
+      finalPrice,
+      isFeatured: product.isFeatured,
+      category: product.category,
+      collection: product.collection,
+      primaryImage: product.images[0] ?? fallbackVariantImg,
+      secondaryImage: product.images[1] ?? null,
+    };
+  });
+
+  return mapped.filter((item) => {
+    if (minPrice !== undefined && item.finalPrice < minPrice) return false;
+    if (maxPrice !== undefined && item.finalPrice > maxPrice) return false;
+    return true;
+  });
+}
+
+/**
+ * Obtiene los últimos N productos agregados en estado ACTIVE (take: 4 por defecto)
+ * junto con sus primeras 2 imágenes para la sección "Novedades" (New Arrivals).
+ */
+export async function getLatestProducts(
+  take = 4
+): Promise<ProductListItemDTO[]> {
+  const products = await db.product.findMany({
+    where: { status: ProductStatus.ACTIVE },
+    orderBy: { createdAt: "desc" },
+    take,
+    include: {
+      category: {
+        select: { name: true, slug: true },
+      },
+      collection: {
+        select: { name: true, slug: true },
+      },
+      images: {
+        orderBy: { position: "asc" },
+        take: 2,
+        select: { url: true, altText: true },
+      },
+      variants: {
+        where: { isActive: true },
+        take: 1,
+        select: { imageUrl: true },
+      },
+    },
   });
 
   return products.map((product) => {
@@ -259,6 +345,7 @@ export async function getActiveProducts(
       category: product.category,
       collection: product.collection,
       primaryImage: product.images[0] ?? fallbackVariantImg,
+      secondaryImage: product.images[1] ?? null,
     };
   });
 }

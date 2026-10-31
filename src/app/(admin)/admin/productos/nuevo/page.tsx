@@ -26,6 +26,10 @@ import {
   getAdminProductFormCatalogs,
   type AdminProductFormCatalogsDTO,
 } from "@/modules/admin/actions/admin-products.actions";
+import {
+  GalleryMultiDropzone,
+  SingleImageDropzone,
+} from "@/modules/admin/components/ImageDropzone";
 
 function NewProductForm() {
   const router = useRouter();
@@ -89,9 +93,20 @@ function NewProductForm() {
   });
 
   const watchedName = watch("name");
+  const watchedGalleryUrls = watch("galleryUrls");
   const watchedVariants = watch("variants");
   const watchedBasePrice = watch("basePrice");
   const watchedDiscount = watch("discountPercentage");
+
+  function handleGalleryFilesAdded(dataUrls: string[]) {
+    const current = watchedGalleryUrls ?? [];
+    if (current.length === 1 && !current[0]?.url?.trim()) {
+      setValue(`galleryUrls.0.url`, dataUrls[0], { shouldValidate: true });
+      dataUrls.slice(1).forEach((url) => appendGalleryUrl({ url }));
+    } else {
+      dataUrls.forEach((url) => appendGalleryUrl({ url }));
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -457,17 +472,18 @@ function NewProductForm() {
         </div>
       </section>
 
-      {/* SECCIÓN 2: Galería de Imágenes del Producto (1 a N ProductImage) */}
+      {/* SECCIÓN 2: Galería de Imágenes del Producto (Subida Drag & Drop a Cloudinary) */}
       <section className="rounded-xl border border-stone-200 bg-white p-6 shadow-2xs sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 pb-4">
           <div>
             <h2 className="flex items-center gap-2 text-sm font-semibold tracking-wider text-stone-900 uppercase">
               <ImageIcon className="h-4 w-4 text-stone-500" />
-              2. Galería de Imágenes del Producto (1 a N)
+              2. Galería de Imágenes del Producto (Cloudinary Drag &amp; Drop)
             </h2>
             <p className="mt-0.5 text-xs text-stone-500">
-              La primera URL será la foto de portada principal; podés sumar
-              todas las vistas adicionales que necesites.
+              Arrastrá las fotos de la prenda. La primera imagen será la portada
+              principal y la segunda se mostrará en el efecto hover del
+              catálogo.
             </p>
           </div>
 
@@ -477,47 +493,59 @@ function NewProductForm() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-stone-900 bg-white px-3.5 py-2 text-xs font-semibold text-stone-900 transition-colors hover:bg-stone-900 hover:text-white"
           >
             <Plus className="h-3.5 w-3.5" />
-            Agregar Foto a la Galería
+            Agregar Espacio de Foto
           </button>
         </div>
 
-        <div className="mt-5 space-y-3">
-          {galleryFields.map((field, index) => {
-            const urlError = errors.galleryUrls?.[index]?.url;
-            return (
-              <div key={field.id} className="flex items-start gap-3">
-                <span className="mt-2.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-600">
-                  {index + 1}
-                </span>
-                <div className="flex-1">
-                  <input
-                    type="url"
-                    placeholder={
-                      index === 0
-                        ? "https://images.unsplash.com/... (Foto de Portada Principal)"
-                        : "https://images.unsplash.com/... (Foto secundaria de galería)"
-                    }
-                    {...register(`galleryUrls.${index}.url`)}
-                    className="w-full rounded-lg border border-stone-300 px-3.5 py-2 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
-                  />
-                  {urlError && (
-                    <p className="mt-1 text-xs text-red-600">
-                      {urlError.message}
-                    </p>
-                  )}
+        <div className="mt-5 space-y-4">
+          <GalleryMultiDropzone onFilesAdded={handleGalleryFilesAdded} />
+
+          <div className="space-y-3">
+            {galleryFields.map((field, index) => {
+              const urlError = errors.galleryUrls?.[index]?.url;
+              const currentUrl = watchedGalleryUrls?.[index]?.url ?? "";
+
+              return (
+                <div key={field.id} className="flex items-start gap-3">
+                  <span className="mt-3 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-600">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <SingleImageDropzone
+                      value={currentUrl}
+                      badgeText={index === 0 ? "Portada Principal" : `Foto #${index + 1}`}
+                      helperText={
+                        index === 0
+                          ? "Arrastrá la Foto de Portada Principal o hacé clic para subir"
+                          : `Arrastrá la Foto #${index + 1} de la galería o hacé clic para subir`
+                      }
+                      compact
+                      onChange={(nextVal) =>
+                        setValue(`galleryUrls.${index}.url`, nextVal, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                      }
+                    />
+                    {urlError && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {urlError.message}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeGalleryUrl(index)}
+                    disabled={galleryFields.length <= 1}
+                    aria-label="Eliminar foto de galería"
+                    className="mt-2 rounded-lg p-2 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeGalleryUrl(index)}
-                  disabled={galleryFields.length <= 1}
-                  aria-label="Eliminar foto de galería"
-                  className="mt-1 rounded-lg p-2 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -687,16 +715,19 @@ function NewProductForm() {
                   </div>
                 </div>
 
-                {/* URL de Imagen Específica de la Variante */}
+                {/* Subida Drag & Drop de Foto Específica de la Variante */}
                 <div>
-                  <label className="block text-[11px] font-semibold tracking-wider text-stone-600 uppercase">
-                    URL de Foto Específica para esta Variante / Color (Opcional)
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://images.unsplash.com/... (Foto específica de este color/talle)"
-                    {...register(`variants.${index}.imageUrl`)}
-                    className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs text-stone-900 focus:border-stone-900 focus:outline-none"
+                  <SingleImageDropzone
+                    label="Foto Específica para esta Variante / Color (Opcional)"
+                    helperText="Arrastrá la foto específica de este color/talle o hacé clic para subir"
+                    compact
+                    value={watchedVariants?.[index]?.imageUrl ?? ""}
+                    onChange={(nextVal) =>
+                      setValue(`variants.${index}.imageUrl`, nextVal, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
                   />
                   {rowErrors?.imageUrl && (
                     <p className="mt-1 text-[11px] text-red-600">

@@ -7,14 +7,11 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Lock,
   AlertCircle,
   Loader2,
   ArrowLeft,
   ShoppingBag,
-  CreditCard,
-  Landmark,
-  CheckCircle2,
+  Check,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart.store";
 import {
@@ -25,17 +22,29 @@ import {
 } from "@/modules/orders/schemas/checkout.schema";
 import { processCheckoutOrder } from "@/modules/orders/checkout.actions";
 
+const FREE_SHIPPING_THRESHOLD_ARS = 180_000;
+
+type DeliveryMethodOption = "HOME_DELIVERY" | "SHOWROOM_PICKUP";
+
 const arsFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
   maximumFractionDigits: 0,
 });
 
+const inputMinimalClass =
+  "w-full rounded-none border-0 border-b border-stone-300 bg-transparent px-0 py-3 font-sans text-sm font-light text-stone-900 placeholder:text-stone-400 transition-colors focus:border-stone-900 focus:outline-none";
+
+const labelMinimalClass =
+  "block text-[10px] font-normal tracking-[0.2em] text-stone-500 uppercase";
+
 export default function CheckoutPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [deliveryMethod, setDeliveryMethod] =
+    useState<DeliveryMethodOption>("HOME_DELIVERY");
 
   const items = useCartStore((state) => state.items);
   const getSubtotal = useCartStore((state) => state.getSubtotal);
@@ -80,8 +89,18 @@ export default function CheckoutPage() {
       return;
     }
 
+    const deliveryPrefix =
+      deliveryMethod === "SHOWROOM_PICKUP"
+        ? "[Retiro en Showroom Palermo] "
+        : "[Envío a Domicilio] ";
+
+    const combinedNotes = `${deliveryPrefix}${values.notes?.trim() ?? ""}`.trim();
+
     const response = await processCheckoutOrder({
-      customer: values,
+      customer: {
+        ...values,
+        notes: combinedNotes,
+      },
       items: items.map((item) => ({
         variantId: item.variantId,
         quantity: item.quantity,
@@ -107,30 +126,34 @@ export default function CheckoutPage() {
 
   if (!mounted) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="h-96 animate-pulse rounded-xl bg-stone-100" />
+      <main className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+          <div className="h-96 animate-pulse rounded-none bg-stone-100 lg:col-span-7" />
+          <div className="h-80 animate-pulse rounded-none bg-stone-100 lg:col-span-5" />
+        </div>
       </main>
     );
   }
 
   if (items.length === 0 && !isRedirecting) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-stone-100">
-          <ShoppingBag className="h-7 w-7 text-stone-400" />
+      <main className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-none border border-stone-200 bg-stone-50">
+          <ShoppingBag className="h-6 w-6 text-stone-400" strokeWidth={1.3} />
         </div>
-        <h1 className="mt-4 text-2xl font-semibold text-stone-900">
+        <h1 className="mt-6 font-serif text-3xl font-normal tracking-[0.08em] text-stone-900 uppercase">
           Tu carrito está vacío
         </h1>
-        <p className="mt-2 text-sm text-stone-500">
-          Agregá prendas del catálogo antes de iniciar el proceso de compra.
+        <p className="mt-2 font-sans text-xs font-light text-stone-500">
+          Seleccioná tus prendas en el catálogo antes de iniciar el proceso de
+          compra.
         </p>
         <Link
-          href="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-stone-900 px-6 py-3.5 text-xs font-semibold tracking-wider text-white uppercase hover:bg-stone-800"
+          href="/productos"
+          className="mt-8 inline-flex h-12 items-center gap-2 rounded-none bg-stone-900 px-8 text-xs font-medium tracking-[0.2em] text-white uppercase transition-colors hover:bg-stone-800"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Ir al Catálogo
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+          Explorar Catálogo
         </Link>
       </main>
     );
@@ -142,18 +165,22 @@ export default function CheckoutPage() {
     ? Math.round(subtotal * (BANK_TRANSFER_DISCOUNT_PERCENTAGE / 100))
     : 0;
   const finalTotal = Math.max(0, subtotal - transferDiscountAmount);
+  const qualifiesFreeShipping =
+    subtotal >= FREE_SHIPPING_THRESHOLD_ARS ||
+    deliveryMethod === "SHOWROOM_PICKUP";
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8">
+    <main className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+      {/* Encabezado Editorial del Checkout */}
+      <div className="mb-12 border-b border-stone-200 pb-8">
         <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 transition-colors hover:text-stone-900"
+          href="/productos"
+          className="inline-flex items-center gap-2 text-[11px] font-light tracking-[0.2em] text-stone-500 uppercase transition-colors hover:text-stone-900"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Seguir comprando
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.4} />
+          Volver al Catálogo
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
+        <h1 className="mt-4 font-serif text-3xl font-normal tracking-[0.08em] text-stone-900 uppercase sm:text-5xl">
           Finalizar Compra
         </h1>
       </div>
@@ -161,221 +188,186 @@ export default function CheckoutPage() {
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className="grid grid-cols-1 gap-10 lg:grid-cols-12"
+        className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-start"
       >
-        {/* COLUMNA IZQUIERDA: Datos de Envío y Selector de Medio de Pago (7 columnas) */}
-        <div className="space-y-8 lg:col-span-7">
+        {/* COLUMNA IZQUIERDA: Flujo de Datos del Comprador (7 columnas) */}
+        <div className="space-y-14 lg:col-span-7">
           {serverError && (
-            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+            <div className="flex items-start gap-3 rounded-none border border-red-300 bg-red-50/60 p-4 text-xs font-light text-red-800">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
               <p>{serverError}</p>
             </div>
           )}
 
-          {/* SECCIÓN 1: Datos de Contacto y Facturación */}
-          <section className="rounded-xl border border-stone-200 bg-white p-6 shadow-2xs">
-            <h2 className="text-sm font-semibold tracking-wider text-stone-900 uppercase">
-              1. Contacto y Facturación (ARCA / AFIP)
-            </h2>
+          {/* PASO 01 / CONTACTO Y ENVÍO */}
+          <section>
+            <div className="border-b border-stone-200 pb-3">
+              <h2 className="font-serif text-lg font-normal tracking-wider text-stone-900 uppercase sm:text-xl">
+                01 / CONTACTO Y ENVÍO
+              </h2>
+            </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label
-                  htmlFor="email"
-                  className="block text-xs font-medium text-stone-700"
-                >
+            <div className="mt-7 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-6">
+              <div className="sm:col-span-6">
+                <label htmlFor="email" className={labelMinimalClass}>
                   Correo Electrónico *
                 </label>
                 <input
                   id="email"
                   type="email"
-                  placeholder="ejemplo@correo.com"
+                  placeholder="tu@correo.com"
                   {...register("email")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.email.message}
                   </p>
                 )}
               </div>
 
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-xs font-medium text-stone-700"
-                >
+              <div className="sm:col-span-3">
+                <label htmlFor="firstName" className={labelMinimalClass}>
                   Nombre *
                 </label>
                 <input
                   id="firstName"
                   type="text"
+                  placeholder="Nombre"
                   {...register("firstName")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.firstName.message}
                   </p>
                 )}
               </div>
 
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-xs font-medium text-stone-700"
-                >
+              <div className="sm:col-span-3">
+                <label htmlFor="lastName" className={labelMinimalClass}>
                   Apellido *
                 </label>
                 <input
                   id="lastName"
                   type="text"
+                  placeholder="Apellido"
                   {...register("lastName")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.lastName && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.lastName.message}
                   </p>
                 )}
               </div>
 
-              <div>
-                <label
-                  htmlFor="documentNumber"
-                  className="block text-xs font-medium text-stone-700"
-                >
-                  DNI o CUIL/CUIT (sin puntos) *
+              <div className="sm:col-span-3">
+                <label htmlFor="documentNumber" className={labelMinimalClass}>
+                  DNI o CUIL/CUIT (Facturación ARCA) *
                 </label>
                 <input
                   id="documentNumber"
                   type="text"
                   inputMode="numeric"
-                  placeholder="Ej: 38123456"
+                  placeholder="Sin puntos ni guiones"
                   {...register("documentNumber")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.documentNumber && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.documentNumber.message}
                   </p>
                 )}
               </div>
 
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-xs font-medium text-stone-700"
-                >
+              <div className="sm:col-span-3">
+                <label htmlFor="phone" className={labelMinimalClass}>
                   Teléfono / WhatsApp *
                 </label>
                 <input
                   id="phone"
                   type="tel"
-                  placeholder="Ej: 11 2345 6789"
+                  placeholder="11 2345 6789"
                   {...register("phone")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.phone && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.phone.message}
                   </p>
                 )}
               </div>
-            </div>
-          </section>
 
-          {/* SECCIÓN 2: Dirección de Envío */}
-          <section className="rounded-xl border border-stone-200 bg-white p-6 shadow-2xs">
-            <h2 className="text-sm font-semibold tracking-wider text-stone-900 uppercase">
-              2. Domicilio de Entrega
-            </h2>
-
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-6">
               <div className="sm:col-span-4">
-                <label
-                  htmlFor="street"
-                  className="block text-xs font-medium text-stone-700"
-                >
+                <label htmlFor="street" className={labelMinimalClass}>
                   Calle *
                 </label>
                 <input
                   id="street"
                   type="text"
-                  placeholder="Ej: Av. Santa Fe"
+                  placeholder="Ej. Av. Alvear"
                   {...register("street")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.street && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.street.message}
                   </p>
                 )}
               </div>
 
               <div className="sm:col-span-1">
-                <label
-                  htmlFor="number"
-                  className="block text-xs font-medium text-stone-700"
-                >
+                <label htmlFor="number" className={labelMinimalClass}>
                   Altura *
                 </label>
                 <input
                   id="number"
                   type="text"
-                  placeholder="3200"
+                  placeholder="1850"
                   {...register("number")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.number && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.number.message}
                   </p>
                 )}
               </div>
 
               <div className="sm:col-span-1">
-                <label
-                  htmlFor="apartment"
-                  className="block text-xs font-medium text-stone-700"
-                >
+                <label htmlFor="apartment" className={labelMinimalClass}>
                   Piso / Depto
                 </label>
                 <input
                   id="apartment"
                   type="text"
-                  placeholder="4 B"
+                  placeholder="3 A"
                   {...register("apartment")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label
-                  htmlFor="postalCode"
-                  className="block text-xs font-medium text-stone-700"
-                >
+                <label htmlFor="postalCode" className={labelMinimalClass}>
                   Código Postal *
                 </label>
                 <input
                   id="postalCode"
                   type="text"
-                  placeholder="Ej: 1425"
+                  placeholder="1425"
                   {...register("postalCode")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.postalCode && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.postalCode.message}
                   </p>
                 )}
               </div>
 
               <div className="sm:col-span-2">
-                <label
-                  htmlFor="city"
-                  className="block text-xs font-medium text-stone-700"
-                >
+                <label htmlFor="city" className={labelMinimalClass}>
                   Localidad / Ciudad *
                 </label>
                 <input
@@ -383,26 +375,23 @@ export default function CheckoutPage() {
                   type="text"
                   placeholder="Palermo"
                   {...register("city")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
                 {errors.city && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.city.message}
                   </p>
                 )}
               </div>
 
               <div className="sm:col-span-2">
-                <label
-                  htmlFor="state"
-                  className="block text-xs font-medium text-stone-700"
-                >
+                <label htmlFor="state" className={labelMinimalClass}>
                   Provincia *
                 </label>
                 <select
                   id="state"
                   {...register("state")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 >
                   {ARGENTINA_PROVINCES.map((province) => (
                     <option key={province} value={province}>
@@ -411,75 +400,106 @@ export default function CheckoutPage() {
                   ))}
                 </select>
                 {errors.state && (
-                  <p className="mt-1 text-xs text-red-600">
+                  <p className="mt-1.5 text-[11px] font-light text-red-600">
                     {errors.state.message}
                   </p>
                 )}
               </div>
 
               <div className="sm:col-span-6">
-                <label
-                  htmlFor="notes"
-                  className="block text-xs font-medium text-stone-700"
-                >
-                  Observaciones para el envío (opcional)
+                <label htmlFor="notes" className={labelMinimalClass}>
+                  Notas de entrega (Opcional)
                 </label>
-                <textarea
+                <input
                   id="notes"
-                  rows={2}
-                  placeholder="Entre calles, horarios de recepción o indicaciones para portería..."
+                  type="text"
+                  placeholder="Indicaciones para recepción, portería o franja horaria..."
                   {...register("notes")}
-                  className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+                  className={inputMinimalClass}
                 />
               </div>
             </div>
           </section>
 
-          {/* SECCIÓN 3: Selector de Medio de Pago (Mercado Pago vs Transferencia Bancaria) */}
-          <section className="rounded-xl border border-stone-200 bg-white p-6 shadow-2xs">
-            <h2 className="text-sm font-semibold tracking-wider text-stone-900 uppercase">
-              3. Medio de Pago
-            </h2>
-            <p className="mt-1 text-xs text-stone-500">
-              Seleccioná cómo preferís abonar tu pedido.
-            </p>
+          {/* PASO 02 / MÉTODO DE ENTREGA */}
+          <section>
+            <div className="border-b border-stone-200 pb-3">
+              <h2 className="font-serif text-lg font-normal tracking-wider text-stone-900 uppercase sm:text-xl">
+                02 / MÉTODO DE ENTREGA
+              </h2>
+            </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Opción 1: Mercado Pago */}
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={() =>
-                  setValue("paymentMethod", "MERCADOPAGO", {
-                    shouldValidate: true,
-                  })
-                }
-                className={`flex flex-col items-start justify-between rounded-xl border-2 p-4 text-left transition-all ${
-                  selectedPaymentMethod === "MERCADOPAGO"
-                    ? "border-stone-900 bg-stone-50 ring-1 ring-stone-900"
+                onClick={() => setDeliveryMethod("HOME_DELIVERY")}
+                className={`flex cursor-pointer flex-col justify-between rounded-none border p-4 text-left transition-colors ${
+                  deliveryMethod === "HOME_DELIVERY"
+                    ? "border-stone-900 bg-stone-50/70"
                     : "border-stone-200 bg-white hover:border-stone-400"
                 }`}
               >
-                <div className="flex w-full items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#009EE3]/10 text-[#009EE3]">
-                      <CreditCard className="h-5 w-5" />
-                    </div>
-                    <span className="text-sm font-semibold text-stone-900">
-                      Mercado Pago
+                <div className="flex w-full items-start justify-between gap-2">
+                  <div>
+                    <span className="block text-xs font-medium tracking-[0.16em] text-stone-900 uppercase">
+                      Envío a Domicilio
+                    </span>
+                    <span className="mt-1 block text-[11px] font-light text-stone-500">
+                      Andreani / Correo Argentino (24–72 hs hábiles)
                     </span>
                   </div>
-                  {selectedPaymentMethod === "MERCADOPAGO" && (
-                    <CheckCircle2 className="h-5 w-5 text-stone-900" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium tracking-[0.18em] text-[#5C4033] uppercase">
+                      Bonificado
+                    </span>
+                    {deliveryMethod === "HOME_DELIVERY" && (
+                      <Check className="h-4 w-4 text-stone-900" strokeWidth={1.6} />
+                    )}
+                  </div>
                 </div>
-
-                <p className="mt-3 text-xs leading-relaxed text-stone-500">
-                  Tarjetas de crédito (3 y 6 cuotas), débito o dinero en cuenta
-                  con acreditación automática.
-                </p>
               </button>
 
-              {/* Opción 2: Transferencia Bancaria */}
+              <button
+                type="button"
+                onClick={() => setDeliveryMethod("SHOWROOM_PICKUP")}
+                className={`flex cursor-pointer flex-col justify-between rounded-none border p-4 text-left transition-colors ${
+                  deliveryMethod === "SHOWROOM_PICKUP"
+                    ? "border-stone-900 bg-stone-50/70"
+                    : "border-stone-200 bg-white hover:border-stone-400"
+                }`}
+              >
+                <div className="flex w-full items-start justify-between gap-2">
+                  <div>
+                    <span className="block text-xs font-medium tracking-[0.16em] text-stone-900 uppercase">
+                      Retiro en Showroom OL.
+                    </span>
+                    <span className="mt-1 block text-[11px] font-light text-stone-500">
+                      Palermo, Buenos Aires (Disponible en 24 hs)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium tracking-[0.18em] text-stone-900 uppercase">
+                      Sin Cargo
+                    </span>
+                    {deliveryMethod === "SHOWROOM_PICKUP" && (
+                      <Check className="h-4 w-4 text-stone-900" strokeWidth={1.6} />
+                    )}
+                  </div>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          {/* PASO 03 / FORMA DE PAGO */}
+          <section>
+            <div className="border-b border-stone-200 pb-3">
+              <h2 className="font-serif text-lg font-normal tracking-wider text-stone-900 uppercase sm:text-xl">
+                03 / FORMA DE PAGO
+              </h2>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Opción 1: Transferencia Bancaria (-15% OFF) */}
               <button
                 type="button"
                 onClick={() =>
@@ -487,76 +507,106 @@ export default function CheckoutPage() {
                     shouldValidate: true,
                   })
                 }
-                className={`flex flex-col items-start justify-between rounded-xl border-2 p-4 text-left transition-all ${
+                className={`flex cursor-pointer flex-col justify-between rounded-none border p-4 text-left transition-colors ${
                   selectedPaymentMethod === "BANK_TRANSFER"
-                    ? "border-stone-900 bg-stone-50 ring-1 ring-stone-900"
+                    ? "border-stone-900 bg-stone-50/70"
                     : "border-stone-200 bg-white hover:border-stone-400"
                 }`}
               >
-                <div className="flex w-full items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                      <Landmark className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <span className="block text-sm font-semibold text-stone-900">
-                        Transferencia Bancaria
-                      </span>
-                      <span className="inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 uppercase">
-                        {BANK_TRANSFER_DISCOUNT_PERCENTAGE}% OFF Adicional
-                      </span>
-                    </div>
+                <div className="flex w-full items-start justify-between gap-2">
+                  <div>
+                    <span className="block text-xs font-medium tracking-[0.16em] text-stone-900 uppercase">
+                      Transferencia Bancaria
+                    </span>
+                    <span className="mt-1.5 inline-block border border-[#5C4033]/40 bg-[#5C4033]/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.18em] text-[#5C4033] uppercase">
+                      {BANK_TRANSFER_DISCOUNT_PERCENTAGE}% OFF Adicional
+                    </span>
                   </div>
                   {selectedPaymentMethod === "BANK_TRANSFER" && (
-                    <CheckCircle2 className="h-5 w-5 text-stone-900" />
+                    <Check className="h-4 w-4 shrink-0 text-stone-900" strokeWidth={1.6} />
                   )}
                 </div>
 
-                <p className="mt-3 text-xs leading-relaxed text-stone-500">
+                <p className="mt-4 font-sans text-xs font-light leading-relaxed text-stone-500">
                   Transferí desde cualquier banco o billetera virtual a nuestro
-                  CBU / Alias con descuento directo.
+                  CBU / Alias con descuento directo sobre el total.
+                </p>
+              </button>
+
+              {/* Opción 2: Mercado Pago */}
+              <button
+                type="button"
+                onClick={() =>
+                  setValue("paymentMethod", "MERCADOPAGO", {
+                    shouldValidate: true,
+                  })
+                }
+                className={`flex cursor-pointer flex-col justify-between rounded-none border p-4 text-left transition-colors ${
+                  selectedPaymentMethod === "MERCADOPAGO"
+                    ? "border-stone-900 bg-stone-50/70"
+                    : "border-stone-200 bg-white hover:border-stone-400"
+                }`}
+              >
+                <div className="flex w-full items-start justify-between gap-2">
+                  <div>
+                    <span className="block text-xs font-medium tracking-[0.16em] text-stone-900 uppercase">
+                      Mercado Pago
+                    </span>
+                    <span className="mt-1.5 inline-block border border-stone-200 bg-stone-100 px-2 py-0.5 text-[10px] font-light tracking-[0.16em] text-stone-600 uppercase">
+                      Tarjetas &amp; Dinero en Cuenta
+                    </span>
+                  </div>
+                  {selectedPaymentMethod === "MERCADOPAGO" && (
+                    <Check className="h-4 w-4 shrink-0 text-stone-900" strokeWidth={1.6} />
+                  )}
+                </div>
+
+                <p className="mt-4 font-sans text-xs font-light leading-relaxed text-stone-500">
+                  Aboná con tarjetas de crédito en cuotas, débito o saldo de
+                  Mercado Pago con acreditación instantánea.
                 </p>
               </button>
             </div>
           </section>
         </div>
 
-        {/* COLUMNA DERECHA: Resumen del Pedido y Confirmación (5 columnas) */}
-        <div className="lg:col-span-5">
-          <div className="sticky top-24 rounded-xl border border-stone-200 bg-stone-50 p-6 shadow-2xs">
-            <h2 className="text-sm font-semibold tracking-wider text-stone-900 uppercase">
-              Resumen del Pedido
+        {/* COLUMNA DERECHA: Resumen del Pedido (5 columnas, sticky top-28) */}
+        <div className="h-fit lg:sticky lg:top-28 lg:col-span-5">
+          <div className="rounded-none border border-stone-200 bg-[#FAF9F6] p-6 sm:p-8">
+            <h2 className="border-b border-stone-200 pb-4 font-serif text-xl font-normal tracking-[0.12em] text-stone-900 uppercase">
+              Resumen de Orden
             </h2>
 
-            <ul className="mt-5 divide-y divide-stone-200">
+            {/* Lista de prendas compradas */}
+            <ul className="divide-y divide-stone-200/80">
               {items.map((item) => (
-                <li key={item.variantId} className="flex gap-3.5 py-3.5">
-                  <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-md bg-stone-200">
+                <li key={item.variantId} className="flex gap-4 py-4">
+                  <div className="relative aspect-[3/4] w-16 shrink-0 overflow-hidden rounded-none bg-stone-200">
                     {item.imageUrl && (
                       <Image
                         src={item.imageUrl}
                         alt={item.productName}
                         fill
                         sizes="64px"
-                        className="object-cover"
+                        className="h-full w-full rounded-none object-cover"
                       />
                     )}
                   </div>
 
-                  <div className="flex flex-1 flex-col justify-between text-xs">
+                  <div className="flex flex-1 flex-col justify-between">
                     <div>
-                      <p className="font-medium text-stone-900">
+                      <p className="text-xs font-normal tracking-[0.12em] text-stone-900 uppercase">
                         {item.productName}
                       </p>
-                      <p className="mt-0.5 text-stone-500">
-                        {item.colorName} • Talle {item.sizeName}
+                      <p className="mt-1 font-sans text-[11px] font-light text-stone-500">
+                        {item.colorName} / Talle {item.sizeName}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="mt-2 flex items-center justify-between font-sans text-xs font-light">
                       <span className="text-stone-500">
-                        Cant: {item.quantity}
+                        Cant. {item.quantity}
                       </span>
-                      <span className="font-semibold text-stone-900">
+                      <span className="text-stone-900">
                         {arsFormatter.format(item.unitPrice * item.quantity)}
                       </span>
                     </div>
@@ -565,60 +615,69 @@ export default function CheckoutPage() {
               ))}
             </ul>
 
-            <div className="mt-4 space-y-2 border-t border-stone-200 pt-4 text-sm">
+            {/* Desglose tipográfico fino */}
+            <div className="mt-4 space-y-3 border-t border-stone-200 pt-5 font-sans text-xs font-light">
               <div className="flex justify-between text-stone-600">
-                <span>Subtotal prendas</span>
-                <span>{arsFormatter.format(subtotal)}</span>
+                <span className="tracking-[0.14em] uppercase">Subtotal</span>
+                <span className="text-sm text-stone-900">
+                  {arsFormatter.format(subtotal)}
+                </span>
               </div>
 
               {isBankTransfer && transferDiscountAmount > 0 && (
-                <div className="flex justify-between font-medium text-emerald-700">
-                  <span>
-                    Descuento Transferencia ({BANK_TRANSFER_DISCOUNT_PERCENTAGE}
-                    % OFF)
+                <div className="flex justify-between text-[#5C4033]">
+                  <span className="tracking-[0.14em] uppercase">
+                    Ahorro Transferencia ({BANK_TRANSFER_DISCOUNT_PERCENTAGE}%
+                    OFF)
                   </span>
-                  <span>-{arsFormatter.format(transferDiscountAmount)}</span>
+                  <span className="text-sm font-normal">
+                    -{arsFormatter.format(transferDiscountAmount)}
+                  </span>
                 </div>
               )}
 
               <div className="flex justify-between text-stone-600">
-                <span>Envío</span>
-                <span className="text-xs font-medium text-emerald-700 uppercase">
-                  Bonificado
+                <span className="tracking-[0.14em] uppercase">Envío</span>
+                <span className="text-[11px] font-normal tracking-[0.18em] text-stone-900 uppercase">
+                  {qualifiesFreeShipping ? "Bonificado" : "Bonificado"}
                 </span>
               </div>
 
-              <div className="flex justify-between border-t border-stone-200 pt-3 text-base font-bold text-stone-900">
-                <span>Total a Pagar</span>
-                <span>{arsFormatter.format(finalTotal)}</span>
+              <div className="flex items-baseline justify-between border-t border-stone-200 pt-4">
+                <span className="text-xs font-normal tracking-[0.2em] text-stone-900 uppercase">
+                  Total
+                </span>
+                <span className="font-sans text-2xl font-light tracking-wide text-stone-900">
+                  {arsFormatter.format(finalTotal)}
+                </span>
               </div>
             </div>
 
+            {/* Botón final de confirmación en negro profundo */}
             <button
               type="submit"
               disabled={isSubmitting || isRedirecting}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-stone-900 px-6 py-4 text-sm font-semibold tracking-wider text-white uppercase transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+              className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-none bg-stone-900 px-6 text-xs font-medium tracking-[0.2em] text-white uppercase transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-300"
             >
               {isSubmitting || isRedirecting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {selectedPaymentMethod === "MERCADOPAGO"
-                    ? "Conectando con Mercado Pago..."
-                    : "Generando Orden por Transferencia..."}
+                  <span>
+                    {selectedPaymentMethod === "MERCADOPAGO"
+                      ? "Conectando con Mercado Pago..."
+                      : "Confirmando Orden..."}
+                  </span>
                 </>
+              ) : selectedPaymentMethod === "MERCADOPAGO" ? (
+                "Pagar con Mercado Pago"
               ) : (
-                <>
-                  <Lock className="h-4 w-4" />
-                  {selectedPaymentMethod === "MERCADOPAGO"
-                    ? "Pagar con Mercado Pago"
-                    : "Confirmar Pedido por Transferencia"}
-                </>
+                "Confirmar Pedido por Transferencia"
               )}
             </button>
 
-            <p className="mt-3 text-center text-[11px] text-stone-500">
-              Al confirmar, reservaremos tu stock en tiempo real y generaremos
-              tu orden #{selectedPaymentMethod === "MERCADOPAGO" ? "Checkout Pro" : "Transferencia"}.
+            <p className="mt-4 text-center font-sans text-[11px] font-light leading-relaxed text-stone-500">
+              Al confirmar tu pedido, reservamos el stock de tus prendas de
+              forma inmediata y te enviamos el resumen por correo electrónico.
             </p>
           </div>
         </div>

@@ -39,27 +39,30 @@ async function CatalogTableContent() {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-2xs">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-stone-200 bg-stone-50 text-xs font-semibold tracking-wider text-stone-500 uppercase">
+    <div className="w-full max-w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-2xs">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full table-fixed text-left text-sm">
+          <thead className="border-b border-stone-200 bg-stone-50 text-[11px] font-semibold tracking-wider text-stone-500 uppercase">
             <tr>
-              <th className="px-6 py-4">Prenda</th>
-              <th className="px-6 py-4">Categoría / Colección</th>
-              <th className="px-6 py-4">Estado</th>
-              <th className="px-6 py-4">Precio Actual</th>
-              <th className="px-6 py-4">Matriz de Variantes</th>
-              <th className="px-6 py-4 text-right">Stock Consolidado</th>
-              <th className="px-6 py-4 text-right">Acciones</th>
+              <th className="w-56 px-4 py-3.5">Prenda</th>
+              <th className="w-40 px-4 py-3.5">Categoría</th>
+              <th className="w-28 px-4 py-3.5">Estado</th>
+              <th className="w-36 px-4 py-3.5">Precio Actual</th>
+              <th className="w-72 px-4 py-3.5">Matriz de Variantes</th>
+              <th className="w-36 px-4 py-3.5 text-right">Stock</th>
+              <th className="w-48 px-4 py-3.5 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-200">
             {products.map((product) => (
-              <tr key={product.id} className="hover:bg-stone-50/70">
-                {/* 1. Foto y Nombre */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md bg-stone-100">
+              <tr
+                key={product.id}
+                className="align-top transition-colors hover:bg-stone-50/70"
+              >
+                {/* 1. Foto y Nombre (con truncado de texto largo) */}
+                <td className="px-4 py-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-stone-200 bg-stone-100">
                       {product.primaryImageUrl ? (
                         <Image
                           src={product.primaryImageUrl}
@@ -75,21 +78,27 @@ async function CatalogTableContent() {
                       )}
                     </div>
 
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-stone-900">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p
+                          title={product.name}
+                          className="truncate font-semibold text-stone-900"
+                        >
                           {product.name}
                         </p>
                         <Link
                           href={`/productos/${product.slug}`}
                           target="_blank"
                           title="Ver en tienda pública"
-                          className="text-stone-400 transition-colors hover:text-stone-900"
+                          className="shrink-0 text-stone-400 transition-colors hover:text-stone-900"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                         </Link>
                       </div>
-                      <p className="font-mono text-xs text-stone-400">
+                      <p
+                        title={`/${product.slug}`}
+                        className="truncate font-mono text-xs text-stone-400"
+                      >
                         /{product.slug}
                       </p>
                     </div>
@@ -97,19 +106,25 @@ async function CatalogTableContent() {
                 </td>
 
                 {/* 2. Categoría y Colección */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <p className="font-medium text-stone-800">
+                <td className="px-4 py-4">
+                  <p
+                    title={product.categoryName}
+                    className="truncate font-medium text-stone-800"
+                  >
                     {product.categoryName}
                   </p>
                   {product.collectionName && (
-                    <p className="text-xs text-stone-500">
+                    <p
+                      title={product.collectionName}
+                      className="truncate text-xs text-stone-500"
+                    >
                       {product.collectionName}
                     </p>
                   )}
                 </td>
 
                 {/* 3. Estado */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-4 whitespace-nowrap">
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                       product.status === "ACTIVE"
@@ -133,8 +148,8 @@ async function CatalogTableContent() {
                 </td>
 
                 {/* 4. Precio Actual */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
                     <p className="font-semibold text-stone-900">
                       {arsFormatter.format(product.basePrice)}
                     </p>
@@ -150,24 +165,27 @@ async function CatalogTableContent() {
                     </p>
                   )}
                   <p className="mt-0.5 text-[11px] text-stone-400">
-                    Peso: {product.weightInGrams} g • {product.galleryImagesCount}{" "}
+                    {product.weightInGrams} g • {product.galleryImagesCount}{" "}
                     foto/s
                   </p>
                 </td>
 
-                {/* 5. Desglose de Variantes */}
-                <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1.5">
+                {/* 5. Matriz de Variantes (Chips horizontales con flex-wrap gap-2 y alto acotado con overflow-y-auto) */}
+                <td className="px-4 py-4">
+                  <div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
                     {product.variants.map((v) => (
                       <span
                         key={v.id}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-stone-700"
+                        title={`${v.colorName} • Talle ${v.sizeName} (${v.availableStock} disp.) — SKU: ${v.sku}`}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 text-[11px] text-stone-700"
                       >
                         <span
-                          className="h-2.5 w-2.5 rounded-full border border-stone-300"
+                          className="h-2.5 w-2.5 shrink-0 rounded-full border border-stone-300"
                           style={{ backgroundColor: v.colorHex }}
                         />
-                        <strong className="text-stone-900">{v.sizeName}</strong>
+                        <strong className="font-semibold text-stone-900">
+                          {v.sizeName}
+                        </strong>
                         <span className="text-stone-400">•</span>
                         <span>{v.availableStock} u.</span>
                       </span>
@@ -176,10 +194,10 @@ async function CatalogTableContent() {
                 </td>
 
                 {/* 6. Stock Consolidado */}
-                <td className="px-6 py-4 text-right whitespace-nowrap">
+                <td className="px-4 py-4 text-right whitespace-nowrap">
                   <div className="inline-flex flex-col items-end">
                     <span
-                      className={`text-base font-bold ${
+                      className={`text-sm font-bold ${
                         product.totalAvailableStock > 0
                           ? "text-stone-900"
                           : "text-red-600"
@@ -188,15 +206,15 @@ async function CatalogTableContent() {
                       {product.totalAvailableStock} disp.
                     </span>
                     <span className="flex items-center gap-1 text-[11px] text-stone-500">
-                      <Layers className="h-3 w-3" />
-                      Físico: {product.totalPhysicalStock} | Reservado:{" "}
+                      <Layers className="h-3 w-3 shrink-0" />
+                      Fís: {product.totalPhysicalStock} | Res:{" "}
                       {product.totalReservedStock}
                     </span>
                   </div>
                 </td>
 
                 {/* 7. Acciones Rápidas (Editar / Pausar / Eliminar) */}
-                <td className="px-6 py-4 text-right whitespace-nowrap">
+                <td className="px-4 py-4 text-right whitespace-nowrap">
                   <ProductRowActions
                     productId={product.id}
                     productName={product.name}
@@ -214,9 +232,9 @@ async function CatalogTableContent() {
 
 export default function AdminProductsPage() {
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
             Catálogo de Productos
           </h1>
@@ -228,7 +246,7 @@ export default function AdminProductsPage() {
 
         <Link
           href="/admin/productos/nuevo"
-          className="inline-flex items-center gap-2 rounded-lg bg-stone-900 px-5 py-3 text-xs font-semibold tracking-wider text-white uppercase transition-colors hover:bg-stone-800"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-stone-900 px-5 py-3 text-xs font-semibold tracking-wider text-white uppercase transition-colors hover:bg-stone-800"
         >
           <Plus className="h-4 w-4" />
           Nuevo Producto

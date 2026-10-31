@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { resolveProductImageUrl } from "@/lib/cloudinary";
 import { ProductStatus } from "@prisma/client";
 import {
   createProductFormSchema,
@@ -305,11 +306,30 @@ export async function createAdminProduct(
     };
   }
 
-  const validGalleryUrls = data.galleryUrls
+  const rawGallerySources = data.galleryUrls
     .map((item) => item.url.trim())
     .filter((url) => url.length > 0);
 
   try {
+    // 1. Subir a Cloudinary todas las fotos de galería y de variantes antes de abrir la transacción SQL
+    const [validGalleryUrls, resolvedVariantImageUrls] = await Promise.all([
+      Promise.all(
+        rawGallerySources.map((src) =>
+          resolveProductImageUrl(src, `olecommerce/products/${baseSlug}/gallery`)
+        )
+      ),
+      Promise.all(
+        data.variants.map((variant) =>
+          variant.imageUrl?.trim()
+            ? resolveProductImageUrl(
+                variant.imageUrl,
+                `olecommerce/products/${baseSlug}/variants`
+              )
+            : Promise.resolve("")
+        )
+      ),
+    ]);
+
     const created = await db.$transaction(async (tx) => {
       const requestedSkus = data.variants.map((v) =>
         v.sku.trim().toUpperCase()
@@ -351,13 +371,13 @@ export async function createAdminProduct(
           composition: data.composition || null,
           careGuide: data.careGuide || null,
           variants: {
-            create: data.variants.map((variant) => ({
+            create: data.variants.map((variant, idx) => ({
               sizeId: variant.sizeId,
               colorId: variant.colorId,
               sku: variant.sku.trim().toUpperCase(),
               stock: variant.stock,
               reservedStock: 0,
-              imageUrl: variant.imageUrl?.trim() || null,
+              imageUrl: resolvedVariantImageUrls[idx] || null,
               isActive: true,
             })),
           },
@@ -424,11 +444,34 @@ export async function updateAdminProduct(
   }
 
   const data = parsed.data;
-  const validGalleryUrls = data.galleryUrls
+  const folderSlug = slugifyProductName(data.name) || productId;
+  const rawGallerySources = data.galleryUrls
     .map((item) => item.url.trim())
     .filter((url) => url.length > 0);
 
   try {
+    // Subir a Cloudinary las nuevas imágenes en formato Data URI antes de la transacción SQL
+    const [validGalleryUrls, resolvedVariantImageUrls] = await Promise.all([
+      Promise.all(
+        rawGallerySources.map((src) =>
+          resolveProductImageUrl(
+            src,
+            `olecommerce/products/${folderSlug}/gallery`
+          )
+        )
+      ),
+      Promise.all(
+        data.variants.map((variant) =>
+          variant.imageUrl?.trim()
+            ? resolveProductImageUrl(
+                variant.imageUrl,
+                `olecommerce/products/${folderSlug}/variants`
+              )
+            : Promise.resolve("")
+        )
+      ),
+    ]);
+
     await db.$transaction(async (tx) => {
       const existingProduct = await tx.product.findUnique({
         where: { id: productId },
@@ -496,7 +539,9 @@ export async function updateAdminProduct(
       // 4. Sincronizar matriz de variantes (upsert por clave compuesta productId_sizeId_colorId)
       const activeComboKeys = new Set<string>();
 
-      for (const variant of data.variants) {
+      for (let idx = 0; idx < data.variants.length; idx++) {
+        const variant = data.variants[idx];
+        const resolvedVariantImage = resolvedVariantImageUrls[idx] || null;
         const comboKey = `${variant.sizeId}:${variant.colorId}`;
         activeComboKeys.add(comboKey);
 
@@ -511,7 +556,7 @@ export async function updateAdminProduct(
           update: {
             sku: variant.sku.trim().toUpperCase(),
             stock: variant.stock,
-            imageUrl: variant.imageUrl?.trim() || null,
+            imageUrl: resolvedVariantImage,
             isActive: true,
           },
           create: {
@@ -521,7 +566,7 @@ export async function updateAdminProduct(
             sku: variant.sku.trim().toUpperCase(),
             stock: variant.stock,
             reservedStock: 0,
-            imageUrl: variant.imageUrl?.trim() || null,
+            imageUrl: resolvedVariantImage,
             isActive: true,
           },
         });

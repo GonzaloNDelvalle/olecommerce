@@ -6,6 +6,7 @@ import {
 } from "mercadopago";
 import { db } from "@/lib/db";
 import { getMercadoPagoConfig } from "@/lib/mercadopago";
+import { sendPaymentApprovedEmail } from "@/lib/email";
 import { OrderStatus, PaymentStatus, Prisma } from "@prisma/client";
 
 /**
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     const mappedPaymentStatus = mapMercadoPagoStatus(mpPayment.status);
 
-    await db.$transaction(async (tx) => {
+    const transitionedToPaid = await db.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
         include: {
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
         console.log(
           `[MP Webhook] Orden #${order.orderNumber} ya se encontraba en estado ${order.status}. Ignorando duplicado.`
         );
-        return;
+        return false;
       }
 
       const rawPayload = JSON.parse(
@@ -194,10 +195,20 @@ export async function POST(request: NextRequest) {
 
       // CASO A: PAGO APROBADO -> Pasar Order a PAID y descontar stock físico y reservedStock
       if (mappedPaymentStatus === PaymentStatus.APPROVED) {
-        await tx.order.update({
-          where: { id: order.id },
+        // Transición atómica condicionada a PENDING: si MercadoPago envía notificaciones
+        // duplicadas en paralelo, solo una logra el cambio (count === 1). Así se evita
+        // descontar stock dos veces y enviar el email "Pago Acreditado" duplicado.
+        const claimed = await tx.order.updateMany({
+          where: { id: order.id, status: OrderStatus.PENDING },
           data: { status: OrderStatus.PAID },
         });
+
+        if (claimed.count === 0) {
+          console.log(
+            `[MP Webhook] Orden #${order.orderNumber} ya fue procesada por otra notificación concurrente.`
+          );
+          return false;
+        }
 
         for (const item of order.items) {
           await tx.productVariant.update({
@@ -212,6 +223,7 @@ export async function POST(request: NextRequest) {
         console.log(
           `✅ [MP Webhook] Orden #${order.orderNumber} actualizada a PAID y stock descontado.`
         );
+        return true;
       }
 
       // CASO B: PAGO RECHAZADO O CANCELADO -> Pasar Order a CANCELLED y liberar reservedStock
@@ -237,7 +249,20 @@ export async function POST(request: NextRequest) {
           `⚠️ [MP Webhook] Orden #${order.orderNumber} cancelada por pago ${mappedPaymentStatus}. Stock reservado liberado.`
         );
       }
+
+      return false;
     });
+
+    // 4. EMAIL "PAGO ACREDITADO": solo cuando esta notificación fue la que pasó la orden a PAID.
+    //    Se ejecuta fuera de la transacción y nunca lanza excepciones, por lo que un fallo
+    //    de email no provoca que MercadoPago reintente el webhook.
+    if (transitionedToPaid) {
+      const emailResult = await sendPaymentApprovedEmail(orderId);
+      console.log(
+        `[MP Webhook] Email "Pago Acreditado" para orden ${orderId}:`,
+        emailResult.success ? "enviado" : `falló (${emailResult.error})`
+      );
+    }
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {

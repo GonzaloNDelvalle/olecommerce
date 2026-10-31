@@ -8,7 +8,13 @@ const nextConfig: NextConfig = {
     "ws",
     "@prisma/adapter-neon",
     "@neondatabase/serverless",
+    "cloudinary",
   ],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -18,6 +24,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "media.istockphoto.com",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
       },
     ],
   },

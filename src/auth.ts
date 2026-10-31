@@ -1,5 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
+import type { Adapter } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -28,6 +30,7 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(db) as Adapter,
   secret:
     process.env.AUTH_SECRET ||
     "olecommerce-auth-secret-key-2026-argentina-secure-98f4d2a1",

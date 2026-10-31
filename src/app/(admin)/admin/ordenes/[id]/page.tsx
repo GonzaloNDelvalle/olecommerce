@@ -10,10 +10,13 @@ import {
   Package,
   FileText,
   Landmark,
+  Truck,
 } from "lucide-react";
 import { getAdminOrderById } from "@/modules/admin/actions/admin-orders.actions";
 import { OrderStatusBadge } from "@/modules/admin/components/OrderStatusBadge";
 import { ApproveManualPaymentButton } from "@/modules/admin/components/ApproveManualPaymentButton";
+import { DispatchOrderModalButton } from "@/modules/admin/components/DispatchOrderModalButton";
+import { CancelOrderButton } from "@/modules/admin/components/CancelOrderButton";
 
 interface AdminOrderDetailPageProps {
   params: Promise<{
@@ -61,9 +64,22 @@ async function OrderDetailContent({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           {order.status === OrderStatus.PENDING && (
-            <ApproveManualPaymentButton
+            <>
+              <ApproveManualPaymentButton
+                orderId={order.id}
+                orderNumber={order.orderNumber}
+              />
+              <CancelOrderButton
+                orderId={order.id}
+                orderNumber={order.orderNumber}
+              />
+            </>
+          )}
+
+          {order.status === OrderStatus.PAID && (
+            <DispatchOrderModalButton
               orderId={order.id}
               orderNumber={order.orderNumber}
             />
@@ -143,6 +159,25 @@ async function OrderDetailContent({
                 <span>
                   <strong>Indicaciones de entrega:</strong> {order.notes}
                 </span>
+              </div>
+            )}
+
+            {order.carrier && order.trackingCode && (
+              <div className="mt-3 flex items-start gap-2.5 rounded-none border border-stone-200 bg-stone-50 p-3 text-xs text-stone-800">
+                <Truck className="mt-0.5 h-4 w-4 shrink-0 text-stone-700" />
+                <div className="space-y-0.5">
+                  <p className="font-semibold text-stone-900 uppercase">
+                    Despachado vía {order.carrier}
+                  </p>
+                  <p className="font-mono text-stone-700">
+                    Código de seguimiento: <strong>{order.trackingCode}</strong>
+                  </p>
+                  {order.shippedAt && (
+                    <p className="text-[11px] text-stone-500">
+                      Fecha: {dateFormatter.format(new Date(order.shippedAt))}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>

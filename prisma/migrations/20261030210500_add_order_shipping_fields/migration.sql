@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "orders"
+  ADD COLUMN IF NOT EXISTS "carrier" VARCHAR(80),
+  ADD COLUMN IF NOT EXISTS "tracking_code" VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS "shipped_at" TIMESTAMP(3);

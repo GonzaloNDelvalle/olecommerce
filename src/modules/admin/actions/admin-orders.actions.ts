@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import {
+  sendOrderShippedEmail,
+  sendPaymentApprovedEmail,
+} from "@/lib/email";
+import {
   OrderStatus,
   PaymentProvider,
   PaymentStatus,
@@ -44,6 +48,9 @@ export interface AdminOrderDTO {
   totalAmount: number;
   customerDocument: string;
   shippingAddress: ShippingAddressSnapshotDTO;
+  carrier: string | null;
+  trackingCode: string | null;
+  shippedAt: string | null;
   notes: string | null;
   createdAt: string;
   user: {
@@ -95,6 +102,11 @@ function mapOrderToDTO(order: {
   totalAmount: unknown;
   customerDocument: string;
   shippingAddress: unknown;
+  shippingCarrier?: string | null;
+  trackingNumber?: string | null;
+  carrier?: string | null;
+  trackingCode?: string | null;
+  shippedAt?: Date | null;
   notes: string | null;
   createdAt: Date;
   user: {
@@ -142,6 +154,9 @@ function mapOrderToDTO(order: {
     totalAmount: Number(order.totalAmount),
     customerDocument: order.customerDocument,
     shippingAddress: addressObj,
+    carrier: order.carrier ?? order.shippingCarrier ?? null,
+    trackingCode: order.trackingCode ?? order.trackingNumber ?? null,
+    shippedAt: order.shippedAt ? order.shippedAt.toISOString() : null,
     notes: order.notes,
     createdAt: order.createdAt.toISOString(),
     user: order.user,
@@ -262,7 +277,7 @@ export async function approveManualOrderPayment(
   orderId: string
 ): Promise<AdminOrderMutationResult> {
   try {
-    await db.$transaction(async (tx) => {
+    const transitionedToPaid = await db.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
         include: {
@@ -276,7 +291,7 @@ export async function approveManualOrderPayment(
       }
 
       if (order.status === OrderStatus.PAID) {
-        return;
+        return false;
       }
 
       if (order.status !== OrderStatus.PENDING) {
@@ -285,13 +300,18 @@ export async function approveManualOrderPayment(
         );
       }
 
-      // 1. Cambiar el estado de la orden de PENDING a PAID
-      await tx.order.update({
-        where: { id: orderId },
+      // 1. Cambiar el estado de la orden de PENDING a PAID (transición atómica:
+      //    ante dos solicitudes simultáneas, solo una logra el cambio)
+      const claimed = await tx.order.updateMany({
+        where: { id: orderId, status: OrderStatus.PENDING },
         data: {
           status: OrderStatus.PAID,
         },
       });
+
+      if (claimed.count === 0) {
+        return false;
+      }
 
       // 2. Conciliar inventario físico y reservado de cada variante comprada
       for (const item of order.items) {
@@ -341,7 +361,14 @@ export async function approveManualOrderPayment(
           paidAt: now,
         },
       });
+
+      return true;
     });
+
+    // 4. Email transaccional "Pago Acreditado" (solo si la orden efectivamente pasó a PAID ahora)
+    if (transitionedToPaid) {
+      await sendPaymentApprovedEmail(orderId);
+    }
 
     revalidatePath("/admin");
     revalidatePath("/admin/ordenes");
@@ -349,7 +376,7 @@ export async function approveManualOrderPayment(
     revalidatePath("/admin/productos");
     revalidatePath("/productos");
 
-    return {
+      return {
       success: true,
       message:
         "Pago manual acreditado con éxito. La orden pasó a estado PAID y se descontó el stock definitivo.",
@@ -362,6 +389,187 @@ export async function approveManualOrderPayment(
         error instanceof Error
           ? error.message
           : "Ocurrió un error al intentar acreditar el pago manualmente.",
+    };
+  }
+}
+
+/**
+ * Despacha una orden en estado PAID -> SHIPPED, guardando empresa de envío (`carrier`),
+ * código de seguimiento (`trackingCode`) y fecha de despacho (`shippedAt`),
+ * y dispara inmediatamente el correo transaccional "Tu paquete está en viaje".
+ */
+export async function dispatchAdminOrder(
+  orderId: string,
+  payload: {
+    carrier: string;
+    trackingCode: string;
+  }
+): Promise<AdminOrderMutationResult> {
+  const carrier = payload.carrier?.trim();
+  const trackingCode = payload.trackingCode?.trim();
+
+  if (!carrier) {
+    return {
+      success: false,
+      error: "Seleccioná la empresa de envío.",
+    };
+  }
+
+  if (!trackingCode) {
+    return {
+      success: false,
+      error: "Ingresá el código de seguimiento del envío.",
+    };
+  }
+
+  try {
+    const order = await db.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, orderNumber: true, status: true },
+    });
+
+    if (!order) {
+      return {
+        success: false,
+        error: "La orden solicitada no existe.",
+      };
+    }
+
+    if (
+      order.status !== OrderStatus.PAID &&
+      order.status !== OrderStatus.PROCESSING
+    ) {
+      return {
+        success: false,
+        error: `Solo se pueden despachar órdenes pagadas (estado actual: ${order.status}).`,
+      };
+    }
+
+    const now = new Date();
+    await db.order.update({
+      where: { id: orderId },
+      data: {
+        status: OrderStatus.SHIPPED,
+        carrier,
+        shippingCarrier: carrier,
+        trackingCode,
+        trackingNumber: trackingCode,
+        shippedAt: now,
+      },
+    });
+
+    // Disparar inmediatamente el email "Tu paquete está en viaje"
+    await sendOrderShippedEmail(orderId);
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/ordenes");
+    revalidatePath(`/admin/ordenes/${orderId}`);
+    revalidatePath("/mi-cuenta");
+
+    return {
+      success: true,
+      message: `Orden #${order.orderNumber} despachada (${carrier} • ${trackingCode}) y notificación enviada por correo.`,
+    };
+  } catch (error) {
+    console.error("[dispatchAdminOrder] Error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error al despachar el pedido.",
+    };
+  }
+}
+
+/**
+ * Cancela una orden en estado PENDING -> CANCELLED dentro de una transacción segura (`db.$transaction`)
+ * y restituye automáticamente las unidades reservadas (`reservedStock`) al stock disponible
+ * de cada variante de prenda involucrada.
+ */
+export async function cancelAdminOrder(
+  orderId: string
+): Promise<AdminOrderMutationResult> {
+  try {
+    await db.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: true,
+        },
+      });
+
+      if (!order) {
+        throw new Error("La orden solicitada no existe.");
+      }
+
+      if (order.status === OrderStatus.CANCELLED) {
+        return;
+      }
+
+      if (order.status !== OrderStatus.PENDING) {
+        throw new Error(
+          `Solo se pueden cancelar órdenes en estado PENDING (estado actual: ${order.status}).`
+        );
+      }
+
+      // 1. Transición atómica de PENDING a CANCELLED
+      const claimed = await tx.order.updateMany({
+        where: { id: orderId, status: OrderStatus.PENDING },
+        data: { status: OrderStatus.CANCELLED },
+      });
+
+      if (claimed.count === 0) {
+        return;
+      }
+
+      // 2. Restituir las unidades reservadas al stock disponible de cada variante
+      for (const item of order.items) {
+        const variant = await tx.productVariant.findUnique({
+          where: { id: item.variantId },
+          select: { reservedStock: true },
+        });
+
+        if (variant && variant.reservedStock > 0) {
+          const toRelease = Math.min(variant.reservedStock, item.quantity);
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: {
+              reservedStock: {
+                decrement: toRelease,
+              },
+            },
+          });
+        }
+      }
+
+      // 3. Marcar el Payment asociado como CANCELLED
+      await tx.payment.updateMany({
+        where: { orderId },
+        data: { status: PaymentStatus.CANCELLED },
+      });
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/ordenes");
+    revalidatePath(`/admin/ordenes/${orderId}`);
+    revalidatePath("/admin/productos");
+    revalidatePath("/productos");
+    revalidatePath("/mi-cuenta");
+
+    return {
+      success: true,
+      message:
+        "Orden cancelada con éxito. Las unidades reservadas fueron restituidas al stock disponible.",
+    };
+  } catch (error) {
+    console.error("[cancelAdminOrder] Error:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error al cancelar la orden.",
     };
   }
 }

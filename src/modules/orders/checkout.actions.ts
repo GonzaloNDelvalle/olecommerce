@@ -15,6 +15,7 @@ import {
   type CreateOrderPayload,
 } from "@/modules/orders/schemas/checkout.schema";
 import { createMercadoPagoPreference } from "@/modules/orders/payment.actions";
+import { sendOrderConfirmedEmail } from "@/lib/email";
 
 export type ProcessCheckoutOrderResult =
   | {
@@ -267,7 +268,11 @@ export async function processCheckoutOrder(
       };
     });
 
-    // 6. Resolver URL de redirección según el medio de pago seleccionado
+    // 6. Email transaccional "Orden Confirmada" (incluye CBU si es por transferencia).
+    //    Se ejecuta fuera de la transacción y nunca interrumpe el checkout si falla.
+    await sendOrderConfirmedEmail(txResult.orderId);
+
+    // 7. Resolver URL de redirección según el medio de pago seleccionado
     if (customer.paymentMethod === "BANK_TRANSFER") {
       return {
         success: true,
@@ -277,7 +282,7 @@ export async function processCheckoutOrder(
         discountAmount: txResult.discountAmount,
         totalAmount: txResult.totalAmount,
         paymentMethod: "BANK_TRANSFER",
-        redirectUrl: `/checkout/transferencia/${txResult.orderId}`,
+        redirectUrl: `/checkout/confirmacion/${txResult.orderId}`,
       };
     }
 
@@ -311,6 +316,108 @@ export async function processCheckoutOrder(
       error: message,
     };
   }
+}
+
+export interface OrderItemSummaryDTO {
+  id: string;
+  productName: string;
+  variantSku: string;
+  sizeName: string;
+  colorName: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  imageUrl?: string | null;
+}
+
+export interface ConfirmationOrderDTO {
+  id: string;
+  orderNumber: number;
+  status: OrderStatus;
+  subtotal: number;
+  discountAmount: number;
+  shippingCost: number;
+  totalAmount: number;
+  customerName: string;
+  customerEmail: string;
+  customerDocument: string;
+  createdAt: string;
+  paymentProvider: PaymentProvider;
+  paymentStatus: PaymentStatus;
+  items: OrderItemSummaryDTO[];
+}
+
+/**
+ * Obtiene los datos detallados de una orden para la vista de Confirmación de Pedido / Recibo Digital.
+ */
+export async function getConfirmationOrderDetails(
+  orderId: string
+): Promise<ConfirmationOrderDTO | null> {
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      payment: {
+        select: {
+          provider: true,
+          status: true,
+        },
+      },
+      items: {
+        include: {
+          variant: {
+            select: {
+              imageUrl: true,
+              product: {
+                select: {
+                  images: {
+                    orderBy: { position: "asc" },
+                    take: 1,
+                    select: { url: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) return null;
+
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    subtotal: Number(order.subtotal),
+    discountAmount: Number(order.discountAmount),
+    shippingCost: Number(order.shippingCost),
+    totalAmount: Number(order.totalAmount),
+    customerName: `${order.user.firstName} ${order.user.lastName}`,
+    customerEmail: order.user.email,
+    customerDocument: order.customerDocument,
+    createdAt: order.createdAt.toISOString(),
+    paymentProvider: order.payment?.provider ?? PaymentProvider.BANK_TRANSFER,
+    paymentStatus: order.payment?.status ?? PaymentStatus.PENDING,
+    items: order.items.map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      variantSku: item.variantSku,
+      sizeName: item.sizeName,
+      colorName: item.colorName,
+      quantity: item.quantity,
+      unitPrice: Number(item.unitPrice),
+      subtotal: Number(item.subtotal),
+      imageUrl: item.variant?.imageUrl || item.variant?.product?.images[0]?.url || null,
+    })),
+  };
 }
 
 /**

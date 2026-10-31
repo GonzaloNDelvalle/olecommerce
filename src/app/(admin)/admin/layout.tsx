@@ -25,7 +25,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </Suspense>
 
       {/* Área Principal de Trabajo */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Barra Superior de Contexto */}
         <header className="flex h-16 items-center justify-between border-b border-stone-200 bg-white px-6 lg:px-10">
           <div>
@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Contenido Dinámico de cada Vista (/admin, /admin/ordenes, /admin/productos) */}
-        <main className="flex-1 p-6 lg:p-10">{children}</main>
+        <main className="min-w-0 flex-1 p-6 lg:p-10">{children}</main>
       </div>
     </div>
   );

@@ -53,8 +53,8 @@ export function AdminSidebar() {
       {/* Identidad del Backoffice */}
       <div className="flex h-16 items-center justify-between border-b border-stone-800 px-6">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <span className="text-base font-bold tracking-[0.2em] text-white uppercase">
-            OLÉ
+          <span className="text-base font-bold tracking-[0.2em] text-white">
+            OL.
           </span>
           <span className="rounded bg-stone-800 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-stone-300 uppercase">
             Admin

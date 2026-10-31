@@ -25,26 +25,33 @@ async function ProductDetailContent({
 
   return (
     <>
-      {/* Breadcrumb de navegación */}
+      {/* Breadcrumb Editorial Minimalista */}
       <nav
         aria-label="Breadcrumb"
-        className="mb-8 flex flex-wrap items-center gap-2 text-xs text-stone-500"
+        className="mb-10 flex flex-wrap items-center gap-2 text-[11px] tracking-[0.18em] text-stone-400 uppercase"
       >
-        <Link href="/" className="transition-colors hover:text-stone-900">
+        <Link href="/" className="transition-colors hover:text-[#5C4033]">
+          OL.
+        </Link>
+        <ChevronRight className="h-3 w-3 text-stone-300" />
+        <Link
+          href="/productos"
+          className="transition-colors hover:text-[#5C4033]"
+        >
           Catálogo
         </Link>
-        <ChevronRight className="h-3.5 w-3.5 text-stone-400" />
+        <ChevronRight className="h-3 w-3 text-stone-300" />
         <Link
-          href={`/?categoria=${product.category.slug}`}
-          className="transition-colors hover:text-stone-900"
+          href={`/productos?categoria=${product.category.slug}`}
+          className="transition-colors hover:text-[#5C4033]"
         >
           {product.category.name}
         </Link>
-        <ChevronRight className="h-3.5 w-3.5 text-stone-400" />
+        <ChevronRight className="h-3 w-3 text-stone-300" />
         <span className="font-medium text-stone-900">{product.name}</span>
       </nav>
 
-      {/* Galería Dinámica por Color + Selector Interactivo de Variantes */}
+      {/* Layout Editorial de 2 Columnas: Lookbook Vertical (Izq) + Ficha Sticky (Der) */}
       <ProductVariantSelector product={product} />
     </>
   );
@@ -52,13 +59,17 @@ async function ProductDetailContent({
 
 function ProductDetailSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
-      <div className="aspect-[3/4] w-full animate-pulse rounded-2xl bg-stone-200 lg:col-span-7" />
-      <div className="flex flex-col gap-4 lg:col-span-5">
-        <div className="h-4 w-32 animate-pulse rounded bg-stone-200" />
-        <div className="h-8 w-3/4 animate-pulse rounded bg-stone-200" />
-        <div className="h-7 w-28 animate-pulse rounded bg-stone-200" />
-        <div className="mt-4 h-20 w-full animate-pulse rounded bg-stone-200" />
+    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16 xl:gap-20">
+      <div className="space-y-6 lg:col-span-7">
+        <div className="aspect-[3/4] w-full animate-pulse rounded-none bg-stone-100" />
+        <div className="aspect-[3/4] w-full animate-pulse rounded-none bg-stone-100" />
+      </div>
+      <div className="flex flex-col gap-4 bg-white lg:col-span-5 lg:pl-2">
+        <div className="h-3 w-32 animate-pulse rounded-none bg-stone-100" />
+        <div className="h-9 w-3/4 animate-pulse rounded-none bg-stone-100" />
+        <div className="h-6 w-28 animate-pulse rounded-none bg-stone-100" />
+        <div className="mt-4 h-24 w-full animate-pulse rounded-none bg-stone-100" />
+        <div className="mt-6 h-12 w-full animate-pulse rounded-none bg-stone-200" />
       </div>
     </div>
   );
@@ -66,7 +77,7 @@ function ProductDetailSkeleton() {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-7xl bg-white px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <Suspense fallback={<ProductDetailSkeleton />}>
         <ProductDetailContent paramsPromise={params} />
       </Suspense>

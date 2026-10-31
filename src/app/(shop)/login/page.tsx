@@ -5,12 +5,17 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import {
   loginFormSchema,
   type LoginFormValues,
 } from "@/modules/auth/schemas/auth.schema";
 import { loginCustomerAction } from "@/modules/auth/actions/auth.actions";
+
+const INPUT_CLASS =
+  "w-full bg-transparent border-0 border-b border-stone-300 focus:border-stone-900 rounded-none px-0 py-3 font-sans text-sm font-light text-stone-900 placeholder:text-stone-400 focus:outline-none transition-colors";
+const LABEL_CLASS =
+  "block font-sans text-[10px] uppercase tracking-[0.2em] text-stone-600";
 
 function LoginForm() {
   const router = useRouter();
@@ -46,20 +51,17 @@ function LoginForm() {
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-6 sm:p-8">
+    <div className="rounded-none border border-stone-200 bg-white p-8 sm:p-10">
       {serverError && (
-        <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs text-red-700">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+        <div className="mb-6 flex items-start gap-2.5 rounded-none border border-red-200 bg-red-50/70 p-4 font-sans text-xs font-light text-red-800">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
           <p>{serverError}</p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
         <div>
-          <label
-            htmlFor="email"
-            className="block text-xs font-medium text-stone-700"
-          >
+          <label htmlFor="email" className={LABEL_CLASS}>
             Correo Electrónico
           </label>
           <input
@@ -68,18 +70,17 @@ function LoginForm() {
             autoComplete="email"
             placeholder="tu@correo.com"
             {...register("email")}
-            className="mt-1.5 w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-900 transition-colors focus:border-stone-900 focus:bg-white focus:outline-none"
+            className={INPUT_CLASS}
           />
           {errors.email && (
-            <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+            <p className="mt-1.5 font-sans text-[11px] font-light text-red-600">
+              {errors.email.message}
+            </p>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="password"
-            className="block text-xs font-medium text-stone-700"
-          >
+          <label htmlFor="password" className={LABEL_CLASS}>
             Contraseña
           </label>
           <input
@@ -88,41 +89,40 @@ function LoginForm() {
             autoComplete="current-password"
             placeholder="••••••••"
             {...register("password")}
-            className="mt-1.5 w-full rounded-lg border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-900 transition-colors focus:border-stone-900 focus:bg-white focus:outline-none"
+            className={INPUT_CLASS}
           />
           {errors.password && (
-            <p className="mt-1 text-xs text-red-600">
+            <p className="mt-1.5 font-sans text-[11px] font-light text-red-600">
               {errors.password.message}
             </p>
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-stone-900 px-6 py-3.5 text-xs font-semibold tracking-wider text-white uppercase transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Ingresando...
-            </>
-          ) : (
-            <>
-              Ingresar a Mi Cuenta
-              <ArrowRight className="h-4 w-4" />
-            </>
-          )}
-        </button>
+        <div className="pt-2">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-none bg-stone-900 px-6 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                INGRESANDO...
+              </>
+            ) : (
+              "INICIAR SESIÓN"
+            )}
+          </button>
+        </div>
       </form>
 
-      <div className="mt-6 border-t border-stone-200 pt-6 text-center text-xs text-stone-600">
-        ¿Todavía no tenés cuenta en OLÉ?{" "}
+      <div className="mt-8 border-t border-stone-200 pt-6 text-center font-sans text-xs font-light text-stone-500">
+        <span>¿Todavía no tenés una cuenta? </span>
         <Link
           href="/registro"
-          className="font-semibold text-stone-900 underline underline-offset-4 hover:text-stone-600"
+          className="border-b border-stone-900 pb-0.5 text-stone-900 uppercase tracking-[0.15em] text-[11px] transition-colors hover:border-stone-500 hover:text-stone-600"
         >
-          Creá tu cuenta aquí
+          Crear una cuenta
         </Link>
       </div>
     </div>
@@ -131,27 +131,28 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto max-w-md px-4 py-16 sm:px-6">
-      <header className="mb-8 text-center">
-        <p className="text-[11px] font-semibold tracking-[0.25em] text-stone-500 uppercase">
-          Acceso de Clientas
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
-          Iniciar Sesión
-        </h1>
-        <p className="mt-2 text-xs text-stone-500">
-          Consultá el estado de tus pedidos, pagos por transferencia e historial
-          de compras.
-        </p>
-      </header>
+    <main className="min-h-[calc(100vh-5rem)] bg-[#FAF9F6]">
+      <div className="mx-auto max-w-md px-4 py-20">
+        <header className="mb-10 text-center">
+          <p className="font-serif text-3xl tracking-tight text-stone-900">
+            OL.
+          </p>
+          <h1 className="mt-4 font-serif text-3xl tracking-wide text-stone-900 uppercase">
+            INICIAR SESIÓN
+          </h1>
+          <p className="mt-2.5 font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
+            ACCESO DE CLIENTAS &amp; SEGUIMIENTO DE PEDIDOS
+          </p>
+        </header>
 
-      <Suspense
-        fallback={
-          <div className="h-72 animate-pulse rounded-xl border border-stone-200 bg-stone-50" />
-        }
-      >
-        <LoginForm />
-      </Suspense>
+        <Suspense
+          fallback={
+            <div className="h-80 animate-pulse rounded-none border border-stone-200 bg-white" />
+          }
+        >
+          <LoginForm />
+        </Suspense>
+      </div>
     </main>
   );
 }

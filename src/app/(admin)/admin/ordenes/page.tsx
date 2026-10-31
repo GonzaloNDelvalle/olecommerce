@@ -8,10 +8,13 @@ import {
   Package,
   FileText,
   ArrowRight,
+  Truck,
 } from "lucide-react";
 import { getAdminOrders } from "@/modules/admin/actions/admin-orders.actions";
 import { OrderStatusBadge } from "@/modules/admin/components/OrderStatusBadge";
 import { ApproveManualPaymentButton } from "@/modules/admin/components/ApproveManualPaymentButton";
+import { DispatchOrderModalButton } from "@/modules/admin/components/DispatchOrderModalButton";
+import { CancelOrderButton } from "@/modules/admin/components/CancelOrderButton";
 
 interface AdminOrdersPageProps {
   searchParams: Promise<{
@@ -32,8 +35,9 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
 
 const FILTER_TABS: { label: string; value?: OrderStatus }[] = [
   { label: "Todas", value: undefined },
-  { label: "Pagadas (PAID)", value: OrderStatus.PAID },
   { label: "Pendientes (PENDING)", value: OrderStatus.PENDING },
+  { label: "Pagadas (PAID)", value: OrderStatus.PAID },
+  { label: "Despachadas (SHIPPED)", value: OrderStatus.SHIPPED },
   { label: "Canceladas", value: OrderStatus.CANCELLED },
 ];
 
@@ -124,7 +128,20 @@ async function OrdersListContent({
                   </div>
 
                   {order.status === OrderStatus.PENDING && (
-                    <ApproveManualPaymentButton
+                    <>
+                      <ApproveManualPaymentButton
+                        orderId={order.id}
+                        orderNumber={order.orderNumber}
+                      />
+                      <CancelOrderButton
+                        orderId={order.id}
+                        orderNumber={order.orderNumber}
+                      />
+                    </>
+                  )}
+
+                  {order.status === OrderStatus.PAID && (
+                    <DispatchOrderModalButton
                       orderId={order.id}
                       orderNumber={order.orderNumber}
                     />
@@ -190,6 +207,19 @@ async function OrdersListContent({
                         <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>Nota: {order.notes}</span>
                       </p>
+                    )}
+                    {order.carrier && order.trackingCode && (
+                      <div className="mt-2 flex items-start gap-2 rounded-none border border-stone-200 bg-stone-50 p-2.5 text-stone-800">
+                        <Truck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-700" />
+                        <div>
+                          <p className="font-semibold text-stone-900">
+                            {order.carrier}
+                          </p>
+                          <p className="font-mono text-[11px] text-stone-600">
+                            Guía: {order.trackingCode}
+                          </p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

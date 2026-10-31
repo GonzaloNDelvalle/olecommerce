@@ -24,7 +24,7 @@ export function PriceSortSelect({ activeSort }: PriceSortSelectProps) {
     }
 
     const qs = params.toString();
-    router.push(qs ? `/?${qs}` : "/");
+    router.push(qs ? `/productos?${qs}` : "/productos");
   }
 
   return (
@@ -41,7 +41,7 @@ export function PriceSortSelect({ activeSort }: PriceSortSelectProps) {
         id="catalog-sort-select"
         value={currentSort}
         onChange={handleSortChange}
-        className="mt-2.5 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-800 transition-colors focus:border-stone-900 focus:bg-white focus:outline-none"
+        className="mt-2.5 w-full rounded-none border border-stone-200 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-800 transition-colors focus:border-stone-900 focus:bg-white focus:outline-none"
       >
         <option value="recientes">Destacados y Más Recientes</option>
         <option value="precio_asc">Precio: Menor a Mayor</option>

@@ -36,7 +36,7 @@ function buildFilterHref(paramsObj: {
   }
 
   const qs = params.toString();
-  return qs ? `/?${qs}` : "/";
+  return qs ? `/productos?${qs}` : "/productos";
 }
 
 export async function SidebarFilters({
@@ -64,7 +64,7 @@ export async function SidebarFilters({
 
   return (
     <aside className="w-full lg:w-64 lg:shrink-0">
-      <div className="sticky top-24 space-y-6 rounded-xl border border-stone-200 bg-white p-5">
+      <div className="sticky top-24 space-y-6 rounded-none border border-stone-200 bg-white p-5">
         {/* Cabecera del Panel de Filtros */}
         <div className="flex items-center justify-between border-b border-stone-200 pb-3.5">
           <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-stone-900 uppercase">
@@ -74,8 +74,8 @@ export async function SidebarFilters({
 
           {hasAnyFilter && (
             <Link
-              href="/"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 transition-colors hover:text-stone-900"
+              href="/productos"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 transition-colors hover:text-[#5C4033]"
             >
               <X className="h-3 w-3" />
               Limpiar
@@ -86,7 +86,7 @@ export async function SidebarFilters({
         {/* 1. Ordenar por Precio (Menor a Mayor / Mayor a Menor) */}
         <Suspense
           fallback={
-            <div className="h-14 animate-pulse rounded-lg bg-stone-50" />
+            <div className="h-14 animate-pulse rounded-none bg-stone-50" />
           }
         >
           <PriceSortSelect activeSort={activeSort} />
@@ -108,7 +108,7 @@ export async function SidebarFilters({
                     talle: activeSizeName,
                     orden: activeSort,
                   })}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 font-medium transition-colors ${
+                  className={`flex items-center justify-between rounded-none px-3 py-2 font-medium transition-colors ${
                     !activeCategorySlug
                       ? "bg-stone-900 text-white"
                       : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
@@ -116,7 +116,7 @@ export async function SidebarFilters({
                 >
                   <span>Todas las Prendas</span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                    className={`rounded-none px-2 py-0.5 text-[10px] font-semibold ${
                       !activeCategorySlug
                         ? "bg-stone-700 text-stone-100"
                         : "bg-stone-100 text-stone-600"
@@ -138,7 +138,7 @@ export async function SidebarFilters({
                         talle: activeSizeName,
                         orden: activeSort,
                       })}
-                      className={`flex items-center justify-between rounded-lg px-3 py-2 font-medium transition-colors ${
+                      className={`flex items-center justify-between rounded-none px-3 py-2 font-medium transition-colors ${
                         isSelected
                           ? "bg-stone-900 text-white"
                           : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
@@ -146,7 +146,7 @@ export async function SidebarFilters({
                     >
                       <span>{category.name}</span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        className={`rounded-none px-2 py-0.5 text-[10px] font-semibold ${
                           isSelected
                             ? "bg-stone-700 text-stone-100"
                             : "bg-stone-100 text-stone-600"
@@ -199,7 +199,7 @@ export async function SidebarFilters({
                       talle: nextTalle,
                       orden: activeSort,
                     })}
-                    className={`flex h-9 items-center justify-center rounded-lg border text-xs font-medium transition-colors ${
+                    className={`flex h-9 items-center justify-center rounded-none border text-xs font-medium transition-colors ${
                       isSelected
                         ? "border-stone-900 bg-stone-900 text-white"
                         : "border-stone-200 bg-white text-stone-700 hover:border-stone-900 hover:text-stone-900"

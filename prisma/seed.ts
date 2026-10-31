@@ -1,33 +1,232 @@
-// prisma/seed.ts
-import { PrismaClient, ProductStatus, Role } from "@prisma/client";
-import { randomBytes, scryptSync } from "node:crypto";
+import "dotenv/config";
+import bcrypt from "bcryptjs";
+import { ProductStatus, Role } from "@prisma/client";
+import { db } from "../src/lib/db";
 
-const prisma = new PrismaClient();
-
-/**
- * Genera un hash seguro usando scrypt nativo de Node.js (formato salt:hash)
- */
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${derivedKey}`;
+interface MockProductSeed {
+  name: string;
+  slug: string;
+  description: string;
+  composition: string;
+  basePrice: number;
+  discountPercentage: number;
+  weightInGrams: number;
+  isFeatured: boolean;
+  categorySlug: string;
+  skuPrefix: string;
+  colors: string[];
+  sizes: string[];
+  images: [string, string];
 }
 
-async function main() {
-  console.log("🌱 Iniciando seed de la base de datos OLEcommerce...");
+const MOCK_PRODUCTS: MockProductSeed[] = [
+  {
+    name: "Sweater Oslo",
+    slug: "sweater-oslo",
+    description:
+      "Sweater tejido en punto inglés de calce relajado y hombros caídos. Hilado suave de tacto cálido, pensado para superponer en capas neutras.",
+    composition: "70% Lana Merino, 30% Algodón Orgánico",
+    basePrice: 118000,
+    discountPercentage: 10,
+    weightInGrams: 520,
+    isFeatured: true,
+    categorySlug: "tejidos",
+    skuPrefix: "SWE-OSL",
+    colors: ["Blanco Off-White", "Beige Arena", "Chocolate"],
+    sizes: ["S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Pantalón Denim Wide",
+    slug: "pantalon-denim-wide",
+    description:
+      "Jean de tiro alto y pierna ancha recta en denim rígido de 13 oz. Lavado neutro atemporal con costuras al tono y calce estructurado.",
+    composition: "100% Algodón Denim Premium",
+    basePrice: 129000,
+    discountPercentage: 0,
+    weightInGrams: 680,
+    isFeatured: true,
+    categorySlug: "denim",
+    skuPrefix: "DEN-WID",
+    colors: ["Gris Piedra", "Negro", "Blanco Off-White"],
+    sizes: ["XS", "S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1582418702059-97ebafb35d09?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Remera Basic Cream",
+    slug: "remera-basic-cream",
+    description:
+      "Remera esencial de cuello redondo cerrado en jersey pesado de algodón peruano peinado. Corte boxy sutil que mantiene su estructura uso tras uso.",
+    composition: "100% Algodón Pima Peruano 24/1",
+    basePrice: 54000,
+    discountPercentage: 0,
+    weightInGrams: 240,
+    isFeatured: true,
+    categorySlug: "partes-de-arriba",
+    skuPrefix: "REM-CRM",
+    colors: ["Blanco Off-White", "Beige Arena", "Negro"],
+    sizes: ["XS", "S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Blazer Sastrero Siena",
+    slug: "blazer-sastrero-siena",
+    description:
+      "Blazer cruzado de moldería sastrera masculina con hombreras sutiles, solapa en punta y forrería íntegra en viscosa.",
+    composition: "80% Lana Fría, 20% Viscosa",
+    basePrice: 195000,
+    discountPercentage: 15,
+    weightInGrams: 740,
+    isFeatured: true,
+    categorySlug: "partes-de-arriba",
+    skuPrefix: "BLZ-SIE",
+    colors: ["Chocolate", "Beige Arena", "Negro"],
+    sizes: ["S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Tapado Lana Cruda Milan",
+    slug: "tapado-lana-cruda-milan",
+    description:
+      "Tapado largo hasta el tobillo en paño de lana doble faz cosido a mano. Cinturón desmontable del mismo género y bolsillos invisibles.",
+    composition: "90% Lana Virgen, 10% Cashmere",
+    basePrice: 285000,
+    discountPercentage: 10,
+    weightInGrams: 1150,
+    isFeatured: true,
+    categorySlug: "partes-de-arriba",
+    skuPrefix: "TAP-MIL",
+    colors: ["Beige Arena", "Chocolate", "Negro"],
+    sizes: ["S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1544022613-e87ca75a784a?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Camisa Poplín Arena",
+    slug: "camisa-poplin-arena",
+    description:
+      "Camisa oversize en poplín de algodón crujiente con botones de nácar natural y puños anchos abotonados.",
+    composition: "100% Algodón Poplín de Alto Conteo",
+    basePrice: 89000,
+    discountPercentage: 0,
+    weightInGrams: 310,
+    isFeatured: false,
+    categorySlug: "partes-de-arriba",
+    skuPrefix: "CAM-ARE",
+    colors: ["Blanco Off-White", "Beige Arena"],
+    sizes: ["S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1551163943-3f6a855d1153?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Pantalón Sastrero Pinzas",
+    slug: "pantalon-sastrero-pinzas",
+    description:
+      "Pantalón palazzo de doble pinza frontal con caída fluida y cintura limpia con presillas. El aliado ideal del Blazer Siena.",
+    composition: "78% Poliéster Reciclado, 18% Viscosa, 4% Elastano",
+    basePrice: 134000,
+    discountPercentage: 0,
+    weightInGrams: 460,
+    isFeatured: true,
+    categorySlug: "denim",
+    skuPrefix: "PAN-PIN",
+    colors: ["Beige Arena", "Negro", "Gris Piedra"],
+    sizes: ["XS", "S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Cardigan Punto Grueso",
+    slug: "cardigan-punto-grueso",
+    description:
+      "Cárdigan tejido en galga gruesa con escote en V pronunciado y botones carey. Silueta envolvente pensada para el confort diario.",
+    composition: "65% Lana, 35% Poliamida",
+    basePrice: 124000,
+    discountPercentage: 15,
+    weightInGrams: 590,
+    isFeatured: false,
+    categorySlug: "tejidos",
+    skuPrefix: "CAR-PUN",
+    colors: ["Chocolate", "Beige Arena", "Blanco Off-White"],
+    sizes: ["S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Vestido Midi Lino Piedra",
+    slug: "vestido-midi-lino-piedra",
+    description:
+      "Vestido minimalista de largo midi con escote recto, breteles finos regulables y espalda baja. Confeccionado en lino pesado lavado a la piedra.",
+    composition: "100% Lino Europeo",
+    basePrice: 142000,
+    discountPercentage: 0,
+    weightInGrams: 390,
+    isFeatured: true,
+    categorySlug: "vestidos",
+    skuPrefix: "VES-LIN",
+    colors: ["Gris Piedra", "Blanco Off-White", "Negro"],
+    sizes: ["XS", "S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+  {
+    name: "Trench Oversize Visón",
+    slug: "trench-oversize-vison",
+    description:
+      "Trench clásico reinterpretado en gabardina impermeable de algodón con solapa tormenta, presillas en puños y lazo ajustable.",
+    composition: "100% Gabardina de Algodón Hidrófugo",
+    basePrice: 248000,
+    discountPercentage: 10,
+    weightInGrams: 920,
+    isFeatured: true,
+    categorySlug: "partes-de-arriba",
+    skuPrefix: "TRE-VIS",
+    colors: ["Beige Arena", "Chocolate"],
+    sizes: ["S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1000&q=85",
+      "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=85",
+    ],
+  },
+];
 
-  // ==========================================
-  // 1. USUARIO ADMINISTRADOR
-  // ==========================================
+async function main() {
+  console.log("🌱 Iniciando seed de OL Indumenti (FW'26 - Neutral State)...");
+
+  // 1. Usuario Admin
   const adminEmail = "admin@olecommerce.com.ar";
-  const adminUser = await prisma.user.upsert({
+  const passwordHash = await bcrypt.hash("Admin1234!", 10);
+  await db.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: { passwordHash, role: Role.ADMIN },
     create: {
       email: adminEmail,
-      passwordHash: hashPassword("Admin1234!"), // Contraseña temporal de desarrollo
+      name: "Admin OL.",
       firstName: "Admin",
-      lastName: "OLEcommerce",
+      lastName: "OL Indumenti",
+      passwordHash,
       documentNumber: "30123456789",
       phone: "+5491112345678",
       role: Role.ADMIN,
@@ -35,11 +234,8 @@ async function main() {
       emailVerified: new Date(),
     },
   });
-  console.log(`✅ Usuario Admin listo: ${adminUser.email}`);
 
-  // ==========================================
-  // 2. CATÁLOGO BASE DE TALLES (XS a XL + Único)
-  // ==========================================
+  // 2. Talles
   const sizesData = [
     { name: "XS", sortOrder: 1 },
     { name: "S", sortOrder: 2 },
@@ -51,167 +247,177 @@ async function main() {
 
   const sizesMap: Record<string, string> = {};
   for (const s of sizesData) {
-    const record = await prisma.size.upsert({
+    const record = await db.size.upsert({
       where: { name: s.name },
       update: { sortOrder: s.sortOrder },
       create: s,
     });
     sizesMap[s.name] = record.id;
   }
-  console.log(`✅ Talles creados/actualizados: ${Object.keys(sizesMap).join(", ")}`);
 
-  // ==========================================
-  // 3. CATÁLOGO BASE DE COLORES (con códigos Hex reales)
-  // ==========================================
+  // 3. Colores en paleta neutra
   const colorsData = [
-    { name: "Negro", hexCode: "#111111" },
-    { name: "Blanco Off-White", hexCode: "#FAF9F6" },
-    { name: "Verde Esmeralda", hexCode: "#046307" },
-    { name: "Borgoña", hexCode: "#6B1D2F" },
+    { name: "Negro", hexCode: "#18181B" },
+    { name: "Blanco Off-White", hexCode: "#FAF8F5" },
     { name: "Beige Arena", hexCode: "#D8C3A5" },
+    { name: "Chocolate", hexCode: "#4A3525" },
+    { name: "Gris Piedra", hexCode: "#A8A29E" },
   ];
 
   const colorsMap: Record<string, string> = {};
   for (const c of colorsData) {
-    const record = await prisma.color.upsert({
+    const record = await db.color.upsert({
       where: { name: c.name },
       update: { hexCode: c.hexCode },
       create: c,
     });
     colorsMap[c.name] = record.id;
   }
-  console.log(`✅ Colores creados/actualizados: ${Object.keys(colorsMap).join(", ")}`);
 
-  // ==========================================
-  // 4. COLECCIÓN / TEMPORADA Y DOS CATEGORÍAS
-  // ==========================================
-  const collection = await prisma.collection.upsert({
-    where: { slug: "otono-invierno-2026" },
-    update: {},
+  // 4. Colección y 4 Categorías Editoriales
+  const collection = await db.collection.upsert({
+    where: { slug: "neutral-state-fw26" },
+    update: { name: "Neutral State FW'26", isActive: true },
     create: {
-      name: "Otoño-Invierno 2026",
-      slug: "otono-invierno-2026",
-      description: "Colección principal de temporada con cortes sastreros y texturas cálidas.",
-      isActive: true,
-    },
-  });
-
-  const catPartesDeArriba = await prisma.category.upsert({
-    where: { slug: "partes-de-arriba" },
-    update: {},
-    create: {
-      name: "Partes de Arriba",
-      slug: "partes-de-arriba",
-      description: "Blusas, tops, camisas, vestidos y prendas superiores.",
-      isActive: true,
-    },
-  });
-
-  const catPantalones = await prisma.category.upsert({
-    where: { slug: "pantalones" },
-    update: {},
-    create: {
-      name: "Pantalones",
-      slug: "pantalones",
-      description: "Pantalones sastreros, palazzos, jeans y calzas.",
-      isActive: true,
-    },
-  });
-  console.log(`✅ Categorías listas: "${catPartesDeArriba.name}" y "${catPantalones.name}"`);
-
-  // ==========================================
-  // 5. PRODUCTO DE PRUEBA + 2 VARIANTES (Stock: 10 c/u)
-  // ==========================================
-  const testProduct = await prisma.product.upsert({
-    where: { slug: "vestido-de-prueba" },
-    update: {
-      basePrice: 85000.0,
-      compareAtPrice: 98000.0,
-      status: ProductStatus.ACTIVE,
-      isFeatured: true,
-    },
-    create: {
-      name: "Vestido de Prueba",
-      slug: "vestido-de-prueba",
+      name: "Neutral State FW'26",
+      slug: "neutral-state-fw26",
       description:
-        "Vestido midi de corte fluido con caída satinada. Ideal tanto para eventos de noche como para un look elegante de media estación.",
-      careGuide: "Lavar a mano con agua fría y jabón neutro. No retorcer ni usar secadora. Plancha tibia del revés.",
-      composition: "95% Poliéster Satinado, 5% Elastano",
-      sizeGuideUrl: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
-      basePrice: 85000.0,
-      compareAtPrice: 98000.0,
-      status: ProductStatus.ACTIVE,
-      isFeatured: true,
-      // Datos logísticos para cotización volumétrica en Argentina (kg y cm)
-      weight: 0.35,
-      length: 30.0,
-      width: 25.0,
-      height: 5.0,
-      categoryId: catPartesDeArriba.id,
-      collectionId: collection.id,
-    },
-  });
-
-  // Variante 1: Talle S + Color Negro (10 unidades)
-  const variant1 = await prisma.productVariant.upsert({
-    where: { sku: "VES-PRU-NEG-S" },
-    update: { stock: 10 },
-    create: {
-      sku: "VES-PRU-NEG-S",
-      productId: testProduct.id,
-      sizeId: sizesMap["S"],
-      colorId: colorsMap["Negro"],
-      stock: 10,
-      reservedStock: 0,
+        "Colección Otoño/Invierno 2026: sastrería minimalista, tejidos nobles y tonos tierra.",
       isActive: true,
     },
   });
 
-  // Variante 2: Talle M + Color Verde Esmeralda (10 unidades)
-  const variant2 = await prisma.productVariant.upsert({
-    where: { sku: "VES-PRU-ESM-M" },
-    update: { stock: 10 },
-    create: {
-      sku: "VES-PRU-ESM-M",
-      productId: testProduct.id,
-      sizeId: sizesMap["M"],
-      colorId: colorsMap["Verde Esmeralda"],
-      stock: 10,
-      reservedStock: 0,
-      isActive: true,
+  const categoriesSeed = [
+    {
+      name: "Partes de Arriba & Blazers",
+      slug: "partes-de-arriba",
+      description: "Blazers sastreros, tapados de lana, camisas y básicos.",
     },
-  });
+    {
+      name: "Denim & Pantalones",
+      slug: "denim",
+      description: "Jeans wide leg, pantalones de pinzas y cortes rectos.",
+    },
+    {
+      name: "Tejidos & Esenciales",
+      slug: "tejidos",
+      description: "Sweaters de lana merino, cárdigans y punto grueso.",
+    },
+    {
+      name: "Vestidos & Monocromo",
+      slug: "vestidos",
+      description: "Vestidos midi en lino, satén y siluetas fluidas.",
+    },
+  ];
 
-  // Galería de imágenes iniciales para el producto (si aún no tiene imágenes cargadas)
-  const existingImages = await prisma.productImage.count({
-    where: { productId: testProduct.id },
-  });
+  const categoriesMap: Record<string, string> = {};
+  for (const cat of categoriesSeed) {
+    const record = await db.category.upsert({
+      where: { slug: cat.slug },
+      update: { name: cat.name, description: cat.description, isActive: true },
+      create: {
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description,
+        isActive: true,
+      },
+    });
+    categoriesMap[cat.slug] = record.id;
+  }
 
-  if (existingImages === 0) {
-    await prisma.productImage.createMany({
+  // 5. Inyección de los 10 productos Mock con 2 imágenes y variantes
+  for (const item of MOCK_PRODUCTS) {
+    const categoryId = categoriesMap[item.categorySlug];
+    const product = await db.product.upsert({
+      where: { slug: item.slug },
+      update: {
+        name: item.name,
+        description: item.description,
+        composition: item.composition,
+        basePrice: item.basePrice,
+        discountPercentage: item.discountPercentage,
+        weightInGrams: item.weightInGrams,
+        status: ProductStatus.ACTIVE,
+        isFeatured: item.isFeatured,
+        categoryId,
+        collectionId: collection.id,
+      },
+      create: {
+        name: item.name,
+        slug: item.slug,
+        description: item.description,
+        composition: item.composition,
+        careGuide:
+          "Lavar con agua fría en ciclo delicado o limpieza en seco. Secar en plano a la sombra.",
+        basePrice: item.basePrice,
+        discountPercentage: item.discountPercentage,
+        weightInGrams: item.weightInGrams,
+        status: ProductStatus.ACTIVE,
+        isFeatured: item.isFeatured,
+        categoryId,
+        collectionId: collection.id,
+      },
+    });
+
+    // Reemplazar imágenes para asegurar las 2 fotos de hover editorial
+    await db.productImage.deleteMany({
+      where: { productId: product.id },
+    });
+
+    await db.productImage.createMany({
       data: [
         {
-          productId: testProduct.id,
-          colorId: colorsMap["Negro"],
-          url: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&w=1000&q=80",
-          altText: "Vestido de Prueba en color Negro - Vista Frontal",
+          productId: product.id,
+          url: item.images[0],
+          altText: `${item.name} — Vista Principal`,
           position: 0,
         },
         {
-          productId: testProduct.id,
-          colorId: colorsMap["Verde Esmeralda"],
-          url: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=1000&q=80",
-          altText: "Vestido de Prueba en color Verde Esmeralda - Vista Frontal",
+          productId: product.id,
+          url: item.images[1],
+          altText: `${item.name} — Vista Editorial Secundaria`,
           position: 1,
         },
       ],
     });
+
+    // Crear variantes combinando colores y talles
+    for (const colorName of item.colors) {
+      const colorId = colorsMap[colorName];
+      const colorCode = colorName
+        .slice(0, 3)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "X");
+
+      for (const sizeName of item.sizes) {
+        const sizeId = sizesMap[sizeName];
+        const sku = `${item.skuPrefix}-${colorCode}-${sizeName.toUpperCase()}`;
+
+        await db.productVariant.upsert({
+          where: { sku },
+          update: {
+            stock: 8,
+            isActive: true,
+            imageUrl: item.images[0],
+          },
+          create: {
+            sku,
+            productId: product.id,
+            sizeId,
+            colorId,
+            stock: 8,
+            reservedStock: 0,
+            imageUrl: item.images[0],
+            isActive: true,
+          },
+        });
+      }
+    }
+
+    console.log(`✅ Prenda inyectada: ${item.name} (${item.images.length} fotos)`);
   }
 
-  console.log(
-    `✅ Producto "${testProduct.name}" listo con 2 variantes: [${variant1.sku} (Stock: ${variant1.stock})] y [${variant2.sku} (Stock: ${variant2.stock})]`
-  );
-  console.log("🚀 Seed finalizado con éxito.");
+  console.log("🚀 Seed de 10 prendas editoriales completado con éxito.");
 }
 
 main()
@@ -220,5 +426,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await db.$disconnect();
   });

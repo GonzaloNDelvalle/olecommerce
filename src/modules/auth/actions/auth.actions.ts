@@ -31,6 +31,7 @@ export interface CustomerOrderItemDTO {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  imageUrl: string | null;
 }
 
 export interface CustomerOrderDTO {
@@ -42,6 +43,9 @@ export interface CustomerOrderDTO {
   shippingCost: number;
   totalAmount: number;
   createdAt: string;
+  carrier: string | null;
+  trackingCode: string | null;
+  shippedAt: string | null;
   items: CustomerOrderItemDTO[];
   payment: {
     id: string;
@@ -101,10 +105,12 @@ export async function registerCustomerAction(
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const fullName = `${firstName} ${lastName}`.trim();
 
     await db.user.upsert({
       where: { email: normalizedEmail },
       update: {
+        name: fullName,
         firstName,
         lastName,
         passwordHash,
@@ -114,6 +120,7 @@ export async function registerCustomerAction(
       },
       create: {
         email: normalizedEmail,
+        name: fullName,
         firstName,
         lastName,
         passwordHash,
@@ -212,7 +219,24 @@ export async function getCurrentCustomerProfile(): Promise<CustomerAccountProfil
       orders: {
         orderBy: { createdAt: "desc" },
         include: {
-          items: true,
+          items: {
+            include: {
+              variant: {
+                select: {
+                  imageUrl: true,
+                  product: {
+                    select: {
+                      images: {
+                        orderBy: { position: "asc" },
+                        take: 1,
+                        select: { url: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
           payment: {
             select: {
               id: true,
@@ -246,6 +270,9 @@ export async function getCurrentCustomerProfile(): Promise<CustomerAccountProfil
       shippingCost: Number(order.shippingCost),
       totalAmount: Number(order.totalAmount),
       createdAt: order.createdAt.toISOString(),
+      carrier: order.carrier ?? null,
+      trackingCode: order.trackingCode ?? null,
+      shippedAt: order.shippedAt ? order.shippedAt.toISOString() : null,
       items: order.items.map((item) => ({
         id: item.id,
         productName: item.productName,
@@ -255,6 +282,8 @@ export async function getCurrentCustomerProfile(): Promise<CustomerAccountProfil
         quantity: item.quantity,
         unitPrice: Number(item.unitPrice),
         subtotal: Number(item.subtotal),
+        imageUrl:
+          item.variant.imageUrl ?? item.variant.product.images[0]?.url ?? null,
       })),
       payment: order.payment
         ? {

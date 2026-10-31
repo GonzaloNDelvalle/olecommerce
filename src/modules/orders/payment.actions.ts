@@ -77,9 +77,9 @@ export async function createMercadoPagoPreference(
 
     // Definición explícita del objeto back_urls con las 3 rutas requeridas
     const backUrls = {
-      success: `${appUrl}/checkout?status=approved&orderId=${order.id}`,
+      success: `${appUrl}/checkout/confirmacion/${order.id}?status=approved`,
       failure: `${appUrl}/checkout?status=rejected&orderId=${order.id}`,
-      pending: `${appUrl}/checkout?status=pending&orderId=${order.id}`,
+      pending: `${appUrl}/checkout/confirmacion/${order.id}?status=pending`,
     };
 
     const isHttpsAppUrl = appUrl.startsWith("https://");

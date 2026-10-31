@@ -1,11 +1,21 @@
 import { z } from "zod";
 
+const imageSourceSchema = z
+  .string()
+  .trim()
+  .refine(
+    (val) =>
+      val === "" ||
+      val.startsWith("https://") ||
+      val.startsWith("http://") ||
+      val.startsWith("data:image/"),
+    {
+      message: "Subí un archivo de imagen válido (JPG, PNG, WEBP o AVIF)",
+    }
+  );
+
 export const productGalleryImageInputSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .url("Ingresá una URL de imagen válida (https://...)")
-    .or(z.literal("")),
+  url: imageSourceSchema,
 });
 
 export const productVariantInputSchema = z.object({
@@ -20,12 +30,7 @@ export const productVariantInputSchema = z.object({
     .number({ message: "Ingresá una cantidad numérica" })
     .int("El stock debe ser un número entero")
     .min(0, "El stock físico no puede ser negativo"),
-  imageUrl: z
-    .string()
-    .trim()
-    .url("Ingresá una URL de imagen válida (https://...)")
-    .optional()
-    .or(z.literal("")),
+  imageUrl: imageSourceSchema.optional().or(z.literal("")),
 });
 
 export const createProductFormSchema = z
