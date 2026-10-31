@@ -163,10 +163,17 @@ export function ShopFooter() {
             © <CurrentYear /> OL Indumenti. Todos los derechos reservados —
             República Argentina.
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+            <Link
+              href="/arrepentimiento"
+              className="font-medium text-stone-900 uppercase tracking-widest underline underline-offset-4 hover:text-[#5C4033] transition-colors"
+            >
+              BOTÓN DE ARREPENTIMIENTO
+            </Link>
+            <span className="hidden sm:inline">•</span>
             <span>Envíos a todo el país</span>
-            <span>•</span>
-            <span>Mercado Pago &amp; Transferencia Bancaria</span>
+            <span className="hidden sm:inline">•</span>
+            <span>Mercado Pago &amp; Transferencia</span>
           </div>
         </div>
       </div>

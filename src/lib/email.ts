@@ -12,11 +12,11 @@ import { BANK_ACCOUNT_INFO } from "@/lib/bank-account";
  * - NEXT_PUBLIC_APP_URL: URL base de la tienda para los enlaces del email.
  */
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM || "OL. Indumenti <onboarding@resend.dev>";
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+export const RESEND_API_KEY = process.env.RESEND_API_KEY;
+export const EMAIL_FROM = process.env.EMAIL_FROM || "OL. Indumenti <onboarding@resend.dev>";
+export const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
+export const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 const arsFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
