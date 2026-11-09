@@ -11,7 +11,7 @@ Tienda online de indumentaria femenina: catálogo con variantes de talle y color
 | Autenticación | Better Auth (email + contraseña, verificación de email, recuperación, límite de intentos) |
 | Pagos | Mercado Pago Checkout Pro + transferencia bancaria |
 | Imágenes | Cloudinary (subida firmada directa desde el navegador) |
-| Emails | Resend |
+| Emails | React Email (plantillas en `src/emails/`) + Resend |
 | Estilos | Tailwind CSS 4, Motion |
 | Monitoreo | Sentry, Vercel Analytics / Speed Insights, GA4 y Meta Pixel opcionales |
 | Tests | Vitest (unitarios) y Playwright (punta a punta) |
@@ -45,6 +45,7 @@ Después se ingresa por `/login` y el panel está en `/admin`.
 | `pnpm test:e2e` | Tests de punta a punta (Playwright, requiere `pnpm build` y la base del `.env`) |
 | `pnpm db:migrate` | Aplica migraciones pendientes (`prisma migrate deploy`) |
 | `pnpm admin:create` | Crea o promueve una cuenta ADMIN |
+| `pnpm email:dev` | Vista previa de los emails en http://localhost:3030 |
 
 ## Deploy en Vercel
 
