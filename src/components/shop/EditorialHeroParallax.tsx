@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "motion/react";
 
 const EASE_EDITORIAL: [number, number, number, number] = [0.22, 1, 0.36, 1];
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import { db } from "@/lib/db";
 import {
   OrderStatus,
@@ -9,7 +9,6 @@ import {
   ProductStatus,
 } from "@prisma/client";
 import {
-  BANK_TRANSFER_DISCOUNT_PERCENTAGE,
   createOrderPayloadSchema,
   type CheckoutPaymentMethod,
   type CreateOrderPayload,
@@ -17,6 +16,19 @@ import {
 import { createMercadoPagoPreference } from "@/modules/orders/payment.actions";
 import { sendOrderConfirmedEmail } from "@/lib/email";
 import { mergeStockLines, reserveVariantStock } from "@/modules/orders/inventory";
+import { revalidateStockForVariants } from "@/lib/cache-tags";
+import { consumeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import {
+  applyDiscount,
+  computeOrderTotals,
+  computeShippingCost,
+  isShippingAvailableFor,
+} from "@/modules/orders/pricing";
+import {
+  getActiveShippingMethods,
+  getStoreSettings,
+  isBankTransferAvailable,
+} from "@/modules/settings/store-settings";
 
 export type ProcessCheckoutOrderResult =
   | {
@@ -73,10 +85,48 @@ export async function processCheckoutOrder(
     };
   }
 
+  if (!(await consumeRateLimit(RATE_LIMITS.checkout))) {
+    return {
+      success: false,
+      error:
+        "Hiciste demasiados intentos de compra seguidos. Esperá unos minutos y volvé a intentar.",
+    };
+  }
+
   const { customer } = parsed.data;
   // Si el carrito trae la misma variante en dos líneas, se procesa como una sola
   const items = mergeStockLines(parsed.data.items);
-  const session = await auth();
+  const session = await getSession();
+
+  // Método de entrega y medio de pago se validan contra la configuración actual
+  // de la tienda (nunca se confía en costos enviados por el navegador).
+  const [settings, shippingMethods] = await Promise.all([
+    getStoreSettings(),
+    getActiveShippingMethods(),
+  ]);
+  const shippingMethod = shippingMethods.find(
+    (method) => method.id === customer.shippingMethodId
+  );
+  if (
+    !shippingMethod ||
+    shippingMethod.type !== customer.deliveryType ||
+    !isShippingAvailableFor(shippingMethod, customer.state)
+  ) {
+    return {
+      success: false,
+      error:
+        "El método de entrega elegido no está disponible para tu provincia. Elegí otro.",
+    };
+  }
+  if (
+    customer.paymentMethod === "BANK_TRANSFER" &&
+    !isBankTransferAvailable(settings)
+  ) {
+    return {
+      success: false,
+      error: "El pago por transferencia no está disponible en este momento.",
+    };
+  }
 
   try {
     const txResult = await db.$transaction(async (tx) => {
@@ -152,11 +202,10 @@ export async function processCheckoutOrder(
         const rawUnitPrice = Number(
           variant.priceOverride ?? variant.product.basePrice
         );
-        const productDiscount = variant.product.discountPercentage ?? 0;
-        const effectiveUnitPrice =
-          productDiscount > 0
-            ? Math.round(rawUnitPrice * (1 - productDiscount / 100))
-            : rawUnitPrice;
+        const effectiveUnitPrice = applyDiscount(
+          rawUnitPrice,
+          variant.product.discountPercentage ?? 0
+        );
 
         const itemSubtotal = effectiveUnitPrice * requestedItem.quantity;
         calculatedSubtotal += itemSubtotal;
@@ -198,10 +247,16 @@ export async function processCheckoutOrder(
       } else {
         const existing = await tx.user.findUnique({
           where: { email: guestEmail },
-          select: { id: true, passwordHash: true },
+          select: {
+            id: true,
+            accounts: {
+              where: { providerId: "credential" },
+              select: { id: true },
+            },
+          },
         });
 
-        if (existing?.passwordHash) {
+        if (existing && existing.accounts.length > 0) {
           userId = existing.id;
         } else {
           const guest = await tx.user.upsert({
@@ -215,29 +270,27 @@ export async function processCheckoutOrder(
       }
 
       const isBankTransfer = customer.paymentMethod === "BANK_TRANSFER";
-      const shippingCost = 0;
-      const discountAmount = isBankTransfer
-        ? Math.round(
-            calculatedSubtotal * (BANK_TRANSFER_DISCOUNT_PERCENTAGE / 100)
-          )
-        : 0;
-      const totalAmount = Math.max(
-        0,
-        calculatedSubtotal - discountAmount + shippingCost
-      );
+      const { discountAmount, shippingCost, totalAmount } = computeOrderTotals({
+        subtotal: calculatedSubtotal,
+        shippingCost: computeShippingCost(shippingMethod, calculatedSubtotal),
+        isBankTransfer,
+        bankTransferDiscountPercentage: settings.bankTransferDiscountPercentage,
+      });
 
       // 4. Snapshot estático e inmutable de dirección de envío
+      const isPickup = shippingMethod.type === "PICKUP";
       const shippingAddressSnapshot = {
         recipient: `${customer.firstName} ${customer.lastName}`,
         documentNumber: customer.documentNumber,
         phone: customer.phone,
-        street: customer.street,
-        number: customer.number,
-        apartment: customer.apartment || null,
-        postalCode: customer.postalCode.toUpperCase(),
-        city: customer.city,
+        street: isPickup ? null : customer.street?.trim() || null,
+        number: isPickup ? null : customer.number?.trim() || null,
+        apartment: isPickup ? null : customer.apartment?.trim() || null,
+        postalCode: isPickup ? null : customer.postalCode?.trim().toUpperCase() || null,
+        city: isPickup ? null : customer.city?.trim() || null,
         state: customer.state,
         country: "AR",
+        ...(isPickup ? { pickupAddress: settings.showroomAddress } : {}),
       };
 
       // 5. Crear la Order en estado PENDING con sus OrderItems y su registro Payment
@@ -251,6 +304,9 @@ export async function processCheckoutOrder(
           totalAmount,
           customerDocument: customer.documentNumber,
           shippingAddress: shippingAddressSnapshot,
+          shippingMethodId: shippingMethod.id,
+          shippingMethodName: shippingMethod.name,
+          deliveryType: shippingMethod.type,
           notes: customer.notes || null,
           items: {
             create: orderItemsToCreate,
@@ -284,6 +340,9 @@ export async function processCheckoutOrder(
         totalAmount: Number(order.totalAmount),
       };
     });
+
+    // La ficha de los productos muestra stock disponible: refrescarla
+    await revalidateStockForVariants(items.map((item) => item.variantId));
 
     // 6. Email transaccional "Orden Confirmada" (incluye CBU si es por transferencia).
     //    Se ejecuta fuera de la transacción y nunca interrumpe el checkout si falla.

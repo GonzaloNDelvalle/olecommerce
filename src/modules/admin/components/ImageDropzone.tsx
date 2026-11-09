@@ -1,7 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { UploadCloud, X, Image as ImageIcon, RefreshCw } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Loader2,
+  RefreshCw,
+  UploadCloud,
+  X,
+} from "lucide-react";
+import { getCloudinaryUploadSignature } from "@/modules/admin/actions/admin-uploads.actions";
 
 const ACCEPTED_MIME_TYPES = [
   "image/jpeg",
@@ -11,43 +18,61 @@ const ACCEPTED_MIME_TYPES = [
 ];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB por imagen
 
-export function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
-      reject(
-        new Error(
-          `El archivo "${file.name}" no tiene un formato soportado (usá JPG, PNG, WEBP o AVIF).`
-        )
-      );
-      return;
-    }
+export function validateImageFile(file: File): void {
+  if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
+    throw new Error(
+      `El archivo "${file.name}" no tiene un formato soportado (usá JPG, PNG, WEBP o AVIF).`
+    );
+  }
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(
+      `El archivo "${file.name}" supera el tamaño máximo permitido de 10 MB.`
+    );
+  }
+}
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      reject(
-        new Error(
-          `El archivo "${file.name}" supera el tamaño máximo permitido de 10 MB.`
-        )
-      );
-      return;
-    }
+/**
+ * Sube la imagen directo del navegador a Cloudinary con una firma generada
+ * por el servidor y devuelve la URL pública (https://res.cloudinary.com/...).
+ */
+export async function uploadImageToCloudinary(
+  file: File,
+  subfolder: "gallery" | "variants" = "gallery"
+): Promise<string> {
+  validateImageFile(file);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("No se pudo leer el archivo seleccionado."));
-      }
-    };
-    reader.onerror = () =>
-      reject(new Error("Error al procesar el archivo de imagen."));
-    reader.readAsDataURL(file);
-  });
+  const { cloudName, apiKey, timestamp, signature, folder } =
+    await getCloudinaryUploadSignature(subfolder);
+
+  const body = new FormData();
+  body.append("file", file);
+  body.append("api_key", apiKey);
+  body.append("timestamp", String(timestamp));
+  body.append("signature", signature);
+  body.append("folder", folder);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    { method: "POST", body }
+  );
+  const result = (await response.json().catch(() => null)) as {
+    secure_url?: string;
+    error?: { message?: string };
+  } | null;
+
+  if (!response.ok || !result?.secure_url) {
+    throw new Error(
+      `No se pudo subir "${file.name}" a Cloudinary${result?.error?.message ? `: ${result.error.message}` : "."}`
+    );
+  }
+  return result.secure_url;
 }
 
 interface SingleImageDropzoneProps {
   value?: string;
-  onChange: (nextDataUrlOrEmpty: string) => void;
+  onChange: (nextUrlOrEmpty: string) => void;
+  /** Carpeta de Cloudinary donde se guarda la foto */
+  subfolder?: "gallery" | "variants";
   label?: string;
   helperText?: string;
   compact?: boolean;
@@ -65,21 +90,25 @@ export function SingleImageDropzone({
   helperText = "Arrastrá una imagen aquí o hacé clic para seleccionar (JPG, PNG, WEBP)",
   compact = false,
   badgeText,
+  subfolder = "gallery",
 }: SingleImageDropzoneProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   async function processFile(file: File | undefined) {
     if (!file) return;
     setLocalError(null);
+    setIsUploading(true);
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      onChange(dataUrl);
+      onChange(await uploadImageToCloudinary(file, subfolder));
     } catch (err) {
       setLocalError(
         err instanceof Error ? err.message : "Archivo de imagen inválido."
       );
+    } finally {
+      setIsUploading(false);
     }
   }
 
@@ -98,7 +127,7 @@ export function SingleImageDropzone({
   }
 
   const hasImage = Boolean(value && value.trim().length > 0);
-  const isNewUpload = Boolean(value?.startsWith("data:image/"));
+  const isNewUpload = isUploading;
 
   return (
     <div className="space-y-1.5">
@@ -116,7 +145,7 @@ export function SingleImageDropzone({
         className="hidden"
       />
 
-      {hasImage ? (
+      {hasImage || isUploading ? (
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -136,12 +165,20 @@ export function SingleImageDropzone({
                 compact ? "h-12 w-10" : "h-16 w-13"
               }`}
             >
+              {hasImage ? (
+                <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={value}
-                alt="Vista previa"
-                className="h-full w-full object-cover"
-              />
+                <img
+                  src={value}
+                  alt="Vista previa"
+                  className="h-full w-full object-cover"
+                />
+                </>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin text-stone-500" />
+                </div>
+              )}
             </div>
 
             <div className="min-w-0">
@@ -158,15 +195,19 @@ export function SingleImageDropzone({
                       : "bg-emerald-50 text-emerald-800"
                   }`}
                 >
-                  <ImageIcon className="h-3 w-3" />
+                  {isNewUpload ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-3 w-3" />
+                  )}
                   {isNewUpload
-                    ? "Lista para subir a Cloudinary"
+                    ? "Subiendo..."
                     : "Almacenada en la nube"}
                 </span>
               </div>
               <p className="mt-1 truncate text-xs text-stone-500">
                 {isNewUpload
-                  ? "Se subirá automáticamente a Cloudinary al guardar el producto"
+                  ? "Subiendo la nueva foto a Cloudinary"
                   : value}
               </p>
             </div>
@@ -246,6 +287,7 @@ export function GalleryMultiDropzone({
 }: GalleryMultiDropzoneProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   async function processFileList(fileList: FileList | null) {
@@ -254,14 +296,20 @@ export function GalleryMultiDropzone({
 
     const files = Array.from(fileList);
     try {
-      const dataUrls = await Promise.all(files.map(readFileAsDataUrl));
-      onFilesAdded(dataUrls);
+      files.forEach(validateImageFile);
+      setIsUploading(true);
+      const urls = await Promise.all(
+        files.map((file) => uploadImageToCloudinary(file, "gallery"))
+      );
+      onFilesAdded(urls);
     } catch (err) {
       setLocalError(
         err instanceof Error
           ? err.message
           : "Uno de los archivos seleccionados no es válido."
       );
+    } finally {
+      setIsUploading(false);
     }
   }
 
@@ -311,15 +359,20 @@ export function GalleryMultiDropzone({
         }`}
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-stone-700 shadow-2xs">
-          <UploadCloud className="h-5 w-5" />
+          {isUploading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <UploadCloud className="h-5 w-5" />
+          )}
         </div>
         <p className="mt-2.5 text-xs font-semibold text-stone-900">
           Arrastrá y soltá una o varias fotos para la galería, o hacé clic para
           buscar archivos
         </p>
         <p className="mt-1 text-[11px] text-stone-500">
-          La primera imagen será la portada principal del producto. Se subirán a
-          Cloudinary automáticamente al guardar.
+          {isUploading
+            ? "Subiendo fotos a Cloudinary..."
+            : "La primera imagen será la portada principal del producto."}
         </p>
       </div>
 

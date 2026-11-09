@@ -10,6 +10,9 @@ import {
   Tags,
   ExternalLink,
   ShieldCheck,
+  Truck,
+  Undo2,
+  Settings,
 } from "lucide-react";
 
 const ADMIN_NAV_ITEMS = [
@@ -42,6 +45,24 @@ const ADMIN_NAV_ITEMS = [
     href: "/admin/productos/nuevo",
     icon: PlusCircle,
     exact: true,
+  },
+  {
+    label: "Envíos",
+    href: "/admin/envios",
+    icon: Truck,
+    exact: false,
+  },
+  {
+    label: "Arrepentimientos",
+    href: "/admin/arrepentimientos",
+    icon: Undo2,
+    exact: false,
+  },
+  {
+    label: "Configuración",
+    href: "/admin/configuracion",
+    icon: Settings,
+    exact: false,
   },
 ];
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
+import { CACHE_TAGS, expireTagsNow } from "@/lib/cache-tags";
 
 export interface AdminCategoryDTO {
   id: string;
@@ -130,7 +131,7 @@ export async function createAdminCategory(input: {
     revalidatePath("/admin/categorias");
     revalidatePath("/admin/productos/nuevo");
     revalidatePath("/");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
 
     return {
       success: true,
@@ -184,7 +185,7 @@ export async function deleteAdminCategory(
     revalidatePath("/admin/categorias");
     revalidatePath("/admin/productos/nuevo");
     revalidatePath("/");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
 
     return {
       success: true,

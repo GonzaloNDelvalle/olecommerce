@@ -1,11 +1,17 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { useCartStore } from "@/store/cart.store";
+import { useHydrated } from "@/hooks/use-hydrated";
+
+function subscribeToScroll(onChange: () => void) {
+  window.addEventListener("scroll", onChange, { passive: true });
+  return () => window.removeEventListener("scroll", onChange);
+}
 import { SearchBar } from "@/components/shop/SearchBar";
 
 const NAV_LINKS = [
@@ -19,8 +25,12 @@ function ShopHeaderInner() {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
-  const [mounted, setMounted] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const mounted = useHydrated();
+  const isScrolled = useSyncExternalStore(
+    subscribeToScroll,
+    () => window.scrollY > 36,
+    () => false
+  );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -28,18 +38,6 @@ function ShopHeaderInner() {
   const totalItems = useCartStore((state) =>
     state.items.reduce((acc, item) => acc + item.quantity, 0)
   );
-
-  useEffect(() => {
-    setMounted(true);
-
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 36);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Transparente únicamente en la portada (/) cuando está arriba sobre el hero video
   const isTransparent = isHome && !isScrolled && !isSearchOpen && !isMobileMenuOpen;

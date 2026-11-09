@@ -10,7 +10,8 @@ import {
   loginFormSchema,
   type LoginFormValues,
 } from "@/modules/auth/schemas/auth.schema";
-import { loginCustomerAction } from "@/modules/auth/actions/auth.actions";
+import { authClient } from "@/lib/auth-client";
+import { authErrorMessage } from "@/lib/auth-errors";
 import { safeInternalPath } from "@/lib/safe-path";
 
 const INPUT_CLASS =
@@ -40,10 +41,13 @@ function LoginForm() {
   async function onSubmit(values: LoginFormValues) {
     setServerError(null);
 
-    const result = await loginCustomerAction(values);
+    const { error } = await authClient.signIn.email({
+      email: values.email.trim().toLowerCase(),
+      password: values.password,
+    });
 
-    if (!result.success) {
-      setServerError(result.error);
+    if (error) {
+      setServerError(authErrorMessage(error));
       return;
     }
 
@@ -97,6 +101,14 @@ function LoginForm() {
               {errors.password.message}
             </p>
           )}
+          <div className="mt-3 text-right">
+            <Link
+              href="/recuperar-contrasena"
+              className="font-sans text-[11px] font-light text-stone-500 underline-offset-4 hover:text-stone-900 hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
         </div>
 
         <div className="pt-2">

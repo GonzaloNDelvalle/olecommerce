@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 
@@ -19,12 +19,16 @@ function SearchBarInner({
 
   const [query, setQuery] = useState(currentQuery);
 
-  useEffect(() => {
+  // Re-sincronizar el input cuando cambia ?q= en la URL
+  const [syncedQuery, setSyncedQuery] = useState(currentQuery);
+  if (currentQuery !== syncedQuery) {
+    setSyncedQuery(currentQuery);
     setQuery(currentQuery);
-  }, [currentQuery]);
+  }
 
   function buildTargetUrl(nextQuery: string) {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("pagina");
     const trimmed = nextQuery.trim();
 
     if (trimmed) {

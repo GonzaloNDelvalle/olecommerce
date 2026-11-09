@@ -137,10 +137,29 @@ async function OrderDetailContent({
         <section className="rounded-xl border border-stone-200 bg-white p-6 shadow-2xs">
           <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-stone-900 uppercase">
             <MapPin className="h-4 w-4 text-stone-500" />
-            <h2>Domicilio de Entrega</h2>
+            <h2>
+              {order.deliveryType === "PICKUP" ? "Retiro" : "Domicilio de Entrega"}
+            </h2>
           </div>
 
           <div className="mt-4 space-y-2 text-sm text-stone-600">
+            {order.shippingMethodName && (
+              <p className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700">
+                {order.shippingMethodName}
+              </p>
+            )}
+            {order.deliveryType === "PICKUP" ? (
+              <p className="font-semibold text-stone-900">
+                Retira en showroom
+                {order.shippingAddress.pickupAddress
+                  ? ` — ${order.shippingAddress.pickupAddress}`
+                  : ""}
+                <span className="block text-xs font-normal text-stone-500">
+                  Provincia de la clienta: {order.shippingAddress.state}
+                </span>
+              </p>
+            ) : (
+            <>
             <p className="font-semibold text-stone-900">
               {order.shippingAddress.street} {order.shippingAddress.number}
               {order.shippingAddress.apartment
@@ -156,6 +175,8 @@ async function OrderDetailContent({
             <p>
               {order.shippingAddress.city}, {order.shippingAddress.state}
             </p>
+            </>
+            )}
             {order.shippingAddress.recipient && (
               <p className="text-xs text-stone-500">
                 Recibe: {order.shippingAddress.recipient}

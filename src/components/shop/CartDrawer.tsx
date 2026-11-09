@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useHydrated } from "@/hooks/use-hydrated";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   X,
   Plus,
@@ -25,7 +26,7 @@ const arsFormatter = new Intl.NumberFormat("es-AR", {
 });
 
 export function CartDrawer() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   const items = useCartStore((state) => state.items);
   const isOpen = useCartStore((state) => state.isOpen);
@@ -35,10 +36,6 @@ export function CartDrawer() {
   const clearCart = useCartStore((state) => state.clearCart);
   const getSubtotal = useCartStore((state) => state.getSubtotal);
   const getTotalItems = useCartStore((state) => state.getTotalItems);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Cerrar con tecla Escape y bloquear el scroll del body cuando el slide-over está abierto
   useEffect(() => {

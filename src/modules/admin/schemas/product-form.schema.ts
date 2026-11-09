@@ -5,12 +5,9 @@ const imageSourceSchema = z
   .trim()
   .refine(
     (val) =>
-      val === "" ||
-      val.startsWith("https://") ||
-      val.startsWith("http://") ||
-      val.startsWith("data:image/"),
+      val === "" || val.startsWith("https://"),
     {
-      message: "Subí un archivo de imagen válido (JPG, PNG, WEBP o AVIF)",
+      message: "Esperá a que termine de subir la imagen o volvé a cargarla",
     }
   );
 

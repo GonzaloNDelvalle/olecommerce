@@ -27,8 +27,6 @@ export const ARGENTINA_PROVINCES = [
   "Tucumán",
 ] as const;
 
-export const BANK_TRANSFER_DISCOUNT_PERCENTAGE = 15;
-
 export const checkoutPaymentMethodSchema = z.enum([
   "MERCADOPAGO",
   "BANK_TRANSFER",
@@ -36,79 +34,79 @@ export const checkoutPaymentMethodSchema = z.enum([
 
 export type CheckoutPaymentMethod = z.infer<typeof checkoutPaymentMethodSchema>;
 
-export const checkoutFormSchema = z.object({
-  // Datos de Contacto y Facturación (ARCA / ex-AFIP)
-  email: z
-    .string()
-    .trim()
-    .min(1, "El email es obligatorio")
-    .email("Ingresá un email válido"),
-  firstName: z
-    .string()
-    .trim()
-    .min(2, "El nombre debe tener al menos 2 caracteres")
-    .max(100),
-  lastName: z
-    .string()
-    .trim()
-    .min(2, "El apellido debe tener al menos 2 caracteres")
-    .max(100),
-  documentNumber: z
-    .string()
-    .trim()
-    .regex(
-      /^\d{7,11}$/,
-      "Ingresá un DNI o CUIT/CUIL válido (7 a 11 números, sin puntos ni guiones)"
-    ),
-  phone: z
-    .string()
-    .trim()
-    .min(8, "Ingresá un teléfono de contacto válido")
-    .max(30),
+export const deliveryTypeSchema = z.enum(["HOME_DELIVERY", "PICKUP"]);
 
-  // Datos de Envío Logístico
-  street: z
-    .string()
-    .trim()
-    .min(2, "La calle es obligatoria")
-    .max(255),
-  number: z
-    .string()
-    .trim()
-    .min(1, "La altura/número es obligatoria")
-    .max(20),
-  apartment: z
-    .string()
-    .trim()
-    .max(50)
-    .optional()
-    .or(z.literal("")),
-  postalCode: z
-    .string()
-    .trim()
-    .regex(
-      /^([A-Za-z]\d{4}[A-Za-z]{3}|\d{4})$/,
-      "Ingresá un Código Postal válido (ej: 1425 o C1425BGH)"
-    ),
-  city: z
-    .string()
-    .trim()
-    .min(2, "La localidad/ciudad es obligatoria")
-    .max(100),
-  state: z
-    .string()
-    .trim()
-    .min(2, "Seleccioná una provincia"),
-  notes: z
-    .string()
-    .trim()
-    .max(500)
-    .optional()
-    .or(z.literal("")),
+const optionalText = (max: number) =>
+  z.string().trim().max(max).optional().or(z.literal(""));
 
-  // Selector de Medio de Pago
-  paymentMethod: checkoutPaymentMethodSchema,
-});
+export const checkoutFormSchema = z
+  .object({
+    // Datos de Contacto y Facturación (ARCA / ex-AFIP)
+    email: z
+      .string()
+      .trim()
+      .min(1, "El email es obligatorio")
+      .email("Ingresá un email válido"),
+    firstName: z
+      .string()
+      .trim()
+      .min(2, "El nombre debe tener al menos 2 caracteres")
+      .max(100),
+    lastName: z
+      .string()
+      .trim()
+      .min(2, "El apellido debe tener al menos 2 caracteres")
+      .max(100),
+    documentNumber: z
+      .string()
+      .trim()
+      .regex(
+        /^\d{7,11}$/,
+        "Ingresá un DNI o CUIT/CUIL válido (7 a 11 números, sin puntos ni guiones)"
+      ),
+    phone: z
+      .string()
+      .trim()
+      .min(8, "Ingresá un teléfono de contacto válido")
+      .max(30),
+
+    // Entrega: método elegido + domicilio (obligatorio solo para envío a domicilio)
+    shippingMethodId: z.string().uuid("Elegí un método de entrega"),
+    deliveryType: deliveryTypeSchema,
+    state: z.string().trim().min(2, "Seleccioná una provincia"),
+    street: optionalText(255),
+    number: optionalText(20),
+    apartment: optionalText(50),
+    postalCode: optionalText(8),
+    city: optionalText(100),
+    notes: optionalText(500),
+
+    paymentMethod: checkoutPaymentMethodSchema,
+  })
+  .superRefine((data, ctx) => {
+    if (data.deliveryType !== "HOME_DELIVERY") return;
+
+    const requireField = (
+      field: "street" | "number" | "city",
+      message: string,
+      min = 2
+    ) => {
+      if ((data[field]?.trim().length ?? 0) < min) {
+        ctx.addIssue({ code: "custom", path: [field], message });
+      }
+    };
+    requireField("street", "La calle es obligatoria");
+    requireField("number", "La altura/número es obligatoria", 1);
+    requireField("city", "La localidad/ciudad es obligatoria");
+
+    if (!/^([A-Za-z]\d{4}[A-Za-z]{3}|\d{4})$/.test(data.postalCode ?? "")) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["postalCode"],
+        message: "Ingresá un Código Postal válido (ej: 1425 o C1425BGH)",
+      });
+    }
+  });
 
 export type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 

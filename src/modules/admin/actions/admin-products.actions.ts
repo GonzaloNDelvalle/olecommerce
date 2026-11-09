@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
+import { CACHE_TAGS, expireTagsNow } from "@/lib/cache-tags";
 import { resolveProductImageUrl } from "@/lib/cloudinary";
 import { ProductStatus } from "@prisma/client";
 import {
@@ -324,16 +325,13 @@ export async function createAdminProduct(
     const [validGalleryUrls, resolvedVariantImageUrls] = await Promise.all([
       Promise.all(
         rawGallerySources.map((src) =>
-          resolveProductImageUrl(src, `olecommerce/products/${baseSlug}/gallery`)
+          resolveProductImageUrl(src)
         )
       ),
       Promise.all(
         data.variants.map((variant) =>
           variant.imageUrl?.trim()
-            ? resolveProductImageUrl(
-                variant.imageUrl,
-                `olecommerce/products/${baseSlug}/variants`
-              )
+            ? resolveProductImageUrl(variant.imageUrl)
             : Promise.resolve("")
         )
       ),
@@ -413,7 +411,7 @@ export async function createAdminProduct(
 
     revalidatePath("/admin/productos");
     revalidatePath("/admin");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
 
     return {
       success: true,
@@ -455,7 +453,6 @@ export async function updateAdminProduct(
   }
 
   const data = parsed.data;
-  const folderSlug = slugifyProductName(data.name) || productId;
   const rawGallerySources = data.galleryUrls
     .map((item) => item.url.trim())
     .filter((url) => url.length > 0);
@@ -465,19 +462,13 @@ export async function updateAdminProduct(
     const [validGalleryUrls, resolvedVariantImageUrls] = await Promise.all([
       Promise.all(
         rawGallerySources.map((src) =>
-          resolveProductImageUrl(
-            src,
-            `olecommerce/products/${folderSlug}/gallery`
-          )
+          resolveProductImageUrl(src)
         )
       ),
       Promise.all(
         data.variants.map((variant) =>
           variant.imageUrl?.trim()
-            ? resolveProductImageUrl(
-                variant.imageUrl,
-                `olecommerce/products/${folderSlug}/variants`
-              )
+            ? resolveProductImageUrl(variant.imageUrl)
             : Promise.resolve("")
         )
       ),
@@ -615,7 +606,7 @@ export async function updateAdminProduct(
 
     revalidatePath("/admin/productos");
     revalidatePath("/admin");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
 
     return {
       success: true,
@@ -650,7 +641,7 @@ export async function toggleAdminProductStatus(
 
     revalidatePath("/admin/productos");
     revalidatePath("/admin");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
 
     return {
       success: true,
@@ -702,7 +693,7 @@ export async function deleteOrArchiveAdminProduct(
 
       revalidatePath("/admin/productos");
       revalidatePath("/admin");
-      revalidatePath("/productos");
+      expireTagsNow(CACHE_TAGS.catalog);
 
       return {
         success: true,
@@ -717,7 +708,7 @@ export async function deleteOrArchiveAdminProduct(
 
     revalidatePath("/admin/productos");
     revalidatePath("/admin");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
 
     return {
       success: true,

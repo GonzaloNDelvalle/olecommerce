@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ProductListItemDTO } from "@/modules/products/actions";
+import type { ProductListItemDTO } from "@/modules/products/types";
 
 interface ProductCardProps {
   product: ProductListItemDTO;
@@ -40,7 +40,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <article className="group relative flex flex-col">
       <Link
-        href={`/productos/${product.id}`}
+        href={`/productos/${product.slug}`}
         className="relative aspect-[3/4] w-full overflow-hidden rounded-none border border-stone-200/80 bg-stone-100"
       >
         {product.primaryImage ? (
@@ -97,7 +97,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </span>
 
         <h3 className="text-xs font-normal tracking-[0.12em] text-stone-900 uppercase transition-colors group-hover:text-[#5C4033] sm:text-sm">
-          <Link href={`/productos/${product.id}`}>{product.name}</Link>
+          <Link href={`/productos/${product.slug}`}>{product.name}</Link>
         </h3>
 
         <div className="mt-1 flex items-baseline gap-2.5">

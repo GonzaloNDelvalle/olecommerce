@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Plus, X, Check } from "lucide-react";
 import type {
   PublicCategoryDTO,
   PublicSizeDTO,
-} from "@/modules/products/actions";
+} from "@/modules/products/types";
 
 interface CatalogFilterBarProps {
   categories: PublicCategoryDTO[];
@@ -62,10 +62,15 @@ export function CatalogFilterBar({
     activeMaxPrice ? String(activeMaxPrice) : ""
   );
 
-  useEffect(() => {
+  // Re-sincronizar los inputs cuando cambian los filtros activos en la URL
+  // (ajuste de estado durante el render, patrón recomendado por React)
+  const priceKey = `${activeMinPrice ?? ""}:${activeMaxPrice ?? ""}`;
+  const [syncedPriceKey, setSyncedPriceKey] = useState(priceKey);
+  if (priceKey !== syncedPriceKey) {
+    setSyncedPriceKey(priceKey);
     setMinPriceInput(activeMinPrice ? String(activeMinPrice) : "");
     setMaxPriceInput(activeMaxPrice ? String(activeMaxPrice) : "");
-  }, [activeMinPrice, activeMaxPrice]);
+  }
 
   useEffect(() => {
     if (!isDrawerOpen) return;
@@ -104,6 +109,8 @@ export function CatalogFilterBar({
     precio_max?: string | number | null;
   }) {
     const params = new URLSearchParams(searchParams.toString());
+    // Cambiar un filtro vuelve a la primera página
+    params.delete("pagina");
 
     const applyParam = (
       key: string,

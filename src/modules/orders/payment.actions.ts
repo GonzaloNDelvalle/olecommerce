@@ -114,6 +114,15 @@ export async function createMercadoPagoPreference(
             number: order.customerDocument,
           },
         },
+        // Costo de envío calculado en el checkout (Mercado Pago lo suma al total)
+        ...(Number(order.shippingCost) > 0
+          ? {
+              shipments: {
+                mode: "not_specified",
+                cost: Number(order.shippingCost),
+              },
+            }
+          : {}),
         back_urls: backUrls,
         ...(isHttpsAppUrl ? { auto_return: "approved" } : {}),
         notification_url: notificationUrl,
@@ -161,4 +170,37 @@ export async function createMercadoPagoPreference(
           : "No se pudo generar el link de pago con MercadoPago.",
     };
   }
+}
+
+/**
+ * Reintento de pago de una orden de Mercado Pago que sigue pendiente (ej. la
+ * tarjeta fue rechazada y la clienta volvió a la tienda). Genera un link
+ * nuevo sin rehacer la orden: el stock ya está reservado.
+ */
+export async function retryMercadoPagoPayment(
+  orderId: string
+): Promise<CreatePreferenceResult> {
+  if (typeof orderId !== "string" || !/^[0-9a-f-]{36}$/i.test(orderId)) {
+    return { success: false, error: "La orden no es válida." };
+  }
+
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    select: { status: true, payment: { select: { provider: true } } },
+  });
+
+  if (!order || order.payment?.provider !== "MERCADOPAGO") {
+    return { success: false, error: "No encontramos la orden para reintentar el pago." };
+  }
+  if (order.status !== OrderStatus.PENDING) {
+    return {
+      success: false,
+      error:
+        order.status === OrderStatus.CANCELLED
+          ? "La orden venció y se liberaron las prendas. Volvé a armar tu carrito."
+          : "Esta orden ya fue pagada.",
+    };
+  }
+
+  return createMercadoPagoPreference(orderId);
 }

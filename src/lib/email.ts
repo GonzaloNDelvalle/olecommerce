@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 import { db } from "@/lib/db";
-import { BANK_ACCOUNT_INFO } from "@/lib/bank-account";
+import {
+  readStoreSettings,
+  type StoreSettingsDTO,
+} from "@/modules/settings/store-settings";
+import { BANK_TRANSFER_TTL_HOURS } from "@/modules/orders/order-expiration";
 
 /**
  * Motor de emails transaccionales de OL Indumenti (Resend).
@@ -51,6 +55,9 @@ interface EmailOrderData {
   shippingAddressLine: string;
   carrier: string | null;
   trackingCode: string | null;
+  shippingMethodName: string | null;
+  isPickup: boolean;
+  store: StoreSettingsDTO;
 }
 
 export type SendEmailResult =
@@ -82,6 +89,7 @@ function renderEmailLayout(params: {
   eyebrow: string;
   title: string;
   bodyHtml: string;
+  supportEmail?: string | null;
 }): string {
   return `<!DOCTYPE html>
 <html lang="es">
@@ -123,8 +131,11 @@ function renderEmailLayout(params: {
             <td align="center" style="padding-top:48px;margin-top:48px;border-top:1px solid #e7e5e4;">
               <p style="margin:24px 0 0;font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:#a8a29e;">Neutral State • FW'26</p>
               <p style="margin:10px 0 0;font-size:11px;font-weight:300;color:#a8a29e;">
-                OL Indumenti — República Argentina<br />
-                ¿Consultas? Escribinos a <a href="mailto:${BANK_ACCOUNT_INFO.supportEmail}" style="color:#78716c;">${BANK_ACCOUNT_INFO.supportEmail}</a>
+                OL Indumenti — República Argentina${
+                  params.supportEmail
+                    ? `<br />¿Consultas? Escribinos a <a href="mailto:${escapeHtml(params.supportEmail)}" style="color:#78716c;">${escapeHtml(params.supportEmail)}</a>`
+                    : ""
+                }
               </p>
             </td>
           </tr>
@@ -178,8 +189,8 @@ function renderItemsTable(order: EmailOrderData): string {
           : ""
       }
       ${summaryRow(
-        "Envío",
-        order.shippingCost > 0 ? arsFormatter.format(order.shippingCost) : "Bonificado"
+        order.shippingMethodName ? `Envío (${escapeHtml(order.shippingMethodName)})` : "Envío",
+        order.shippingCost > 0 ? arsFormatter.format(order.shippingCost) : "Sin cargo"
       )}
       <tr><td colspan="2" style="padding-top:8px;border-bottom:1px solid #e7e5e4;"></td></tr>
       ${summaryRow("Total", arsFormatter.format(order.totalAmount), true)}
@@ -187,6 +198,7 @@ function renderItemsTable(order: EmailOrderData): string {
 }
 
 function renderBankTransferBlock(order: EmailOrderData): string {
+  const bank = order.store;
   const row = (label: string, value: string) => `
     <tr>
       <td style="padding:7px 0;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#a8a29e;">${label}</td>
@@ -207,18 +219,19 @@ function renderBankTransferBlock(order: EmailOrderData): string {
       <tr>
         <td style="padding:8px 24px 20px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            ${row("Banco", escapeHtml(BANK_ACCOUNT_INFO.bankName))}
-            ${row("Titular", escapeHtml(BANK_ACCOUNT_INFO.accountHolder))}
-            ${row("CUIT", BANK_ACCOUNT_INFO.cuit)}
-            ${row("CBU", BANK_ACCOUNT_INFO.cbu)}
-            ${row("Alias", BANK_ACCOUNT_INFO.alias)}
+            ${bank.bankName ? row("Banco", escapeHtml(bank.bankName)) : ""}
+            ${row("Titular", escapeHtml(bank.bankAccountHolder ?? ""))}
+            ${bank.bankCuit ? row("CUIT", escapeHtml(bank.bankCuit)) : ""}
+            ${row("CBU", escapeHtml(bank.bankCbu ?? ""))}
+            ${row("Alias", escapeHtml(bank.bankAlias ?? ""))}
           </table>
         </td>
       </tr>
       <tr>
         <td style="padding:0 24px 24px;font-size:12px;font-weight:300;color:#78716c;">
-          Enviá el comprobante a <a href="mailto:${BANK_ACCOUNT_INFO.supportEmail}" style="color:#1c1917;">${BANK_ACCOUNT_INFO.supportEmail}</a>
-          o por WhatsApp al ${BANK_ACCOUNT_INFO.whatsappNumber}. Reservamos tus prendas por 48 hs.
+          Enviá el comprobante a <a href="mailto:${escapeHtml(bank.supportEmail)}" style="color:#1c1917;">${escapeHtml(bank.supportEmail)}</a>${
+            bank.whatsappNumber ? ` o por WhatsApp al ${escapeHtml(bank.whatsappNumber)}` : ""
+          }. Reservamos tus prendas por ${BANK_TRANSFER_TTL_HOURS} hs.
         </td>
       </tr>
     </table>`;
@@ -252,7 +265,7 @@ export function renderOrderConfirmedEmail(order: EmailOrderData): {
     ${order.isBankTransfer ? renderBankTransferBlock(order) : ""}
     ${renderItemsTable(order)}
     <p style="margin:28px 0 0;font-size:12px;color:#78716c;">
-      <span style="font-size:10px;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;color:#1c1917;">Envío a</span><br />
+      <span style="font-size:10px;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;color:#1c1917;">${order.isPickup ? "Entrega" : "Envío a"}</span><br />
       ${escapeHtml(order.shippingAddressLine)}
     </p>
     ${renderButton(`${APP_URL}/mi-cuenta`, "Ver mi pedido")}`;
@@ -266,6 +279,7 @@ export function renderOrderConfirmedEmail(order: EmailOrderData): {
       eyebrow: `Orden #${order.orderNumber}`,
       title: "Orden Confirmada",
       bodyHtml,
+      supportEmail: order.store.supportEmail,
     }),
   };
 }
@@ -282,7 +296,7 @@ export function renderPaymentApprovedEmail(order: EmailOrderData): {
     </p>
     ${renderItemsTable(order)}
     <p style="margin:28px 0 0;font-size:12px;color:#78716c;">
-      <span style="font-size:10px;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;color:#1c1917;">Envío a</span><br />
+      <span style="font-size:10px;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;color:#1c1917;">${order.isPickup ? "Entrega" : "Envío a"}</span><br />
       ${escapeHtml(order.shippingAddressLine)}
     </p>
     ${renderButton(`${APP_URL}/mi-cuenta`, "Seguir mi pedido")}`;
@@ -294,6 +308,7 @@ export function renderPaymentApprovedEmail(order: EmailOrderData): {
       eyebrow: `Orden #${order.orderNumber}`,
       title: "Pago Acreditado",
       bodyHtml,
+      supportEmail: order.store.supportEmail,
     }),
   };
 }
@@ -368,6 +383,7 @@ export function renderOrderShippedEmail(order: EmailOrderData): {
       eyebrow: `Orden #${order.orderNumber} • Despachada`,
       title: "Tu paquete está en viaje",
       bodyHtml,
+      supportEmail: order.store.supportEmail,
     }),
   };
 }
@@ -426,12 +442,16 @@ async function loadOrderForEmail(orderId: string): Promise<EmailOrderData | null
 
   if (!order) return null;
 
+  const store = await readStoreSettings();
+  const isPickup = order.deliveryType === "PICKUP";
   const address =
     typeof order.shippingAddress === "object" && order.shippingAddress !== null
       ? (order.shippingAddress as Record<string, string | null | undefined>)
       : {};
 
-  const shippingAddressLine = [
+  const shippingAddressLine = isPickup
+    ? `Retiro en showroom${store.showroomAddress ? ` — ${store.showroomAddress}` : ""}`
+    : [
     [address.street, address.number].filter(Boolean).join(" "),
     address.apartment,
     [address.city, address.state].filter(Boolean).join(", "),
@@ -451,8 +471,11 @@ async function loadOrderForEmail(orderId: string): Promise<EmailOrderData | null
     shippingCost: Number(order.shippingCost),
     totalAmount: Number(order.totalAmount),
     shippingAddressLine,
-    carrier: order.carrier ?? order.shippingCarrier ?? null,
-    trackingCode: order.trackingCode ?? order.trackingNumber ?? null,
+    carrier: order.carrier ?? null,
+    trackingCode: order.trackingCode ?? null,
+    shippingMethodName: order.shippingMethodName ?? null,
+    isPickup,
+    store,
     items: order.items.map((item) => ({
       productName: item.productName,
       sizeName: item.sizeName,
@@ -584,6 +607,95 @@ export async function sendEmailVerificationEmail(params: {
       eyebrow: "Tu cuenta",
       title: "Confirmá tu email",
       bodyHtml,
+    }),
+  });
+}
+
+/**
+ * Link para restablecer la contraseña, o para crearla por primera vez cuando
+ * la clienta compró como invitada y ahora quiere su cuenta.
+ */
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  firstName: string;
+  resetUrl: string;
+  isFirstPassword: boolean;
+}): Promise<SendEmailResult> {
+  const title = params.isFirstPassword
+    ? "Creá tu contraseña"
+    : "Restablecé tu contraseña";
+  const intro = params.isFirstPassword
+    ? "Ya hiciste compras con este email. Para activar tu cuenta y ver tu historial de pedidos, creá tu contraseña desde este link."
+    : "Recibimos un pedido para restablecer la contraseña de tu cuenta.";
+
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#44403c;">Hola ${escapeHtml(params.firstName)}, ${escapeHtml(intro)}</p>
+    <div style="margin:28px 0;">${renderButton(params.resetUrl, params.isFirstPassword ? "Crear contraseña" : "Elegir nueva contraseña")}</div>
+    <p style="margin:0;font-size:12px;line-height:1.7;color:#a8a29e;">El link vence en 1 hora. Si no lo pediste, ignorá este mensaje: tu cuenta no cambia.</p>`;
+
+  return sendEmail({
+    to: params.to,
+    subject: `${title} | OL. Indumenti`,
+    html: renderEmailLayout({
+      preheader: title,
+      eyebrow: "Tu cuenta",
+      title,
+      bodyHtml,
+    }),
+  });
+}
+
+/**
+ * Aviso cuando alguien intenta registrarse con un email que ya tiene cuenta.
+ */
+export async function sendAccountExistsEmail(params: {
+  to: string;
+  loginUrl: string;
+  resetUrl: string;
+}): Promise<SendEmailResult> {
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#44403c;">Alguien intentó crear una cuenta con este email, pero ya tenés una registrada.</p>
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#44403c;">Si fuiste vos, iniciá sesión. Si no recordás tu contraseña, podés restablecerla.</p>
+    <div style="margin:28px 0;">${renderButton(params.loginUrl, "Iniciar sesión")}</div>
+    <p style="margin:0;font-size:12px;line-height:1.7;color:#a8a29e;">¿Olvidaste tu contraseña? <a href="${params.resetUrl}" style="color:#78716c;">Restablecerla</a>. Si no fuiste vos, no hace falta que hagas nada.</p>`;
+
+  return sendEmail({
+    to: params.to,
+    subject: "Ya tenés una cuenta | OL. Indumenti",
+    html: renderEmailLayout({
+      preheader: "Ya tenés una cuenta registrada con este email.",
+      eyebrow: "Tu cuenta",
+      title: "Ya tenés una cuenta",
+      bodyHtml,
+    }),
+  });
+}
+
+/**
+ * Constancia de la solicitud de arrepentimiento con su código de
+ * identificación (Res. 424/2020).
+ */
+export async function sendRevocationReceivedEmail(params: {
+  to: string;
+  code: string;
+  orderNumber: number;
+}): Promise<SendEmailResult> {
+  const store = await readStoreSettings();
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#44403c;">Recibimos tu solicitud de arrepentimiento para la orden <strong style="color:#1c1917;">#${params.orderNumber}</strong>.</p>
+    <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#a8a29e;">Código de identificación</p>
+    <p style="margin:0 0 24px;font-size:22px;letter-spacing:0.12em;color:#1c1917;font-family:'SFMono-Regular',Menlo,Consolas,monospace;">${escapeHtml(params.code)}</p>
+    <p style="margin:0;font-size:13px;line-height:1.7;color:#57534e;">Guardá este código. Te vamos a escribir para coordinar la devolución de la prenda y el reintegro, sin costo para vos.</p>`;
+
+  return sendEmail({
+    to: params.to,
+    subject: `Solicitud de arrepentimiento ${params.code} | OL. Indumenti`,
+    html: renderEmailLayout({
+      preheader: `Tu código de solicitud es ${params.code}`,
+      eyebrow: "Botón de arrepentimiento",
+      title: "Solicitud recibida",
+      bodyHtml,
+      supportEmail: store.supportEmail,
     }),
   });
 }

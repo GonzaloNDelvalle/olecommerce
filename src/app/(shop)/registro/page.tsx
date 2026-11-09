@@ -9,7 +9,8 @@ import {
   registerFormSchema,
   type RegisterFormValues,
 } from "@/modules/auth/schemas/auth.schema";
-import { registerCustomerAction } from "@/modules/auth/actions/auth.actions";
+import { authClient } from "@/lib/auth-client";
+import { authErrorMessage } from "@/lib/auth-errors";
 
 const INPUT_CLASS =
   "w-full bg-transparent border-0 border-b border-stone-300 focus:border-stone-900 rounded-none px-0 py-3 font-sans text-sm font-light text-stone-900 placeholder:text-stone-400 focus:outline-none transition-colors";
@@ -40,14 +41,26 @@ export default function RegisterPage() {
   async function onSubmit(values: RegisterFormValues) {
     setServerError(null);
 
-    const result = await registerCustomerAction(values);
+    const email = values.email.trim().toLowerCase();
+    const { error } = await authClient.signUp.email({
+      email,
+      password: values.password,
+      name: `${values.firstName} ${values.lastName}`.trim(),
+      firstName: values.firstName,
+      lastName: values.lastName,
+      documentNumber: values.documentNumber || undefined,
+      phone: values.phone || undefined,
+      callbackURL: "/mi-cuenta",
+    });
 
-    if (!result.success) {
-      setServerError(result.error);
+    if (error) {
+      setServerError(authErrorMessage(error));
       return;
     }
 
-    setPendingEmail(result.email);
+    // La respuesta es la misma aunque el email ya exista (no se revela qué
+    // emails están registrados); en ese caso la dueña recibe otro aviso.
+    setPendingEmail(email);
   }
 
   if (pendingEmail) {
@@ -64,7 +77,8 @@ export default function RegisterPage() {
               confirmar tu cuenta. El link vence en 24 horas.
             </p>
             <p className="mt-3 font-sans text-xs leading-relaxed font-light text-stone-500">
-              Si no lo ves, revisá la carpeta de spam o volvé a registrarte para recibir uno nuevo.
+              Si ya habías comprado con este email, vas a recibir un link para crear tu contraseña.
+              Si no lo ves, revisá la carpeta de spam.
             </p>
             <Link
               href="/login"

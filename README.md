@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OL. Indumenti — Ecommerce
 
-## Getting Started
+Tienda online de indumentaria femenina: catálogo con variantes de talle y color, checkout con Mercado Pago y transferencia bancaria, envíos configurables, cuentas de clientas y panel de administración.
 
-First, run the development server:
+## Stack
+
+| Área | Herramienta |
+|---|---|
+| Framework | Next.js 16 (App Router, Cache Components) + React 19 + TypeScript |
+| Base de datos | Postgres en Neon + Prisma 6 (adaptador Neon por WebSocket) |
+| Autenticación | Better Auth (email + contraseña, verificación de email, recuperación, límite de intentos) |
+| Pagos | Mercado Pago Checkout Pro + transferencia bancaria |
+| Imágenes | Cloudinary (subida firmada directa desde el navegador) |
+| Emails | Resend |
+| Estilos | Tailwind CSS 4, Motion |
+| Monitoreo | Sentry, Vercel Analytics / Speed Insights, GA4 y Meta Pixel opcionales |
+| Tests | Vitest (unitarios) y Playwright (punta a punta) |
+
+## Puesta en marcha local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env   # completar los valores
+pnpm db:migrate        # aplica las migraciones
+pnpm db:seed           # catálogo de ejemplo (opcional)
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para crear la cuenta de administración (con `ADMIN_EMAIL` y `ADMIN_PASSWORD` en el `.env`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm admin:create
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Después se ingresa por `/login` y el panel está en `/admin`.
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Comando | Qué hace |
+|---|---|
+| `pnpm dev` | Servidor de desarrollo |
+| `pnpm build` / `pnpm start` | Build y servidor de producción |
+| `pnpm lint` / `pnpm typecheck` | ESLint y TypeScript |
+| `pnpm test` | Tests unitarios (Vitest) |
+| `pnpm test:e2e` | Tests de punta a punta (Playwright, requiere `pnpm build` y la base del `.env`) |
+| `pnpm db:migrate` | Aplica migraciones pendientes (`prisma migrate deploy`) |
+| `pnpm admin:create` | Crea o promueve una cuenta ADMIN |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy en Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Importar el repositorio en Vercel (framework: Next.js) y elegir la región `gru1` (São Paulo), la misma que la base de Neon.
+2. Cargar las variables de `.env.example` en *Environment Variables*. Obligatorias: `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `MP_ACCESS_TOKEN`, `CRON_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM` y las tres de Cloudinary. Si falta alguna, la app no arranca y el log dice cuál.
+3. Aplicar migraciones antes del deploy que las trae: `pnpm db:migrate` con `DATABASE_URL` apuntando a la conexión directa de producción.
+4. En Mercado Pago, configurar el webhook en `https://<dominio>/api/webhooks/mercadopago` y copiar la clave secreta en `MP_WEBHOOK_SECRET`.
+5. El cron de `vercel.json` vence las órdenes impagas una vez por día. Para correrlo más seguido, llamar a `/api/cron/expire-orders` desde un programador externo con `Authorization: Bearer <CRON_SECRET>`.
 
-## Deploy on Vercel
+## Antes de lanzar
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- En `/admin/configuracion`: datos reales de contacto y de la cuenta bancaria (vienen con valores de ejemplo).
+- En `/admin/envios`: costos y zonas de envío reales.
+- Verificar el dominio en Resend y usar un remitente propio en `EMAIL_FROM`.
+- Desactivar o cambiar la contraseña de cualquier admin creado con datos de ejemplo.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estructura
+
+```
+src/
+  app/              Rutas (tienda en (shop), panel en (admin), API en api/)
+  modules/          Lógica por dominio: products, orders, admin, auth, legal, settings
+  lib/              Infraestructura: db, auth guards, caché, emails, rate limit
+  components/       Componentes compartidos de layout y tienda
+prisma/             Esquema, migraciones y seed
+e2e/                Tests de Playwright
+scripts/            Scripts de mantenimiento (crear admin)
+```

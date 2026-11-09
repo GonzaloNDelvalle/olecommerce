@@ -6,7 +6,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import {
   getActiveCategories,
   getLatestProducts,
-} from "@/modules/products/actions";
+} from "@/modules/products/queries";
 import { ProductCard } from "@/modules/products/components/ProductCard";
 import { EditorialHeroParallax } from "@/components/shop/EditorialHeroParallax";
 import { StaggerGrid, StaggerItem } from "@/components/shop/EditorialMotion";

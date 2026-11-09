@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   getActiveCategories,
-  getActiveProducts,
   getAvailableSizes,
-} from "@/modules/products/actions";
+  getCatalogPage,
+} from "@/modules/products/queries";
+import { CatalogPagination } from "@/components/shop/CatalogPagination";
 import { ProductCard } from "@/modules/products/components/ProductCard";
 import { CatalogFilterBar } from "@/components/shop/CatalogFilterBar";
 import { StaggerGrid, StaggerItem } from "@/components/shop/EditorialMotion";
@@ -16,14 +17,15 @@ export const metadata: Metadata = {
     "Explorá el catálogo completo de OL Indumenti. Sastrería, denim y esenciales minimalistas con envíos a todo el país.",
 };
 
-interface ShopCatalogSearchParams {
+type ShopCatalogSearchParams = {
   categoria?: string;
   q?: string;
   talle?: string;
   orden?: string;
   precio_min?: string;
   precio_max?: string;
-}
+  pagina?: string;
+};
 
 interface ShopCatalogPageProps {
   searchParams: Promise<ShopCatalogSearchParams>;
@@ -34,14 +36,15 @@ async function CatalogContent({
 }: {
   searchParamsPromise: Promise<ShopCatalogSearchParams>;
 }) {
-  const { categoria, q, talle, orden, precio_min, precio_max } =
-    await searchParamsPromise;
+  const params = await searchParamsPromise;
+  const { categoria, q, talle, orden, precio_min, precio_max, pagina } = params;
 
   const parsedMinPrice = precio_min ? Number(precio_min) : undefined;
   const parsedMaxPrice = precio_max ? Number(precio_max) : undefined;
 
-  const [products, categories, sizes] = await Promise.all([
-    getActiveProducts({
+  const parsedPage = Number(pagina);
+  const [catalog, categories, sizes] = await Promise.all([
+    getCatalogPage({
       categorySlug: categoria,
       searchQuery: q,
       sizeName: talle,
@@ -54,11 +57,13 @@ async function CatalogContent({
         parsedMaxPrice && !Number.isNaN(parsedMaxPrice)
           ? parsedMaxPrice
           : undefined,
+      page: Number.isFinite(parsedPage) && parsedPage > 1 ? parsedPage : 1,
     }),
     getActiveCategories(),
     getAvailableSizes(),
   ]);
 
+  const products = catalog.items;
   const hasActiveFilters = Boolean(
     categoria ||
       q?.trim() ||
@@ -74,7 +79,7 @@ async function CatalogContent({
       <CatalogFilterBar
         categories={categories}
         sizes={sizes}
-        productsCount={products.length}
+        productsCount={catalog.total}
         activeCategorySlug={categoria}
         activeSearchQuery={q}
         activeSizeName={talle}
@@ -114,6 +119,12 @@ async function CatalogContent({
           ))}
         </StaggerGrid>
       )}
+
+      <CatalogPagination
+        page={catalog.page}
+        pageCount={catalog.pageCount}
+        searchParams={params}
+      />
     </div>
   );
 }

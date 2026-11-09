@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Check, Plus, Minus, Ruler } from "lucide-react";
-import type { ProductDetailDTO } from "@/modules/products/actions";
+import { trackAddToCart } from "@/lib/analytics";
+import type { ProductDetailDTO } from "@/modules/products/types";
 import { useCartStore } from "@/store/cart.store";
 
 interface ProductVariantSelectorProps {
@@ -242,6 +243,13 @@ export function ProductVariantSelector({
       unitPrice: finalPrice,
       maxStock: activeVariant.availableStock,
       imageUrl: itemImageUrl,
+      quantity: 1,
+    });
+    trackAddToCart({
+      id: activeVariant.sku,
+      name: product.name,
+      variant: `${activeVariant.color.name} / ${activeVariant.size.name}`,
+      price: finalPrice,
       quantity: 1,
     });
     openCart();

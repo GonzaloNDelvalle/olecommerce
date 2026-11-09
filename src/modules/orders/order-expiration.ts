@@ -5,6 +5,7 @@ import {
   PaymentStatus,
 } from "@prisma/client";
 import { releaseReservedStock } from "@/modules/orders/inventory";
+import { revalidateStockForVariants } from "@/lib/cache-tags";
 
 /**
  * Política de vencimiento de órdenes impagas (libera el stock reservado).
@@ -92,6 +93,7 @@ export async function expireStalePendingOrders(): Promise<ExpireOrdersResult> {
   });
 
   const result: ExpireOrdersResult = { cancelled: [], failed: [] };
+  const releasedVariantIds = new Set<string>();
 
   for (const candidate of candidates) {
     try {
@@ -107,6 +109,7 @@ export async function expireStalePendingOrders(): Promise<ExpireOrdersResult> {
           select: { variantId: true, quantity: true },
         });
         await releaseReservedStock(tx, items);
+        items.forEach((item) => releasedVariantIds.add(item.variantId));
 
         await tx.payment.updateMany({
           where: {
@@ -130,5 +133,6 @@ export async function expireStalePendingOrders(): Promise<ExpireOrdersResult> {
     }
   }
 
+  await revalidateStockForVariants([...releasedVariantIds]);
   return result;
 }

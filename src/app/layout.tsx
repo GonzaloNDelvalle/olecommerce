@@ -4,6 +4,10 @@ import {
   Plus_Jakarta_Sans,
   Geist_Mono,
 } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { MarketingPixels } from "@/components/analytics/MarketingPixels";
+import { getAppUrl } from "@/lib/app-url";
 import "./globals.css";
 
 const cormorantSerif = Cormorant_Garamond({
@@ -28,6 +32,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getAppUrl()),
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    siteName: "OL. Indumenti",
+  },
+  twitter: { card: "summary_large_image" },
   title: {
     default: "OL. | Neutral State — FW'26 | OL Indumenti",
     template: "%s | OL. Indumenti",
@@ -44,6 +55,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-white font-sans text-stone-900 selection:bg-stone-900 selection:text-stone-50">
         {children}
+        <Analytics />
+        <SpeedInsights />
+        <MarketingPixels />
       </body>
     </html>
   );

@@ -1,18 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 
 /**
- * En Next.js 16, `middleware.ts` fue deprecado y reemplazado por `proxy.ts`
- * (corre en el runtime de Node.js por defecto).
+ * En Next.js 16, `middleware.ts` fue reemplazado por `proxy.ts` (runtime Node.js).
  *
  * Protege las páginas del Backoffice bajo `/admin/:path*` exigiendo una sesión
- * de Auth.js con rol ADMIN. Es solo la primera capa: cada Server Action del admin
- * vuelve a validar con `requireAdmin()` (ver `src/lib/auth-guards.ts`).
+ * de Better Auth con rol ADMIN. Es solo la primera capa: cada Server Action del
+ * admin vuelve a validar con `requireAdmin()` (ver `src/lib/auth-guards.ts`).
  */
-export const proxy = auth((request) => {
-  const user = request.auth?.user;
+export async function proxy(request: NextRequest) {
+  const session = await auth.api.getSession({ headers: request.headers });
 
-  if (!user) {
+  if (!session) {
     const loginUrl = new URL("/login", request.nextUrl.origin);
     loginUrl.searchParams.set(
       "callbackUrl",
@@ -21,12 +20,12 @@ export const proxy = auth((request) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user.role !== "ADMIN") {
+  if (session.user.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/", request.nextUrl.origin));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/admin/:path*"],

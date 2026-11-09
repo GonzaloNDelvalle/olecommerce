@@ -8,12 +8,11 @@ import {
   Landmark,
   MessageCircle,
   Mail,
-  ArrowRight,
   ShieldCheck,
 } from "lucide-react";
 import { getConfirmationOrderDetails } from "@/modules/orders/checkout.actions";
-import { BANK_ACCOUNT_INFO } from "@/lib/bank-account";
-import { BANK_TRANSFER_DISCOUNT_PERCENTAGE } from "@/modules/orders/schemas/checkout.schema";
+import { PurchaseTracker } from "@/components/analytics/PurchaseTracker";
+import { getStoreSettings } from "@/modules/settings/store-settings";
 import { CopyButton } from "@/components/shop/CopyButton";
 import { OrderStatus, PaymentProvider, PaymentStatus } from "@prisma/client";
 
@@ -40,7 +39,10 @@ async function OrderConfirmationContent({
   paramsPromise: Promise<{ id: string }>;
 }) {
   const { id } = await paramsPromise;
-  const order = await getConfirmationOrderDetails(id);
+  const [order, store] = await Promise.all([
+    getConfirmationOrderDetails(id),
+    getStoreSettings(),
+  ]);
 
   if (!order) {
     notFound();
@@ -52,7 +54,7 @@ async function OrderConfirmationContent({
     order.paymentStatus === PaymentStatus.APPROVED;
 
   // Enlace y mensaje predeterminado para WhatsApp
-  const cleanPhone = BANK_ACCOUNT_INFO.whatsappNumber.replace(/[^0-9]/g, "");
+  const cleanPhone = (store.whatsappNumber ?? "").replace(/[^0-9]/g, "");
   const whatsappMessage = encodeURIComponent(
     `Hola OL., te envío el comprobante de pago para mi pedido #${order.orderNumber} a nombre de ${order.customerName}. Monto: ${arsFormatter.format(
       order.totalAmount
@@ -66,7 +68,7 @@ async function OrderConfirmationContent({
       order.totalAmount
     )}`
   );
-  const mailtoUrl = `mailto:${BANK_ACCOUNT_INFO.supportEmail}?subject=${mailSubject}&body=${mailBody}`;
+  const mailtoUrl = `mailto:${store.supportEmail}?subject=${mailSubject}&body=${mailBody}`;
 
   return (
     <div className="w-full max-w-2xl mx-auto py-12 sm:py-16 px-4">
@@ -87,6 +89,23 @@ async function OrderConfirmationContent({
             ORDEN #{order.orderNumber} &bull; {dateFormatter.format(new Date(order.createdAt))}
           </p>
         </header>
+
+        {/* Conversión: pago acreditado o pedido por transferencia confirmado */}
+        {(isPaid || isBankTransfer) && (
+          <PurchaseTracker
+            orderId={order.id}
+            orderNumber={order.orderNumber}
+            total={order.totalAmount}
+            shipping={order.shippingCost}
+            items={order.items.map((item) => ({
+              id: item.variantSku,
+              name: item.productName,
+              variant: `${item.colorName} / ${item.sizeName}`,
+              price: item.unitPrice,
+              quantity: item.quantity,
+            }))}
+          />
+        )}
 
         {/* Sección de Estado & Mensaje */}
         <div className="py-8 border-b border-stone-200 text-center">
@@ -133,7 +152,7 @@ async function OrderConfirmationContent({
                   Banco
                 </span>
                 <span className="font-medium text-stone-800 text-right">
-                  {BANK_ACCOUNT_INFO.bankName}
+                  {store.bankName}
                 </span>
               </div>
 
@@ -142,7 +161,7 @@ async function OrderConfirmationContent({
                   Titular
                 </span>
                 <span className="font-medium text-stone-800 text-right">
-                  {BANK_ACCOUNT_INFO.accountHolder}
+                  {store.bankAccountHolder}
                 </span>
               </div>
 
@@ -151,8 +170,8 @@ async function OrderConfirmationContent({
                   CUIT
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-stone-900 font-medium">{BANK_ACCOUNT_INFO.cuit}</span>
-                  <CopyButton textToCopy={BANK_ACCOUNT_INFO.cuit} label="Copiar" />
+                  <span className="font-mono text-stone-900 font-medium">{store.bankCuit}</span>
+                  <CopyButton textToCopy={store.bankCuit ?? ""} label="Copiar" />
                 </div>
               </div>
 
@@ -161,8 +180,8 @@ async function OrderConfirmationContent({
                   Alias CBU
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-stone-900 font-medium">{BANK_ACCOUNT_INFO.alias}</span>
-                  <CopyButton textToCopy={BANK_ACCOUNT_INFO.alias} label="Copiar" />
+                  <span className="font-mono text-stone-900 font-medium">{store.bankAlias}</span>
+                  <CopyButton textToCopy={store.bankAlias ?? ""} label="Copiar" />
                 </div>
               </div>
 
@@ -172,9 +191,9 @@ async function OrderConfirmationContent({
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[11px] text-stone-900 font-medium sm:text-xs">
-                    {BANK_ACCOUNT_INFO.cbu}
+                    {store.bankCbu}
                   </span>
-                  <CopyButton textToCopy={BANK_ACCOUNT_INFO.cbu} label="Copiar" />
+                  <CopyButton textToCopy={store.bankCbu ?? ""} label="Copiar" />
                 </div>
               </div>
             </div>
@@ -262,7 +281,7 @@ async function OrderConfirmationContent({
             {order.discountAmount > 0 && (
               <div className="flex justify-between text-[#5C4033]">
                 <span className="uppercase tracking-wider text-[11px]">
-                  Descuento Transferencia ({BANK_TRANSFER_DISCOUNT_PERCENTAGE}% OFF)
+                  Descuento Transferencia ({store.bankTransferDiscountPercentage}% OFF)
                 </span>
                 <span className="font-medium">-{arsFormatter.format(order.discountAmount)}</span>
               </div>

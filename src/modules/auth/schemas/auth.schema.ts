@@ -47,7 +47,7 @@ export const registerFormSchema = z
       .or(z.literal("")),
     password: z
       .string()
-      .min(6, "La contraseña debe tener al menos 6 caracteres")
+      .min(8, "La contraseña debe tener al menos 8 caracteres")
       .max(72, "La contraseña no puede superar los 72 caracteres"),
     confirmPassword: z
       .string()

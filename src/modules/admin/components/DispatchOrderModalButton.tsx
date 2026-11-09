@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Truck, X, Loader2, AlertCircle, Check } from "lucide-react";
 import { dispatchAdminOrder } from "@/modules/admin/actions/admin-orders.actions";
 

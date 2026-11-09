@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
+import { CACHE_TAGS, expireTagsNow } from "@/lib/cache-tags";
 import {
   commitReservedStock,
   releaseReservedStock,
@@ -30,6 +31,7 @@ export interface ShippingAddressSnapshotDTO {
   city?: string;
   state?: string;
   country?: string;
+  pickupAddress?: string | null;
 }
 
 export interface AdminOrderItemDTO {
@@ -54,6 +56,8 @@ export interface AdminOrderDTO {
   totalAmount: number;
   customerDocument: string;
   shippingAddress: ShippingAddressSnapshotDTO;
+  shippingMethodName: string | null;
+  deliveryType: "HOME_DELIVERY" | "PICKUP" | null;
   carrier: string | null;
   trackingCode: string | null;
   shippedAt: string | null;
@@ -108,8 +112,8 @@ function mapOrderToDTO(order: {
   totalAmount: unknown;
   customerDocument: string;
   shippingAddress: unknown;
-  shippingCarrier?: string | null;
-  trackingNumber?: string | null;
+  shippingMethodName?: string | null;
+  deliveryType?: "HOME_DELIVERY" | "PICKUP" | null;
   carrier?: string | null;
   trackingCode?: string | null;
   shippedAt?: Date | null;
@@ -160,8 +164,10 @@ function mapOrderToDTO(order: {
     totalAmount: Number(order.totalAmount),
     customerDocument: order.customerDocument,
     shippingAddress: addressObj,
-    carrier: order.carrier ?? order.shippingCarrier ?? null,
-    trackingCode: order.trackingCode ?? order.trackingNumber ?? null,
+    shippingMethodName: order.shippingMethodName ?? null,
+    deliveryType: order.deliveryType ?? null,
+    carrier: order.carrier ?? null,
+    trackingCode: order.trackingCode ?? null,
     shippedAt: order.shippedAt ? order.shippedAt.toISOString() : null,
     notes: order.notes,
     createdAt: order.createdAt.toISOString(),
@@ -387,7 +393,7 @@ export async function approveManualOrderPayment(
     revalidatePath("/admin/ordenes");
     revalidatePath(`/admin/ordenes/${orderId}`);
     revalidatePath("/admin/productos");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
 
       return {
       success: true,
@@ -466,9 +472,7 @@ export async function dispatchAdminOrder(
       data: {
         status: OrderStatus.SHIPPED,
         carrier,
-        shippingCarrier: carrier,
         trackingCode,
-        trackingNumber: trackingCode,
         shippedAt: now,
       },
     });
@@ -554,7 +558,7 @@ export async function cancelAdminOrder(
     revalidatePath("/admin/ordenes");
     revalidatePath(`/admin/ordenes/${orderId}`);
     revalidatePath("/admin/productos");
-    revalidatePath("/productos");
+    expireTagsNow(CACHE_TAGS.catalog);
     revalidatePath("/mi-cuenta");
 
     return {

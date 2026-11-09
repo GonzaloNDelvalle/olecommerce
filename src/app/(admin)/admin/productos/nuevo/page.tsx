@@ -719,6 +719,7 @@ function NewProductForm() {
                 <div>
                   <SingleImageDropzone
                     label="Foto Específica para esta Variante / Color (Opcional)"
+                    subfolder="variants"
                     helperText="Arrastrá la foto específica de este color/talle o hacé clic para subir"
                     compact
                     value={watchedVariants?.[index]?.imageUrl ?? ""}

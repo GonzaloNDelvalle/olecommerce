@@ -17,6 +17,8 @@ import {
   commitReservedStock,
   takeAvailableStock,
 } from "@/modules/orders/inventory";
+import { revalidateStockForVariants } from "@/lib/cache-tags";
+import { mapMercadoPagoStatus } from "@/modules/orders/mercadopago-status";
 
 const FULFILLED_STATUSES: OrderStatus[] = [
   OrderStatus.PAID,
@@ -48,31 +50,6 @@ class OutOfStockForLatePaymentError extends Error {
     readonly sku: string
   ) {
     super(`Sin stock para reactivar la orden #${orderNumber} (${sku})`);
-  }
-}
-
-/**
- * Mapea el status string de MercadoPago al enum PaymentStatus de Prisma.
- */
-function mapMercadoPagoStatus(mpStatus?: string): PaymentStatus {
-  switch (mpStatus) {
-    case "approved":
-      return PaymentStatus.APPROVED;
-    case "authorized":
-      return PaymentStatus.AUTHORIZED;
-    case "in_process":
-    case "in_mediation":
-      return PaymentStatus.IN_PROCESS;
-    case "rejected":
-      return PaymentStatus.REJECTED;
-    case "cancelled":
-      return PaymentStatus.CANCELLED;
-    case "refunded":
-      return PaymentStatus.REFUNDED;
-    case "charged_back":
-      return PaymentStatus.CHARGED_BACK;
-    default:
-      return PaymentStatus.PENDING;
   }
 }
 
@@ -305,6 +282,9 @@ export async function POST(request: NextRequest) {
 
     switch (outcome.kind) {
       case "paid": {
+        await revalidateStockForVariants(
+          outcome.order.items.map((item) => item.variantId)
+        );
         // Email "Pago Acreditado": solo la notificación que efectivamente pasó la orden a PAID.
         const emailResult = await sendPaymentApprovedEmail(orderId);
         console.log(

@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { logoutCustomerAction } from "@/modules/auth/actions/auth.actions";
+import { authClient } from "@/lib/auth-client";
 
 export function CustomerLogoutButton() {
   const router = useRouter();
@@ -11,8 +11,8 @@ export function CustomerLogoutButton() {
 
   function handleLogout() {
     startTransition(async () => {
-      await logoutCustomerAction();
-      router.push("/login");
+      await authClient.signOut();
+      router.push("/");
       router.refresh();
     });
   }

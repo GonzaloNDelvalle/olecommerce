@@ -1,7 +1,7 @@
 import "dotenv/config";
-import bcrypt from "bcryptjs";
-import { ProductStatus, Role } from "@prisma/client";
+import { ProductStatus } from "@prisma/client";
 import { db } from "../src/lib/db";
+import { upsertAdmin } from "../scripts/create-admin";
 
 interface MockProductSeed {
   name: string;
@@ -221,21 +221,7 @@ async function main() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
   if (adminEmail && adminPassword) {
-    const passwordHash = await bcrypt.hash(adminPassword, 12);
-    await db.user.upsert({
-      where: { email: adminEmail },
-      update: { passwordHash, role: Role.ADMIN, isActive: true },
-      create: {
-        email: adminEmail,
-        name: "Admin OL.",
-        firstName: "Admin",
-        lastName: "OL Indumenti",
-        passwordHash,
-        role: Role.ADMIN,
-        isActive: true,
-        emailVerified: new Date(),
-      },
-    });
+    await upsertAdmin(adminEmail, adminPassword);
     console.log(`👤 Admin listo: ${adminEmail}`);
   } else {
     console.log("👤 Admin omitido (definí SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crearlo).");

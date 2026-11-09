@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import { db } from "@/lib/db";
 
 export class UnauthorizedError extends Error {
@@ -19,7 +19,7 @@ export class UnauthorizedError extends Error {
  * una cuenta degradada o desactivada pierda el acceso de inmediato.
  */
 export async function requireAdmin(): Promise<{ id: string; email: string }> {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   if (!userId || session.user.role !== "ADMIN") {
