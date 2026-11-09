@@ -16,7 +16,10 @@ const serverEnvSchema = z
     DATABASE_URL: required("DATABASE_URL"),
     AUTH_SECRET: z.string().trim().min(32, "AUTH_SECRET debe tener al menos 32 caracteres").optional(),
     BETTER_AUTH_SECRET: z.string().trim().min(32).optional(),
-    NEXT_PUBLIC_APP_URL: z.string().trim().url("NEXT_PUBLIC_APP_URL debe ser una URL completa (https://...)"),
+    // En Vercel es opcional: se usa el dominio de producción del proyecto
+    NEXT_PUBLIC_APP_URL: process.env.VERCEL
+      ? z.string().trim().url("NEXT_PUBLIC_APP_URL debe ser una URL completa (https://...)").optional()
+      : z.string().trim().url("NEXT_PUBLIC_APP_URL debe ser una URL completa (https://...)"),
     MP_ACCESS_TOKEN: required("MP_ACCESS_TOKEN"),
     CRON_SECRET: z.string().trim().min(16, "CRON_SECRET debe tener al menos 16 caracteres"),
     RESEND_API_KEY: required("RESEND_API_KEY"),

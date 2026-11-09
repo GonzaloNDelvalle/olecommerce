@@ -4,6 +4,7 @@ import { Preference } from "mercadopago";
 import { db } from "@/lib/db";
 import { getMercadoPagoConfig } from "@/lib/mercadopago";
 import { OrderStatus } from "@prisma/client";
+import { getAppUrl } from "@/lib/app-url";
 import {
   hoursFromNow,
   MP_CASH_TTL_HOURS,
@@ -53,8 +54,7 @@ export async function createMercadoPagoPreference(
       };
     }
 
-    const rawAppUrl =
-      process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+    const rawAppUrl = getAppUrl();
     const appUrl = rawAppUrl.replace(/\/$/, "");
 
     // Si MP_WEBHOOK_URL está configurada (y no es el placeholder de ejemplo), la priorizamos;
