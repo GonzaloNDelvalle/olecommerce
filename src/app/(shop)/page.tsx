@@ -12,7 +12,7 @@ import { EditorialHeroParallax } from "@/components/shop/EditorialHeroParallax";
 import { StaggerGrid, StaggerItem } from "@/components/shop/EditorialMotion";
 
 export const metadata: Metadata = {
-  title: "OL. | Neutral State — FW'26 | OL Indumenti",
+  title: { absolute: "OL. Indumenti | Neutral State — FW'26" },
   description:
     "Colección Neutral State FW'26 de OL Indumenti. Sastrería minimalista, denim y siluetas atemporales en tonos neutros.",
 };
