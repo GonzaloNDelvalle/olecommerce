@@ -61,7 +61,7 @@ export type SendEmailResult =
 // HELPERS DE MAQUETACIÓN
 // ==========================================
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -522,4 +522,68 @@ export async function sendOrderShippedEmail(
       error: "No se pudo enviar el email de despacho de pedido",
     };
   }
+}
+
+// ==========================================
+// ALERTAS INTERNAS Y CUENTAS
+// ==========================================
+
+export const ADMIN_NOTIFY_EMAIL =
+  process.env.ADMIN_NOTIFY_EMAIL?.trim() || null;
+
+/**
+ * Alerta operativa para el equipo (pagos que requieren revisión manual,
+ * reintegros, contracargos). Si ADMIN_NOTIFY_EMAIL no está configurada,
+ * solo queda registrada en los logs del servidor.
+ */
+export async function sendAdminAlertEmail(
+  subject: string,
+  lines: string[]
+): Promise<SendEmailResult> {
+  console.warn(`[ALERTA ADMIN] ${subject}\n  - ${lines.join("\n  - ")}`);
+
+  if (!ADMIN_NOTIFY_EMAIL) {
+    return { success: true, id: null };
+  }
+
+  const bodyHtml = `<ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:#44403c;">${lines
+    .map((line) => `<li>${escapeHtml(line)}</li>`)
+    .join("")}</ul>
+    <div style="margin-top:24px;">${renderButton(`${APP_URL}/admin/ordenes`, "Ir al panel de órdenes")}</div>`;
+
+  return sendEmail({
+    to: ADMIN_NOTIFY_EMAIL,
+    subject: `[OL. Admin] ${subject}`,
+    html: renderEmailLayout({
+      preheader: subject,
+      eyebrow: "Alerta operativa",
+      title: subject,
+      bodyHtml,
+    }),
+  });
+}
+
+/**
+ * Email con el link para confirmar la casilla y activar la contraseña elegida.
+ */
+export async function sendEmailVerificationEmail(params: {
+  to: string;
+  firstName: string;
+  verifyUrl: string;
+}): Promise<SendEmailResult> {
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#44403c;">Hola ${escapeHtml(params.firstName)}, para activar tu cuenta confirmá que este correo es tuyo.</p>
+    <div style="margin:28px 0;">${renderButton(params.verifyUrl, "Confirmar mi email")}</div>
+    <p style="margin:0;font-size:12px;line-height:1.7;color:#a8a29e;">El link vence en 24 horas. Si no creaste una cuenta en OL., ignorá este mensaje: no se activará ninguna contraseña.</p>`;
+
+  return sendEmail({
+    to: params.to,
+    subject: "Confirmá tu email | OL. Indumenti",
+    html: renderEmailLayout({
+      preheader: "Confirmá tu email para activar tu cuenta.",
+      eyebrow: "Tu cuenta",
+      title: "Confirmá tu email",
+      bodyHtml,
+    }),
+  });
 }

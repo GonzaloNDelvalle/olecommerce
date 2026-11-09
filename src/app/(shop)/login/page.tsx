@@ -11,6 +11,7 @@ import {
   type LoginFormValues,
 } from "@/modules/auth/schemas/auth.schema";
 import { loginCustomerAction } from "@/modules/auth/actions/auth.actions";
+import { safeInternalPath } from "@/lib/safe-path";
 
 const INPUT_CLASS =
   "w-full bg-transparent border-0 border-b border-stone-300 focus:border-stone-900 rounded-none px-0 py-3 font-sans text-sm font-light text-stone-900 placeholder:text-stone-400 focus:outline-none transition-colors";
@@ -20,7 +21,7 @@ const LABEL_CLASS =
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/mi-cuenta";
+  const callbackUrl = safeInternalPath(searchParams.get("callbackUrl"));
 
   const [serverError, setServerError] = useState<string | null>(null);
 

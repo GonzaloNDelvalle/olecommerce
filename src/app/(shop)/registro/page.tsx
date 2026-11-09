@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, MailCheck } from "lucide-react";
 import {
   registerFormSchema,
   type RegisterFormValues,
@@ -18,8 +17,8 @@ const LABEL_CLASS =
   "block font-sans text-[10px] uppercase tracking-[0.2em] text-stone-600";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const {
     register,
@@ -48,8 +47,35 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/mi-cuenta");
-    router.refresh();
+    setPendingEmail(result.email);
+  }
+
+  if (pendingEmail) {
+    return (
+      <main className="min-h-[calc(100vh-5rem)] bg-[#FAF9F6]">
+        <div className="mx-auto max-w-md px-4 py-20">
+          <div className="rounded-none border border-stone-200 bg-white p-8 text-center sm:p-10">
+            <MailCheck className="mx-auto h-8 w-8 text-stone-900" strokeWidth={1.25} />
+            <h1 className="mt-6 font-serif text-3xl tracking-wide text-stone-900 uppercase">
+              Revisá tu email
+            </h1>
+            <p className="mt-4 font-sans text-sm leading-relaxed font-light text-stone-600">
+              Te enviamos un link a <strong className="font-medium text-stone-900">{pendingEmail}</strong> para
+              confirmar tu cuenta. El link vence en 24 horas.
+            </p>
+            <p className="mt-3 font-sans text-xs leading-relaxed font-light text-stone-500">
+              Si no lo ves, revisá la carpeta de spam o volvé a registrarte para recibir uno nuevo.
+            </p>
+            <Link
+              href="/login"
+              className="mt-8 inline-block border-b border-stone-900 pb-0.5 text-[11px] tracking-[0.15em] text-stone-900 uppercase transition-colors hover:border-stone-500 hover:text-stone-600"
+            >
+              Ir a iniciar sesión
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

@@ -114,14 +114,19 @@ export type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
 
 export const checkoutCartItemSchema = z.object({
   variantId: z.string().uuid("ID de variante inválido"),
-  quantity: z.number().int().positive("La cantidad debe ser mayor a 0"),
+  quantity: z
+    .number()
+    .int()
+    .positive("La cantidad debe ser mayor a 0")
+    .max(20, "Máximo 20 unidades por prenda"),
 });
 
 export const createOrderPayloadSchema = z.object({
   customer: checkoutFormSchema,
   items: z
     .array(checkoutCartItemSchema)
-    .min(1, "El carrito no puede estar vacío"),
+    .min(1, "El carrito no puede estar vacío")
+    .max(50, "El carrito tiene demasiados productos"),
 });
 
 export type CreateOrderPayload = z.infer<typeof createOrderPayloadSchema>;

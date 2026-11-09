@@ -215,25 +215,31 @@ const MOCK_PRODUCTS: MockProductSeed[] = [
 async function main() {
   console.log("🌱 Iniciando seed de OL Indumenti (FW'26 - Neutral State)...");
 
-  // 1. Usuario Admin
-  const adminEmail = "admin@olecommerce.com.ar";
-  const passwordHash = await bcrypt.hash("Admin1234!", 10);
-  await db.user.upsert({
-    where: { email: adminEmail },
-    update: { passwordHash, role: Role.ADMIN },
-    create: {
-      email: adminEmail,
-      name: "Admin OL.",
-      firstName: "Admin",
-      lastName: "OL Indumenti",
-      passwordHash,
-      documentNumber: "30123456789",
-      phone: "+5491112345678",
-      role: Role.ADMIN,
-      isActive: true,
-      emailVerified: new Date(),
-    },
-  });
+  // 1. Usuario Admin (opcional): solo se crea si se definen SEED_ADMIN_EMAIL y
+  //    SEED_ADMIN_PASSWORD en el entorno. Nunca usar una contraseña fija en el código.
+  //    Para producción usá `pnpm admin:create` (ver scripts/create-admin.ts).
+  const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    await db.user.upsert({
+      where: { email: adminEmail },
+      update: { passwordHash, role: Role.ADMIN, isActive: true },
+      create: {
+        email: adminEmail,
+        name: "Admin OL.",
+        firstName: "Admin",
+        lastName: "OL Indumenti",
+        passwordHash,
+        role: Role.ADMIN,
+        isActive: true,
+        emailVerified: new Date(),
+      },
+    });
+    console.log(`👤 Admin listo: ${adminEmail}`);
+  } else {
+    console.log("👤 Admin omitido (definí SEED_ADMIN_EMAIL y SEED_ADMIN_PASSWORD para crearlo).");
+  }
 
   // 2. Talles
   const sizesData = [

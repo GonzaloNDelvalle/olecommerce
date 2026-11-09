@@ -1,10 +1,12 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { createHash, randomBytes } from "node:crypto";
 import { AuthError } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { auth, signIn, signOut } from "@/auth";
 import { db } from "@/lib/db";
+import { APP_URL, resend, sendEmailVerificationEmail } from "@/lib/email";
 import { OrderStatus, PaymentProvider, PaymentStatus } from "@prisma/client";
 import {
   loginFormSchema,
@@ -67,15 +69,34 @@ export interface CustomerAccountProfileDTO {
   orders: CustomerOrderDTO[];
 }
 
+export type RegisterActionResult =
+  | {
+      success: true;
+      email: string;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+
+function hashVerificationToken(rawToken: string): string {
+  return createHash("sha256").update(rawToken).digest("hex");
+}
+
 /**
- * Registra una nueva clienta en PostgreSQL:
- * - Si el email ya existía por una compra previa como invitada (`passwordHash === null`),
- *   activa su cuenta asignándole su `passwordHash` y conservando todas sus órdenes históricas.
- * - Inicia sesión automáticamente con Auth.js tras crear la cuenta.
+ * Registra una nueva clienta con verificación de email obligatoria:
+ * - La contraseña elegida se guarda como `pendingPasswordHash` y recién se activa
+ *   (pasa a `passwordHash`) cuando la dueña del email hace clic en el link enviado.
+ * - Si el email ya existía por una compra como invitada, NO se toca su perfil ni
+ *   sus órdenes hasta confirmar la casilla: nadie puede "reclamar" el historial
+ *   (DNI, direcciones, pedidos) de otra persona solo conociendo su email.
+ * - Volver a registrarse con un email pendiente reenvía un link nuevo.
  */
 export async function registerCustomerAction(
   payload: RegisterFormValues
-): Promise<AuthActionResult> {
+): Promise<RegisterActionResult> {
   const parsed = registerFormSchema.safeParse(payload);
 
   if (!parsed.success) {
@@ -94,61 +115,147 @@ export async function registerCustomerAction(
   try {
     const existingUser = await db.user.findUnique({
       where: { email: normalizedEmail },
-      select: { id: true, passwordHash: true },
+      select: { id: true, passwordHash: true, firstName: true },
     });
 
-    if (existingUser && existingUser.passwordHash) {
+    if (existingUser?.passwordHash) {
       return {
         success: false,
         error: "Ya existe una cuenta registrada con este correo electrónico.",
       };
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const pendingPasswordHash = await bcrypt.hash(password, 12);
     const fullName = `${firstName} ${lastName}`.trim();
 
-    await db.user.upsert({
-      where: { email: normalizedEmail },
-      update: {
-        name: fullName,
-        firstName,
-        lastName,
-        passwordHash,
-        ...(documentNumber ? { documentNumber } : {}),
-        ...(phone ? { phone } : {}),
-        isActive: true,
-      },
-      create: {
-        email: normalizedEmail,
-        name: fullName,
-        firstName,
-        lastName,
-        passwordHash,
-        documentNumber: documentNumber || null,
-        phone: phone || null,
-        isActive: true,
-      },
+    if (existingUser) {
+      // Email de una compradora invitada: solo se guarda la contraseña pendiente.
+      await db.user.update({
+        where: { id: existingUser.id },
+        data: { pendingPasswordHash },
+      });
+    } else {
+      await db.user.create({
+        data: {
+          email: normalizedEmail,
+          name: fullName,
+          firstName,
+          lastName,
+          pendingPasswordHash,
+          documentNumber: documentNumber || null,
+          phone: phone || null,
+          isActive: true,
+        },
+      });
+    }
+
+    // Un único link vigente por email; en la base se guarda solo el hash del token
+    const rawToken = randomBytes(32).toString("base64url");
+    await db.$transaction([
+      db.verificationToken.deleteMany({
+        where: { identifier: normalizedEmail },
+      }),
+      db.verificationToken.create({
+        data: {
+          identifier: normalizedEmail,
+          token: hashVerificationToken(rawToken),
+          expires: new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+        },
+      }),
+    ]);
+
+    const verifyUrl = `${APP_URL}/verificar-email?token=${encodeURIComponent(rawToken)}`;
+    const emailResult = await sendEmailVerificationEmail({
+      to: normalizedEmail,
+      firstName: existingUser?.firstName || firstName,
+      verifyUrl,
     });
 
-    await signIn("credentials", {
-      email: normalizedEmail,
-      password,
-      redirect: false,
-    });
+    if (!resend && process.env.NODE_ENV !== "production") {
+      console.info(`[registro] Link de verificación (modo desarrollo): ${verifyUrl}`);
+    }
 
-    revalidatePath("/mi-cuenta");
-    return { success: true };
-  } catch (error) {
-    if (error instanceof AuthError) {
+    if (!emailResult.success) {
       return {
         success: false,
-        error: "Cuenta creada, pero no se pudo iniciar sesión automáticamente.",
+        error:
+          "No pudimos enviarte el email de confirmación. Intentá nuevamente en unos minutos.",
       };
     }
+
+    return { success: true, email: normalizedEmail };
+  } catch (error) {
     console.error("[registerCustomerAction] Error:", error);
     return {
       success: false,
       error: "Ocurrió un error al registrar tu cuenta. Intentá nuevamente.",
+    };
+  }
+}
+
+/**
+ * Confirma el email a partir del token del link y activa la contraseña pendiente.
+ * Se invoca desde un botón (POST) y no al abrir el link, para que los
+ * escáneres de seguridad de los proveedores de correo no la activen solos.
+ */
+export async function verifyEmailAction(
+  rawToken: string
+): Promise<AuthActionResult> {
+  const token = typeof rawToken === "string" ? rawToken.trim() : "";
+  if (!token || token.length > 200) {
+    return { success: false, error: "El link de verificación no es válido." };
+  }
+
+  try {
+    const tokenHash = hashVerificationToken(token);
+    const record = await db.verificationToken.findUnique({
+      where: { token: tokenHash },
+    });
+
+    if (!record || record.expires < new Date()) {
+      return {
+        success: false,
+        error:
+          "El link venció o ya fue utilizado. Volvé a registrarte para recibir uno nuevo.",
+      };
+    }
+
+    const activated = await db.$transaction(async (tx) => {
+      await tx.verificationToken.deleteMany({
+        where: { identifier: record.identifier },
+      });
+
+      const user = await tx.user.findUnique({
+        where: { email: record.identifier },
+        select: { id: true, pendingPasswordHash: true },
+      });
+
+      if (!user?.pendingPasswordHash) return false;
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash: user.pendingPasswordHash,
+          pendingPasswordHash: null,
+          emailVerified: new Date(),
+        },
+      });
+      return true;
+    });
+
+    if (!activated) {
+      return {
+        success: false,
+        error: "Esta cuenta ya estaba activada. Iniciá sesión con tu contraseña.",
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[verifyEmailAction] Error:", error);
+    return {
+      success: false,
+      error: "No pudimos confirmar tu email. Intentá nuevamente.",
     };
   }
 }
@@ -181,6 +288,21 @@ export async function loginCustomerAction(
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
+      const pending = await db.user
+        .findUnique({
+          where: { email: parsed.data.email.toLowerCase() },
+          select: { passwordHash: true, pendingPasswordHash: true },
+        })
+        .catch(() => null);
+
+      if (pending && !pending.passwordHash && pending.pendingPasswordHash) {
+        return {
+          success: false,
+          error:
+            "Tenés que confirmar tu email antes de ingresar. Revisá tu casilla (y la carpeta de spam); si no lo encontrás, volvé a registrarte para recibir un link nuevo.",
+        };
+      }
+
       return {
         success: false,
         error: "El correo electrónico o la contraseña son incorrectos.",

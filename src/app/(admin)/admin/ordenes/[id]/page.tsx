@@ -78,6 +78,15 @@ async function OrderDetailContent({
             </>
           )}
 
+          {/* Orden vencida/cancelada cuyo pago llegó tarde: se puede reactivar
+              si todavía hay stock disponible */}
+          {order.status === OrderStatus.CANCELLED && (
+            <ApproveManualPaymentButton
+              orderId={order.id}
+              orderNumber={order.orderNumber}
+            />
+          )}
+
           {order.status === OrderStatus.PAID && (
             <DispatchOrderModalButton
               orderId={order.id}

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth-guards";
 import { resolveProductImageUrl } from "@/lib/cloudinary";
 import { ProductStatus } from "@prisma/client";
 import {
@@ -112,6 +113,8 @@ function slugifyProductName(name: string): string {
 export async function getAdminCatalogProducts(): Promise<
   AdminCatalogProductDTO[]
 > {
+  await requireAdmin();
+
   const products = await db.product.findMany({
     include: {
       category: { select: { name: true } },
@@ -186,6 +189,8 @@ export async function getAdminCatalogProducts(): Promise<
  * para poblar los selectores del formulario de alta/edición de producto.
  */
 export async function getAdminProductFormCatalogs(): Promise<AdminProductFormCatalogsDTO> {
+  await requireAdmin();
+
   const [categories, collections, sizes, colors] = await Promise.all([
     db.category.findMany({
       where: { isActive: true },
@@ -222,6 +227,8 @@ export async function getAdminProductFormCatalogs(): Promise<AdminProductFormCat
 export async function getAdminProductById(
   productId: string
 ): Promise<AdminEditableProductDTO | null> {
+  await requireAdmin();
+
   const product = await db.product.findUnique({
     where: { id: productId },
     include: {
@@ -284,6 +291,8 @@ export async function getAdminProductById(
 export async function createAdminProduct(
   payload: CreateProductFormValues
 ): Promise<CreateAdminProductResult> {
+  await requireAdmin();
+
   const parsed = createProductFormSchema.safeParse(payload);
 
   if (!parsed.success) {
@@ -431,6 +440,8 @@ export async function updateAdminProduct(
   productId: string,
   payload: CreateProductFormValues
 ): Promise<AdminProductMutationResult> {
+  await requireAdmin();
+
   const parsed = createProductFormSchema.safeParse(payload);
 
   if (!parsed.success) {
@@ -538,6 +549,22 @@ export async function updateAdminProduct(
 
       // 4. Sincronizar matriz de variantes (upsert por clave compuesta productId_sizeId_colorId)
       const activeComboKeys = new Set<string>();
+      const existingByCombo = new Map(
+        existingProduct.variants.map((v) => [`${v.sizeId}:${v.colorId}`, v])
+      );
+
+      // El stock físico no puede quedar por debajo de las unidades reservadas por
+      // órdenes pendientes de pago (la base lo rechaza con un CHECK constraint).
+      for (const variant of data.variants) {
+        const previous = existingByCombo.get(
+          `${variant.sizeId}:${variant.colorId}`
+        );
+        if (previous && variant.stock < previous.reservedStock) {
+          throw new Error(
+            `El SKU ${previous.sku} tiene ${previous.reservedStock} u. reservadas por órdenes pendientes: el stock no puede ser menor a ${previous.reservedStock}.`
+          );
+        }
+      }
 
       for (let idx = 0; idx < data.variants.length; idx++) {
         const variant = data.variants[idx];
@@ -576,9 +603,11 @@ export async function updateAdminProduct(
       for (const oldVariant of existingProduct.variants) {
         const oldKey = `${oldVariant.sizeId}:${oldVariant.colorId}`;
         if (!activeComboKeys.has(oldKey) && oldVariant.isActive) {
+          // Se conserva solo lo reservado por órdenes pendientes (si se cancelan,
+          // la reserva se libera y el stock queda en 0 para una variante inactiva).
           await tx.productVariant.update({
             where: { id: oldVariant.id },
-            data: { isActive: false, stock: 0 },
+            data: { isActive: false, stock: oldVariant.reservedStock },
           });
         }
       }
@@ -611,6 +640,8 @@ export async function toggleAdminProductStatus(
   productId: string,
   nextStatus: ProductStatus
 ): Promise<AdminProductMutationResult> {
+  await requireAdmin();
+
   try {
     await db.product.update({
       where: { id: productId },
@@ -644,6 +675,8 @@ export async function toggleAdminProductStatus(
 export async function deleteOrArchiveAdminProduct(
   productId: string
 ): Promise<AdminProductMutationResult> {
+  await requireAdmin();
+
   try {
     const orderItemsCount = await db.orderItem.count({
       where: {
@@ -659,10 +692,12 @@ export async function deleteOrArchiveAdminProduct(
           where: { id: productId },
           data: { status: ProductStatus.ARCHIVED },
         }),
-        db.productVariant.updateMany({
-          where: { productId },
-          data: { isActive: false, stock: 0 },
-        }),
+        // stock = reserved_stock: respeta las reservas de órdenes pendientes
+        db.$executeRaw`
+          UPDATE "product_variants"
+          SET "is_active" = false, "stock" = "reserved_stock", "updated_at" = NOW()
+          WHERE "product_id" = ${productId}::uuid
+        `,
       ]);
 
       revalidatePath("/admin/productos");

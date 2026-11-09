@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth-guards";
 
 export interface AdminCategoryDTO {
   id: string;
@@ -52,6 +53,8 @@ function slugifyCategoryName(name: string): string {
  * de productos asociados a cada una.
  */
 export async function getAdminCategories(): Promise<AdminCategoryDTO[]> {
+  await requireAdmin();
+
   const categories = await db.category.findMany({
     include: {
       _count: {
@@ -79,6 +82,8 @@ export async function createAdminCategory(input: {
   name: string;
   description?: string;
 }): Promise<AdminCategoryMutationResult> {
+  await requireAdmin();
+
   const parsed = createCategorySchema.safeParse(input);
 
   if (!parsed.success) {
@@ -146,6 +151,8 @@ export async function createAdminCategory(input: {
 export async function deleteAdminCategory(
   categoryId: string
 ): Promise<AdminCategoryMutationResult> {
+  await requireAdmin();
+
   try {
     const category = await db.category.findUnique({
       where: { id: categoryId },

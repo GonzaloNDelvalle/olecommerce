@@ -31,9 +31,8 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db) as Adapter,
-  secret:
-    process.env.AUTH_SECRET ||
-    "olecommerce-auth-secret-key-2026-argentina-secure-98f4d2a1",
+  // Auth.js lee AUTH_SECRET del entorno y falla al iniciar si no está definida.
+  // Nunca definir un valor por defecto en el código: permitiría falsificar sesiones.
   session: {
     strategy: "jwt",
   },

@@ -16,6 +16,7 @@ import {
 } from "@/modules/orders/schemas/checkout.schema";
 import { createMercadoPagoPreference } from "@/modules/orders/payment.actions";
 import { sendOrderConfirmedEmail } from "@/lib/email";
+import { mergeStockLines, reserveVariantStock } from "@/modules/orders/inventory";
 
 export type ProcessCheckoutOrderResult =
   | {
@@ -72,7 +73,9 @@ export async function processCheckoutOrder(
     };
   }
 
-  const { customer, items } = parsed.data;
+  const { customer } = parsed.data;
+  // Si el carrito trae la misma variante en dos líneas, se procesa como una sola
+  const items = mergeStockLines(parsed.data.items);
   const session = await auth();
 
   try {
@@ -127,23 +130,24 @@ export async function processCheckoutOrder(
           );
         }
 
-        const availableStock = variant.stock - variant.reservedStock;
+        // Reserva atómica: un único UPDATE condicionado a que haya unidades
+        // disponibles. Evita sobreventa cuando dos clientas compran la última unidad
+        // al mismo tiempo (leer y después incrementar no es seguro).
+        const reserved = await reserveVariantStock(
+          tx,
+          variant.id,
+          requestedItem.quantity
+        );
 
-        if (availableStock < requestedItem.quantity) {
+        if (!reserved) {
+          const availableStock = Math.max(
+            0,
+            variant.stock - variant.reservedStock
+          );
           throw new Error(
-            `Stock insuficiente para "${variant.product.name}" (Talle ${variant.size.name} - ${variant.color.name}). Disponible: ${Math.max(0, availableStock)} u.`
+            `Stock insuficiente para "${variant.product.name}" (Talle ${variant.size.name} - ${variant.color.name}). Disponible: ${availableStock} u.`
           );
         }
-
-        // Retener stock incrementando reservedStock atómicamente
-        await tx.productVariant.update({
-          where: { id: variant.id },
-          data: {
-            reservedStock: {
-              increment: requestedItem.quantity,
-            },
-          },
-        });
 
         const rawUnitPrice = Number(
           variant.priceOverride ?? variant.product.basePrice
@@ -169,33 +173,46 @@ export async function processCheckoutOrder(
         });
       }
 
-      // 3. Vincular la orden al ID de la usuaria autenticada en Auth.js (o upsert por email si compra como invitada)
-      const user = session?.user?.id
-        ? await tx.user.update({
-            where: { id: session.user.id },
-            data: {
-              firstName: customer.firstName,
-              lastName: customer.lastName,
-              documentNumber: customer.documentNumber,
-              phone: customer.phone,
-            },
-          })
-        : await tx.user.upsert({
-            where: { email: customer.email.toLowerCase() },
-            update: {
-              firstName: customer.firstName,
-              lastName: customer.lastName,
-              documentNumber: customer.documentNumber,
-              phone: customer.phone,
-            },
-            create: {
-              email: customer.email.toLowerCase(),
-              firstName: customer.firstName,
-              lastName: customer.lastName,
-              documentNumber: customer.documentNumber,
-              phone: customer.phone,
-            },
+      // 3. Vincular la orden a una usuaria:
+      //    - Sesión iniciada: se actualiza su propio perfil con los datos del formulario.
+      //    - Invitada con email de una cuenta registrada: se vincula la orden pero NO se
+      //      modifica el perfil (una persona anónima no puede pisar nombre/DNI/teléfono
+      //      de una cuenta ajena). Los datos de esta compra quedan en el snapshot de la orden.
+      //    - Invitada sin cuenta registrada: se crea/actualiza el registro de invitada.
+      const customerProfile = {
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        documentNumber: customer.documentNumber,
+        phone: customer.phone,
+      };
+      const guestEmail = customer.email.toLowerCase();
+
+      let userId: string;
+      if (session?.user?.id) {
+        const sessionUser = await tx.user.update({
+          where: { id: session.user.id },
+          data: customerProfile,
+          select: { id: true },
+        });
+        userId = sessionUser.id;
+      } else {
+        const existing = await tx.user.findUnique({
+          where: { email: guestEmail },
+          select: { id: true, passwordHash: true },
+        });
+
+        if (existing?.passwordHash) {
+          userId = existing.id;
+        } else {
+          const guest = await tx.user.upsert({
+            where: { email: guestEmail },
+            update: customerProfile,
+            create: { email: guestEmail, ...customerProfile },
+            select: { id: true },
           });
+          userId = guest.id;
+        }
+      }
 
       const isBankTransfer = customer.paymentMethod === "BANK_TRANSFER";
       const shippingCost = 0;
@@ -226,7 +243,7 @@ export async function processCheckoutOrder(
       // 5. Crear la Order en estado PENDING con sus OrderItems y su registro Payment
       const order = await tx.order.create({
         data: {
-          userId: user.id,
+          userId,
           status: OrderStatus.PENDING,
           subtotal: calculatedSubtotal,
           discountAmount,

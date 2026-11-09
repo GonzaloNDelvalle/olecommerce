@@ -2,6 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth-guards";
+import {
+  commitReservedStock,
+  releaseReservedStock,
+  takeAvailableStock,
+} from "@/modules/orders/inventory";
 import {
   sendOrderShippedEmail,
   sendPaymentApprovedEmail,
@@ -196,6 +202,8 @@ function mapOrderToDTO(order: {
 export async function getAdminOrders(
   statusFilter?: OrderStatus
 ): Promise<AdminOrderDTO[]> {
+  await requireAdmin();
+
   const orders = await db.order.findMany({
     where: statusFilter ? { status: statusFilter } : undefined,
     include: {
@@ -235,6 +243,8 @@ export async function getAdminOrders(
 export async function getAdminOrderById(
   orderId: string
 ): Promise<AdminOrderDTO | null> {
+  await requireAdmin();
+
   const order = await db.order.findUnique({
     where: { id: orderId },
     include: {
@@ -276,6 +286,8 @@ export async function getAdminOrderById(
 export async function approveManualOrderPayment(
   orderId: string
 ): Promise<AdminOrderMutationResult> {
+  await requireAdmin();
+
   try {
     const transitionedToPaid = await db.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -294,16 +306,21 @@ export async function approveManualOrderPayment(
         return false;
       }
 
-      if (order.status !== OrderStatus.PENDING) {
+      if (
+        order.status !== OrderStatus.PENDING &&
+        order.status !== OrderStatus.CANCELLED
+      ) {
         throw new Error(
           `No es posible acreditar manualmente una orden en estado ${order.status}.`
         );
       }
 
-      // 1. Cambiar el estado de la orden de PENDING a PAID (transición atómica:
-      //    ante dos solicitudes simultáneas, solo una logra el cambio)
+      // 1. Transición atómica a PAID (ante dos solicitudes simultáneas, solo una gana).
+      //    Se admite CANCELLED para el caso en que la orden venció por falta de pago
+      //    pero la transferencia llegó tarde.
+      const previousStatus = order.status;
       const claimed = await tx.order.updateMany({
-        where: { id: orderId, status: OrderStatus.PENDING },
+        where: { id: orderId, status: previousStatus },
         data: {
           status: OrderStatus.PAID,
         },
@@ -313,27 +330,23 @@ export async function approveManualOrderPayment(
         return false;
       }
 
-      // 2. Conciliar inventario físico y reservado de cada variante comprada
-      for (const item of order.items) {
-        const variant = await tx.productVariant.findUnique({
-          where: { id: item.variantId },
-          select: { stock: true, reservedStock: true },
-        });
-
-        if (variant) {
-          const stockToDecrement = Math.min(variant.stock, item.quantity);
-          const reservedToDecrement = Math.min(
-            variant.reservedStock,
+      // 2. Conciliar inventario
+      if (previousStatus === OrderStatus.PENDING) {
+        // La orden tenía unidades reservadas: se convierten en venta
+        await commitReservedStock(tx, order.items);
+      } else {
+        // La reserva ya se había liberado: hay que volver a tomar stock disponible
+        for (const item of order.items) {
+          const taken = await takeAvailableStock(
+            tx,
+            item.variantId,
             item.quantity
           );
-
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: {
-              stock: { decrement: stockToDecrement },
-              reservedStock: { decrement: reservedToDecrement },
-            },
-          });
+          if (!taken) {
+            throw new Error(
+              `No hay stock suficiente de ${item.productName} (${item.variantSku}) para reactivar la orden #${order.orderNumber}. Ajustá el inventario o reintegrá el pago.`
+            );
+          }
         }
       }
 
@@ -405,6 +418,8 @@ export async function dispatchAdminOrder(
     trackingCode: string;
   }
 ): Promise<AdminOrderMutationResult> {
+  await requireAdmin();
+
   const carrier = payload.carrier?.trim();
   const trackingCode = payload.trackingCode?.trim();
 
@@ -490,6 +505,8 @@ export async function dispatchAdminOrder(
 export async function cancelAdminOrder(
   orderId: string
 ): Promise<AdminOrderMutationResult> {
+  await requireAdmin();
+
   try {
     await db.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -524,24 +541,7 @@ export async function cancelAdminOrder(
       }
 
       // 2. Restituir las unidades reservadas al stock disponible de cada variante
-      for (const item of order.items) {
-        const variant = await tx.productVariant.findUnique({
-          where: { id: item.variantId },
-          select: { reservedStock: true },
-        });
-
-        if (variant && variant.reservedStock > 0) {
-          const toRelease = Math.min(variant.reservedStock, item.quantity);
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: {
-              reservedStock: {
-                decrement: toRelease,
-              },
-            },
-          });
-        }
-      }
+      await releaseReservedStock(tx, order.items);
 
       // 3. Marcar el Payment asociado como CANCELLED
       await tx.payment.updateMany({
@@ -578,6 +578,8 @@ export async function cancelAdminOrder(
  * Obtiene los indicadores ejecutivos (KPIs) y las últimas 5 órdenes para `/admin`.
  */
 export async function getAdminDashboardSummary(): Promise<AdminDashboardSummaryDTO> {
+  await requireAdmin();
+
   const [
     paidAggregation,
     paidOrdersCount,

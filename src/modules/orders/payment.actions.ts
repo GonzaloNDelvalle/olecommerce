@@ -4,6 +4,11 @@ import { Preference } from "mercadopago";
 import { db } from "@/lib/db";
 import { getMercadoPagoConfig } from "@/lib/mercadopago";
 import { OrderStatus } from "@prisma/client";
+import {
+  hoursFromNow,
+  MP_CASH_TTL_HOURS,
+  MP_CHECKOUT_TTL_HOURS,
+} from "@/modules/orders/order-expiration";
 
 export type CreatePreferenceResult =
   | {
@@ -112,6 +117,12 @@ export async function createMercadoPagoPreference(
         back_urls: backUrls,
         ...(isHttpsAppUrl ? { auto_return: "approved" } : {}),
         notification_url: notificationUrl,
+        // El link de pago vence junto con la reserva de stock de la orden; los
+        // cupones de efectivo (Rapipago / Pago Fácil) vencen a MP_CASH_TTL_HOURS.
+        expires: true,
+        expiration_date_from: new Date().toISOString(),
+        expiration_date_to: hoursFromNow(MP_CHECKOUT_TTL_HOURS).toISOString(),
+        date_of_expiration: hoursFromNow(MP_CASH_TTL_HOURS).toISOString(),
       },
     });
 

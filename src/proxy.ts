@@ -1,47 +1,32 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-
-const ADMIN_COOKIE_NAME = "ole_admin_session";
+import { auth } from "@/auth";
 
 /**
- * En Next.js 16, `middleware.ts` fue deprecado y reemplazado por `proxy.ts`.
- * Protege todas las rutas del Backoffice bajo `/admin/:path*`.
+ * En Next.js 16, `middleware.ts` fue deprecado y reemplazado por `proxy.ts`
+ * (corre en el runtime de Node.js por defecto).
+ *
+ * Protege las páginas del Backoffice bajo `/admin/:path*` exigiendo una sesión
+ * de Auth.js con rol ADMIN. Es solo la primera capa: cada Server Action del admin
+ * vuelve a validar con `requireAdmin()` (ver `src/lib/auth-guards.ts`).
  */
-export function proxy(request: NextRequest) {
-  const adminKey = process.env.ADMIN_ACCESS_KEY?.trim();
+export const proxy = auth((request) => {
+  const user = request.auth?.user;
 
-  // En entorno de desarrollo local, si aún no se definió ADMIN_ACCESS_KEY en .env, permitir acceso
-  if (!adminKey && process.env.NODE_ENV === "development") {
-    return NextResponse.next();
+  if (!user) {
+    const loginUrl = new URL("/login", request.nextUrl.origin);
+    loginUrl.searchParams.set(
+      "callbackUrl",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`
+    );
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Permitir autenticación vía query param: /admin?key=TU_ADMIN_KEY
-  const queryKey = request.nextUrl.searchParams.get("key");
-  if (adminKey && queryKey === adminKey) {
-    const cleanUrl = new URL(request.nextUrl.pathname, request.url);
-    const response = NextResponse.redirect(cleanUrl);
-
-    response.cookies.set({
-      name: ADMIN_COOKIE_NAME,
-      value: adminKey,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/admin",
-      maxAge: 60 * 60 * 24 * 7, // 7 días
-    });
-
-    return response;
-  }
-
-  // Validar cookie de sesión de administrador
-  const sessionCookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  if (!adminKey || sessionCookie !== adminKey) {
-    return NextResponse.redirect(new URL("/productos", request.url));
+  if (user.role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/", request.nextUrl.origin));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/admin/:path*"],
