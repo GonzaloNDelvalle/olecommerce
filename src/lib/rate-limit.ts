@@ -19,6 +19,7 @@ export interface RateLimitRule {
 export const RATE_LIMITS = {
   checkout: { scope: "checkout", max: 10, windowSeconds: 10 * 60 },
   revocation: { scope: "revocation", max: 5, windowSeconds: 60 * 60 },
+  newsletter: { scope: "newsletter", max: 5, windowSeconds: 60 * 60 },
 } satisfies Record<string, RateLimitRule>;
 
 export async function getClientIp(): Promise<string> {

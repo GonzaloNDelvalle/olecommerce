@@ -19,6 +19,7 @@ import PasswordResetEmail from "@/emails/PasswordResetEmail";
 import AccountExistsEmail from "@/emails/AccountExistsEmail";
 import AdminAlertEmail from "@/emails/AdminAlertEmail";
 import RevocationReceivedEmail from "@/emails/RevocationReceivedEmail";
+import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
 
 /**
  * Envío de emails transaccionales con Resend.
@@ -290,3 +291,14 @@ export async function sendRevocationReceivedEmail(params: {
   });
 }
 
+/** Bienvenida al newsletter con el link de baja. */
+export function sendNewsletterWelcomeEmail(params: {
+  to: string;
+  unsubscribeUrl: string;
+}) {
+  return sendEmail({
+    to: params.to,
+    subject: "Bienvenida al archivo privado | OL. Indumenti",
+    template: <NewsletterWelcomeEmail unsubscribeUrl={params.unsubscribeUrl} />,
+  });
+}

@@ -40,6 +40,13 @@ const HERO_FIELDS: TextField[] = [
   { name: "heroCtaHref", label: "Link del botón", placeholder: "/productos", maxLength: 255, hint: "Una página de la tienda, ej: /productos?categoria=denim" },
 ];
 
+const NEWSLETTER_FIELDS: TextField[] = [
+  { name: "newsletterEyebrow", label: "Volanta", placeholder: "Manifiesto OL.", maxLength: 120, wide: true },
+  { name: "newsletterTitle", label: "Frase principal", placeholder: "“Prendas versátiles. Estado de calma y equilibrio.”", maxLength: 160, wide: true },
+  { name: "newsletterText", label: "Texto de invitación (opcional)", maxLength: 400, wide: true },
+  { name: "newsletterButtonLabel", label: "Texto del botón", placeholder: "Suscribirme", maxLength: 40 },
+];
+
 export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
   const router = useRouter();
   const [values, setValues] = useState(initial);
@@ -57,6 +64,7 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
     const payload: SiteContentInput = {
       ...values,
       heroSubtitle: values.heroSubtitle ?? "",
+      newsletterText: values.newsletterText ?? "",
       heroImageUrl: values.heroImageUrl ?? "",
       heroVideoUrl: values.heroVideoUrl ?? "",
     };
@@ -134,6 +142,24 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
             value={values.heroVideoUrl}
             onChange={(url) => update("heroVideoUrl", url)}
           />
+        </div>
+      </AdminCard>
+
+      <AdminCard
+        title="Banner de newsletter"
+        description="La sección oscura al final de la portada. Las suscriptoras se ven en Newsletter."
+      >
+        <label className="mb-5 inline-flex items-center gap-2 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            checked={values.newsletterEnabled}
+            onChange={(e) => update("newsletterEnabled", e.target.checked)}
+            className="h-4 w-4 rounded border-stone-300"
+          />
+          Mostrar el banner en la portada
+        </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {NEWSLETTER_FIELDS.map(renderField)}
         </div>
       </AdminCard>
 

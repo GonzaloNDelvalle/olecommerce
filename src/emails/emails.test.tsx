@@ -7,6 +7,7 @@ import VerifyEmail from "./VerifyEmail";
 import PasswordResetEmail from "./PasswordResetEmail";
 import AdminAlertEmail from "./AdminAlertEmail";
 import RevocationReceivedEmail from "./RevocationReceivedEmail";
+import NewsletterWelcomeEmail from "./NewsletterWelcomeEmail";
 import { PREVIEW_ORDER } from "./types";
 
 describe("emails transaccionales", () => {
@@ -70,6 +71,14 @@ describe("emails transaccionales", () => {
         <RevocationReceivedEmail code="ARR-TEST1234" orderNumber={7} supportEmail="a@b.com" />
       )
     ).toContain("ARR-TEST1234");
+  });
+
+  it("la bienvenida al newsletter incluye el link de baja", async () => {
+    const html = await render(
+      <NewsletterWelcomeEmail unsubscribeUrl="https://tienda.test/newsletter/baja?token=abc" />
+    );
+    expect(html).toContain("https://tienda.test/newsletter/baja?token=abc");
+    expect(html).toContain("darte de baja");
   });
 
   it("genera versión de texto plano", async () => {

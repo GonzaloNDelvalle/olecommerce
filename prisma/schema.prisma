@@ -577,6 +577,13 @@ model SiteContent {
   heroImageUrl String? @map("hero_image_url")
   heroVideoUrl String? @map("hero_video_url")
 
+  // Banner de newsletter (sección oscura al final de la portada)
+  newsletterEnabled     Boolean @default(true) @map("newsletter_enabled")
+  newsletterEyebrow     String  @default("Manifiesto OL.") @map("newsletter_eyebrow") @db.VarChar(120)
+  newsletterTitle       String  @default("“Prendas versátiles. Estado de calma y equilibrio.”") @map("newsletter_title") @db.VarChar(160)
+  newsletterText        String? @map("newsletter_text") @db.VarChar(400)
+  newsletterButtonLabel String  @default("Suscribirme") @map("newsletter_button_label") @db.VarChar(40)
+
   // Barra de anuncios superior
   announcementEnabled       Boolean @default(true) @map("announcement_enabled")
   announcementRotateSeconds Int     @default(5) @map("announcement_rotate_seconds")
@@ -602,4 +609,31 @@ model AnnouncementMessage {
 
   @@index([isActive, sortOrder])
   @@map("announcement_messages")
+}
+
+// ==========================================
+// NEWSLETTER
+// ==========================================
+
+enum NewsletterStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
+// Suscriptoras al newsletter (Ley 25.326: consentimiento registrado y baja simple)
+model NewsletterSubscriber {
+  id               String           @id @default(uuid()) @db.Uuid
+  email            String           @unique @db.VarChar(255)
+  status           NewsletterStatus @default(SUBSCRIBED)
+  source           String           @default("home") @db.VarChar(40)
+  // Token para el link de baja incluido en cada envío
+  unsubscribeToken String           @unique @map("unsubscribe_token") @db.VarChar(64)
+  consentAt        DateTime         @default(now()) @map("consent_at")
+  unsubscribedAt   DateTime?        @map("unsubscribed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("newsletter_subscribers")
 }

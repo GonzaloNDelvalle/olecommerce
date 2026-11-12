@@ -19,6 +19,11 @@ export interface SiteContentDTO {
   heroCtaHref: string;
   heroImageUrl: string | null;
   heroVideoUrl: string | null;
+  newsletterEnabled: boolean;
+  newsletterEyebrow: string;
+  newsletterTitle: string;
+  newsletterText: string | null;
+  newsletterButtonLabel: string;
   announcementEnabled: boolean;
   announcementRotateSeconds: number;
 }
@@ -33,6 +38,11 @@ export const DEFAULT_SITE_CONTENT: SiteContentDTO = {
   heroCtaHref: "/productos",
   heroImageUrl: null,
   heroVideoUrl: null,
+  newsletterEnabled: true,
+  newsletterEyebrow: "Manifiesto OL.",
+  newsletterTitle: "“Prendas versátiles. Estado de calma y equilibrio.”",
+  newsletterText: null,
+  newsletterButtonLabel: "Suscribirme",
   announcementEnabled: false,
   announcementRotateSeconds: 5,
 };
@@ -51,6 +61,11 @@ export async function readSiteContent(): Promise<SiteContentDTO> {
     heroCtaHref: row.heroCtaHref,
     heroImageUrl: row.heroImageUrl,
     heroVideoUrl: row.heroVideoUrl,
+    newsletterEnabled: row.newsletterEnabled,
+    newsletterEyebrow: row.newsletterEyebrow,
+    newsletterTitle: row.newsletterTitle,
+    newsletterText: row.newsletterText,
+    newsletterButtonLabel: row.newsletterButtonLabel,
     announcementEnabled: row.announcementEnabled,
     announcementRotateSeconds: row.announcementRotateSeconds,
   };

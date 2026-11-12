@@ -11,6 +11,7 @@ import { ProductCard } from "@/modules/products/components/ProductCard";
 import { EditorialHeroParallax } from "@/components/shop/EditorialHeroParallax";
 import { StaggerGrid, StaggerItem } from "@/components/shop/EditorialMotion";
 import { getSiteContent } from "@/modules/content/site-content";
+import { NewsletterForm } from "@/modules/newsletter/NewsletterForm";
 
 function collectionLine(collectionName: string, seasonLabel: string) {
   return [collectionName, seasonLabel].filter(Boolean).join(" — ");
@@ -267,51 +268,30 @@ export default async function EditorialHomePage() {
         </div>
       </section>
 
-      {/* 4. BANNER "NEUTRAL STATE" / MANIFIESTO & NEWSLETTER (CHOCOLATE OSCURO) */}
-      <section className="bg-[#2C2119] py-24 text-stone-100 sm:py-32">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <p className="text-[10px] font-semibold tracking-[0.35em] text-[#D2B48C] uppercase sm:text-[11px]">
-            Manifiesto OL.{content.collectionName ? ` — ${content.collectionName}` : ""}
-          </p>
+      {/* 4. BANNER MANIFIESTO & NEWSLETTER (CHOCOLATE OSCURO) — editable en /admin/contenido */}
+      {content.newsletterEnabled && (
+        <section className="bg-[#2C2119] py-24 text-stone-100 sm:py-32">
+          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+            {content.newsletterEyebrow && (
+              <p className="text-[10px] font-semibold tracking-[0.35em] text-[#D2B48C] uppercase sm:text-[11px]">
+                {content.newsletterEyebrow}
+              </p>
+            )}
 
-          <h2 className="mt-6 font-serif text-3xl leading-snug font-normal tracking-[0.06em] text-stone-100 italic sm:text-5xl lg:text-6xl">
-            &ldquo;Prendas versátiles. Estado de calma y equilibrio.&rdquo;
-          </h2>
+            <h2 className="mt-6 font-serif text-3xl leading-snug font-normal tracking-[0.06em] text-stone-100 italic sm:text-5xl lg:text-6xl">
+              {content.newsletterTitle}
+            </h2>
 
-          <p className="mx-auto mt-5 max-w-xl text-xs leading-relaxed text-stone-300/80 sm:text-sm">
-            Suscribite a nuestro archivo privado para recibir acceso anticipado a
-            nuevos lanzamientos de cápsula, preventas exclusivas y ediciones
-            limitadas.
-          </p>
+            {content.newsletterText && (
+              <p className="mx-auto mt-5 max-w-xl text-xs leading-relaxed text-stone-300/80 sm:text-sm">
+                {content.newsletterText}
+              </p>
+            )}
 
-          <form
-            action="/productos"
-            method="get"
-            className="mx-auto mt-10 flex max-w-md flex-col items-center gap-4 sm:flex-row sm:items-end"
-          >
-            <div className="w-full flex-1">
-              <label htmlFor="newsletter-email" className="sr-only">
-                Correo electrónico
-              </label>
-              <input
-                id="newsletter-email"
-                type="email"
-                required
-                placeholder="Ingresá tu correo electrónico..."
-                className="w-full border-0 border-b border-stone-100/40 bg-transparent px-1 py-3 text-xs tracking-wider text-stone-100 placeholder:text-stone-400 focus:border-[#D2B48C] focus:outline-none sm:text-sm"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="inline-flex shrink-0 items-center gap-2 border-b border-[#D2B48C] px-2 py-3 text-xs font-semibold tracking-[0.25em] text-stone-100 uppercase transition-colors hover:border-stone-100 hover:text-[#D2B48C]"
-            >
-              <span>Suscribirme</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </form>
-        </div>
-      </section>
+            <NewsletterForm buttonLabel={content.newsletterButtonLabel} />
+          </div>
+        </section>
+      )}
     </main>
   );
 }

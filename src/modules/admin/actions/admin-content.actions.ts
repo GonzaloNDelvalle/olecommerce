@@ -44,6 +44,11 @@ const siteContentSchema = z.object({
   heroCtaHref: linkSchema,
   heroImageUrl: optionalText(1000),
   heroVideoUrl: optionalText(1000),
+  newsletterEnabled: z.boolean(),
+  newsletterEyebrow: z.string().trim().max(120),
+  newsletterTitle: z.string().trim().min(2, "Ingresá el título del newsletter").max(160),
+  newsletterText: optionalText(400),
+  newsletterButtonLabel: z.string().trim().min(2, "Ingresá el texto del botón del newsletter").max(40),
   announcementEnabled: z.boolean(),
   announcementRotateSeconds: z.number().int().min(2).max(30),
 });

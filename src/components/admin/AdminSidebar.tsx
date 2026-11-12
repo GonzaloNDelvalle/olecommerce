@@ -14,6 +14,7 @@ import {
   Undo2,
   Settings,
   Megaphone,
+  Mail,
 } from "lucide-react";
 
 const ADMIN_NAV_ITEMS = [
@@ -51,6 +52,12 @@ const ADMIN_NAV_ITEMS = [
     label: "Contenido",
     href: "/admin/contenido",
     icon: Megaphone,
+    exact: false,
+  },
+  {
+    label: "Newsletter",
+    href: "/admin/newsletter",
+    icon: Mail,
     exact: false,
   },
   {
