@@ -29,7 +29,21 @@ const appUrl = getAppUrl();
 export const auth = betterAuth({
   appName: "OL. Indumenti",
   baseURL: appUrl,
-  trustedOrigins: getTrustedOrigins(),
+  // Además de los dominios configurados, se acepta siempre el propio origen del
+  // pedido (mismo sitio): así el login funciona en cualquier dominio por el que
+  // se acceda a la tienda (vercel.app, dominio propio, previews) y se siguen
+  // rechazando los pedidos que vienen de otros sitios.
+  trustedOrigins: async (request) => {
+    const origins: string[] = getTrustedOrigins();
+    if (request?.url) {
+      try {
+        origins.push(new URL(request.url).origin);
+      } catch {
+        // URL inválida: se ignora
+      }
+    }
+    return origins;
+  },
   database: prismaAdapter(db, { provider: "postgresql" }),
   advanced: {
     database: { generateId: "uuid" },
