@@ -1,6 +1,7 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
+import { after } from "next/server";
 import { z } from "zod";
 import { NewsletterStatus } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -80,11 +81,10 @@ export async function subscribeToNewsletter(
       select: { unsubscribeToken: true },
     });
 
-    // La bienvenida nunca bloquea la suscripción si el email falla
-    await sendNewsletterWelcomeEmail({
-      to: email,
-      unsubscribeUrl: `${getAppUrl()}/newsletter/baja?token=${subscriber.unsubscribeToken}`,
-    });
+    // La bienvenida se envía después de responder: la confirmación en
+    // pantalla es instantánea y un fallo del email no afecta la suscripción.
+    const unsubscribeUrl = `${getAppUrl()}/newsletter/baja?token=${subscriber.unsubscribeToken}`;
+    after(() => sendNewsletterWelcomeEmail({ to: email, unsubscribeUrl }));
 
     return { success: true, message: SUCCESS_MESSAGE };
   } catch (error) {
