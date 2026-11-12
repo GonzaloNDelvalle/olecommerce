@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
   title: {
-    default: "OL. | Neutral State — FW'26 | OL Indumenti",
+    default: "OL. Indumenti",
     template: "%s | OL. Indumenti",
   },
   description:

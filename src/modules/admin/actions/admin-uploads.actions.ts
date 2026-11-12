@@ -3,6 +3,14 @@
 import { v2 as cloudinary } from "cloudinary";
 import { requireAdmin } from "@/lib/auth-guards";
 
+export type UploadSubfolder = "gallery" | "variants" | "hero";
+
+const UPLOAD_FOLDERS: Record<UploadSubfolder, string> = {
+  gallery: "products/gallery",
+  variants: "products/variants",
+  hero: "site/hero",
+};
+
 export interface CloudinaryUploadSignature {
   cloudName: string;
   apiKey: string;
@@ -22,7 +30,7 @@ const ROOT_FOLDER = (process.env.CLOUDINARY_FOLDER?.trim() || "olecommerce")
  * La firma solo es válida para la carpeta indicada y por unos minutos.
  */
 export async function getCloudinaryUploadSignature(
-  subfolder: "gallery" | "variants"
+  subfolder: UploadSubfolder
 ): Promise<CloudinaryUploadSignature> {
   await requireAdmin();
 
@@ -35,7 +43,7 @@ export async function getCloudinaryUploadSignature(
     );
   }
 
-  const folder = `${ROOT_FOLDER}/products/${subfolder === "variants" ? "variants" : "gallery"}`;
+  const folder = `${ROOT_FOLDER}/${UPLOAD_FOLDERS[subfolder] ?? UPLOAD_FOLDERS.gallery}`;
   const timestamp = Math.round(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(
     { folder, timestamp },

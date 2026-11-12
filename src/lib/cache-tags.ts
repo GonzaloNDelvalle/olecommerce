@@ -10,6 +10,7 @@ export const CACHE_TAGS = {
   product: (productId: string) => `product:${productId}`,
   storeSettings: "store-settings",
   shippingMethods: "shipping-methods",
+  siteContent: "site-content",
 } as const;
 
 /**

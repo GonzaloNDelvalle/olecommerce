@@ -1,12 +1,24 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "motion/react";
 
 const EASE_EDITORIAL: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-export function EditorialHeroParallax() {
+export interface HeroContent {
+  eyebrow: string;
+  title: string;
+  subtitle: string | null;
+  ctaLabel: string;
+  ctaHref: string;
+  imageUrl: string | null;
+  videoUrl: string | null;
+}
+
+/** Banner principal de la portada; los textos y medios se editan en /admin/contenido. */
+export function EditorialHeroParallax({ hero }: { hero: HeroContent }) {
   const sectionRef = useRef<HTMLElement | null>(null);
 
   const { scrollYProgress } = useScroll({
@@ -30,23 +42,28 @@ export function EditorialHeroParallax() {
         style={{ y: videoY, scale: videoScale }}
         className="pointer-events-none absolute -inset-y-[12%] inset-x-0 will-change-transform"
       >
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster="https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1920&q=85"
-          className="h-full w-full object-cover object-center opacity-80"
-        >
-          <source
-            src="https://assets.mixkit.co/videos/preview/mixkit-fashion-model-posing-in-neon-light-39877-large.mp4"
-            type="video/mp4"
+        {hero.videoUrl ? (
+          <video
+            key={hero.videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster={hero.imageUrl ?? undefined}
+            className="h-full w-full object-cover object-center opacity-80"
+          >
+            <source src={hero.videoUrl} />
+          </video>
+        ) : hero.imageUrl ? (
+          <Image
+            src={hero.imageUrl}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-80"
           />
-          <source
-            src="https://assets.mixkit.co/videos/preview/mixkit-woman-modeling-a-brown-coat-41763-large.mp4"
-            type="video/mp4"
-          />
-        </video>
+        ) : null}
       </motion.div>
 
       {/* Overlay oscuro cálido para garantizar legibilidad del texto blanco y del Navbar transparente */}
@@ -79,7 +96,7 @@ export function EditorialHeroParallax() {
           }}
           className="text-[11px] font-medium tracking-[0.38em] text-stone-200/90 uppercase sm:text-xs"
         >
-          OL Indumenti • Autumn / Winter Collection
+          {hero.eyebrow}
         </motion.p>
 
         <motion.h1
@@ -93,9 +110,10 @@ export function EditorialHeroParallax() {
           }}
           className="mt-5 font-serif text-5xl font-normal tracking-[0.16em] text-white uppercase sm:text-7xl lg:text-8xl"
         >
-          NEUTRAL STATE - FW&apos;26
+          {hero.title}
         </motion.h1>
 
+{hero.subtitle && (
         <motion.p
           variants={{
             hidden: { opacity: 0, y: 20 },
@@ -107,9 +125,9 @@ export function EditorialHeroParallax() {
           }}
           className="mt-5 max-w-lg text-xs leading-relaxed font-light tracking-wider text-stone-200/85 sm:text-sm"
         >
-          Siluetas depuradas, sastrería contemporánea y texturas nobles en una
-          paleta de crudos, piedra y chocolate profundo.
+          {hero.subtitle}
         </motion.p>
+        )}
 
         <motion.div
           variants={{
@@ -123,10 +141,10 @@ export function EditorialHeroParallax() {
           className="mt-10"
         >
           <Link
-            href="/productos"
+            href={hero.ctaHref || "/productos"}
             className="inline-flex items-center justify-center border border-stone-100/85 bg-transparent px-11 py-4 text-xs font-medium tracking-[0.32em] text-stone-50 uppercase transition-all duration-300 hover:border-[#D2B48C] hover:bg-stone-50 hover:text-stone-950"
           >
-            EXPLORAR
+            {hero.ctaLabel}
           </Link>
         </motion.div>
       </motion.div>

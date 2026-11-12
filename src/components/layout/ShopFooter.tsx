@@ -2,7 +2,13 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { CurrentYear } from "@/components/layout/CurrentYear";
 
-export function ShopFooter() {
+export function ShopFooter({
+  collectionName,
+  seasonLabel,
+}: {
+  collectionName: string;
+  seasonLabel: string;
+}) {
   return (
     <footer className="border-t border-stone-200 bg-stone-50 text-stone-600">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
@@ -20,7 +26,7 @@ export function ShopFooter() {
               atemporales diseñadas en Buenos Aires, Argentina.
             </p>
             <p className="mt-4 text-[11px] font-medium tracking-[0.22em] text-stone-400 uppercase">
-              Neutral State • FW&apos;26
+              {[collectionName, seasonLabel].filter(Boolean).join(" • ")}
             </p>
           </div>
 

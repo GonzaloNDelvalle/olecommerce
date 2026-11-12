@@ -556,3 +556,50 @@ model RevocationRequest {
   @@index([email])
   @@map("revocation_requests")
 }
+
+// ==========================================
+// MÓDULO DE CONTENIDO EDITABLE (TEMPORADAS Y CAMPAÑAS)
+// ==========================================
+
+// Textos de la portada y de temporada (fila única id = 1), editables en /admin/contenido.
+model SiteContent {
+  id             Int    @id @default(1)
+  // Nombre de la colección y temporada actuales (ej: "Neutral State" / "FW'26")
+  collectionName String @default("Neutral State") @map("collection_name") @db.VarChar(80)
+  seasonLabel    String @default("FW'26") @map("season_label") @db.VarChar(40)
+
+  // Banner principal de la portada
+  heroEyebrow  String  @default("OL Indumenti • Autumn / Winter Collection") @map("hero_eyebrow") @db.VarChar(120)
+  heroTitle    String  @default("Neutral State - FW'26") @map("hero_title") @db.VarChar(80)
+  heroSubtitle String? @map("hero_subtitle") @db.VarChar(300)
+  heroCtaLabel String  @default("Explorar") @map("hero_cta_label") @db.VarChar(40)
+  heroCtaHref  String  @default("/productos") @map("hero_cta_href") @db.VarChar(255)
+  heroImageUrl String? @map("hero_image_url")
+  heroVideoUrl String? @map("hero_video_url")
+
+  // Barra de anuncios superior
+  announcementEnabled       Boolean @default(true) @map("announcement_enabled")
+  announcementRotateSeconds Int     @default(5) @map("announcement_rotate_seconds")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_content")
+}
+
+// Mensajes de la barra de anuncios (envío gratis, cuotas, campañas)
+model AnnouncementMessage {
+  id        String    @id @default(uuid()) @db.Uuid
+  text      String    @db.VarChar(160)
+  linkUrl   String?   @map("link_url") @db.VarChar(255)
+  isActive  Boolean   @default(true) @map("is_active")
+  sortOrder Int       @default(0) @map("sort_order")
+  // Ventana opcional de vigencia (ej: Hot Sale)
+  startsAt  DateTime? @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("announcement_messages")
+}

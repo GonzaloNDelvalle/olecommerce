@@ -1,33 +1,30 @@
 /**
- * Validación de las URLs de imágenes que llegan del formulario de productos.
+ * Validación de las URLs de imágenes y videos que llegan de los formularios
+ * del admin.
  *
- * Las fotos se suben directo del navegador a Cloudinary (ver
+ * Los archivos se suben directo del navegador a Cloudinary (ver
  * `admin-uploads.actions.ts`), así que acá solo se aceptan URLs https de
  * los orígenes permitidos; nunca archivos ni data URIs.
  */
-const ALLOWED_IMAGE_HOSTS = new Set([
+const ALLOWED_MEDIA_HOSTS = new Set([
   "res.cloudinary.com",
-  // Imágenes de ejemplo del seed
+  // Imágenes y video de ejemplo del seed
   "images.unsplash.com",
   "media.istockphoto.com",
+  "assets.mixkit.co",
 ]);
 
-export async function resolveProductImageUrl(
-  imageSource: string | undefined | null
-): Promise<string> {
-  const trimmed = imageSource?.trim() ?? "";
-  if (!trimmed) return "";
-
+export function assertAllowedMediaUrl(source: string): string {
   let url: URL;
   try {
-    url = new URL(trimmed);
+    url = new URL(source.trim());
   } catch {
-    throw new Error("Una de las imágenes no tiene una URL válida.");
+    throw new Error("Uno de los archivos no tiene una URL válida.");
   }
 
-  if (url.protocol !== "https:" || !ALLOWED_IMAGE_HOSTS.has(url.hostname)) {
+  if (url.protocol !== "https:" || !ALLOWED_MEDIA_HOSTS.has(url.hostname)) {
     throw new Error(
-      "Las imágenes deben subirse desde el formulario (Cloudinary). Volvé a cargar la foto."
+      "Las imágenes y videos deben subirse desde el formulario (Cloudinary). Volvé a cargar el archivo."
     );
   }
 
@@ -37,8 +34,16 @@ export async function resolveProductImageUrl(
     cloudName &&
     !url.pathname.startsWith(`/${cloudName}/`)
   ) {
-    throw new Error("La imagen no pertenece a la cuenta de Cloudinary de la tienda.");
+    throw new Error("El archivo no pertenece a la cuenta de Cloudinary de la tienda.");
   }
 
   return url.toString();
+}
+
+export async function resolveProductImageUrl(
+  imageSource: string | undefined | null
+): Promise<string> {
+  const trimmed = imageSource?.trim() ?? "";
+  if (!trimmed) return "";
+  return assertAllowedMediaUrl(trimmed);
 }

@@ -3,19 +3,40 @@ import { ShopHeader } from "@/components/layout/ShopHeader";
 import { ShopFooter } from "@/components/layout/ShopFooter";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SmoothScrollProvider } from "@/components/layout/SmoothScrollProvider";
+import {
+  getAnnouncementMessages,
+  getSiteContent,
+} from "@/modules/content/site-content";
 
-export default function ShopLayout({ children }: { children: ReactNode }) {
+export default async function ShopLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  // Contenido editable desde /admin/contenido (cacheado; se invalida al guardar)
+  const [content, announcements] = await Promise.all([
+    getSiteContent(),
+    getAnnouncementMessages(),
+  ]);
+
   return (
     <SmoothScrollProvider>
       <div className="flex min-h-screen flex-col bg-white text-stone-900">
         {/* Barra de Navegación Editorial (Transparente en Hero / Blanca Pura al scrollear) */}
-        <ShopHeader />
+        <ShopHeader
+          seasonLabel={content.seasonLabel}
+          announcements={content.announcementEnabled ? announcements : []}
+          announcementRotateSeconds={content.announcementRotateSeconds}
+        />
 
         {/* Contenido Principal de la Tienda */}
         <div className="flex-1">{children}</div>
 
         {/* Pie de Página Editorial */}
-        <ShopFooter />
+        <ShopFooter
+          collectionName={content.collectionName}
+          seasonLabel={content.seasonLabel}
+        />
 
         {/* Drawer Lateral del Carrito (Zustand Persist) */}
         <CartDrawer />

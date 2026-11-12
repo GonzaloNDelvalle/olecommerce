@@ -124,7 +124,7 @@ export function EmailLayout({
                 color: colors.faint,
               }}
             >
-              Neutral State • FW&apos;26
+              OL. Indumenti
             </Text>
             <Text
               style={{

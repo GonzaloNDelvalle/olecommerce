@@ -13,6 +13,7 @@ import {
   Truck,
   Undo2,
   Settings,
+  Megaphone,
 } from "lucide-react";
 
 const ADMIN_NAV_ITEMS = [
@@ -45,6 +46,12 @@ const ADMIN_NAV_ITEMS = [
     href: "/admin/productos/nuevo",
     icon: PlusCircle,
     exact: true,
+  },
+  {
+    label: "Contenido",
+    href: "/admin/contenido",
+    icon: Megaphone,
+    exact: false,
   },
   {
     label: "Envíos",

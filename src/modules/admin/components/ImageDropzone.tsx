@@ -8,7 +8,10 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import { getCloudinaryUploadSignature } from "@/modules/admin/actions/admin-uploads.actions";
+import {
+  getCloudinaryUploadSignature,
+  type UploadSubfolder,
+} from "@/modules/admin/actions/admin-uploads.actions";
 
 const ACCEPTED_MIME_TYPES = [
   "image/jpeg",
@@ -37,7 +40,7 @@ export function validateImageFile(file: File): void {
  */
 export async function uploadImageToCloudinary(
   file: File,
-  subfolder: "gallery" | "variants" = "gallery"
+  subfolder: UploadSubfolder = "gallery"
 ): Promise<string> {
   validateImageFile(file);
 
@@ -72,7 +75,7 @@ interface SingleImageDropzoneProps {
   value?: string;
   onChange: (nextUrlOrEmpty: string) => void;
   /** Carpeta de Cloudinary donde se guarda la foto */
-  subfolder?: "gallery" | "variants";
+  subfolder?: UploadSubfolder;
   label?: string;
   helperText?: string;
   compact?: boolean;

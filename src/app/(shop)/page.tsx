@@ -10,12 +10,20 @@ import {
 import { ProductCard } from "@/modules/products/components/ProductCard";
 import { EditorialHeroParallax } from "@/components/shop/EditorialHeroParallax";
 import { StaggerGrid, StaggerItem } from "@/components/shop/EditorialMotion";
+import { getSiteContent } from "@/modules/content/site-content";
 
-export const metadata: Metadata = {
-  title: { absolute: "OL. Indumenti | Neutral State — FW'26" },
-  description:
-    "Colección Neutral State FW'26 de OL Indumenti. Sastrería minimalista, denim y siluetas atemporales en tonos neutros.",
-};
+function collectionLine(collectionName: string, seasonLabel: string) {
+  return [collectionName, seasonLabel].filter(Boolean).join(" — ");
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getSiteContent();
+  const collection = collectionLine(content.collectionName, content.seasonLabel);
+  return {
+    title: { absolute: `OL. Indumenti | ${collection}` },
+    description: `Colección ${collection} de OL Indumenti. Sastrería minimalista, denim y siluetas atemporales en tonos neutros.`,
+  };
+}
 
 interface EditorialBlock {
   id: string;
@@ -163,11 +171,23 @@ async function NewArrivalsSectionContent() {
   );
 }
 
-export default function EditorialHomePage() {
+export default async function EditorialHomePage() {
+  const content = await getSiteContent();
+
   return (
     <main className="bg-white">
       {/* 1. HERO BANNER A PANTALLA COMPLETA CON VIDEO EN LOOP Y PARALLAX */}
-      <EditorialHeroParallax />
+      <EditorialHeroParallax
+        hero={{
+          eyebrow: content.heroEyebrow,
+          title: content.heroTitle,
+          subtitle: content.heroSubtitle,
+          ctaLabel: content.heroCtaLabel,
+          ctaHref: content.heroCtaHref,
+          imageUrl: content.heroImageUrl,
+          videoUrl: content.heroVideoUrl,
+        }}
+      />
 
       {/* 2. SECCIÓN DE DESTACADOS (CUADRÍCULA ASIMÉTRICA EN BG-STONE-50) */}
       <section className="border-t border-stone-200 bg-stone-50 py-20 sm:py-28">
@@ -212,7 +232,7 @@ export default function EditorialHomePage() {
           <div className="mb-12 flex flex-col justify-between gap-4 border-b border-stone-200 pb-8 sm:flex-row sm:items-end">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.28em] text-[#5C4033] uppercase">
-                New Arrivals • FW&apos;26
+                New Arrivals{content.seasonLabel ? ` • ${content.seasonLabel}` : ""}
               </p>
               <h2 className="mt-2 font-serif text-3xl font-normal tracking-[0.08em] text-stone-900 uppercase sm:text-4xl">
                 Novedades
@@ -251,7 +271,7 @@ export default function EditorialHomePage() {
       <section className="bg-[#2C2119] py-24 text-stone-100 sm:py-32">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="text-[10px] font-semibold tracking-[0.35em] text-[#D2B48C] uppercase sm:text-[11px]">
-            Manifiesto OL. — Neutral State
+            Manifiesto OL.{content.collectionName ? ` — ${content.collectionName}` : ""}
           </p>
 
           <h2 className="mt-6 font-serif text-3xl leading-snug font-normal tracking-[0.06em] text-stone-100 italic sm:text-5xl lg:text-6xl">

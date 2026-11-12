@@ -7,12 +7,23 @@ import {
   getCatalogPage,
 } from "@/modules/products/queries";
 import { CatalogPagination } from "@/components/shop/CatalogPagination";
+import { getSiteContent } from "@/modules/content/site-content";
+
+async function CatalogEyebrow() {
+  const { collectionName, seasonLabel } = await getSiteContent();
+  return (
+    <>
+      {[collectionName, seasonLabel].filter(Boolean).join(" — ")} • Colección
+      Exclusiva
+    </>
+  );
+}
 import { ProductCard } from "@/modules/products/components/ProductCard";
 import { CatalogFilterBar } from "@/components/shop/CatalogFilterBar";
 import { StaggerGrid, StaggerItem } from "@/components/shop/EditorialMotion";
 
 export const metadata: Metadata = {
-  title: "Catálogo de Prendas — FW'26",
+  title: "Catálogo de Prendas",
   description:
     "Explorá el catálogo completo de OL Indumenti. Sastrería, denim y esenciales minimalistas con envíos a todo el país.",
 };
@@ -155,7 +166,7 @@ export default function ShopCatalogPage({
       {/* Encabezado Editorial Minimalista */}
       <header className="mb-10">
         <p className="text-[11px] font-medium tracking-[0.28em] text-[#5C4033] uppercase">
-          Neutral State — FW&apos;26 • Colección Exclusiva
+          <CatalogEyebrow />
         </p>
         <h1 className="mt-3 font-serif text-4xl font-normal tracking-[0.08em] text-stone-900 uppercase sm:text-5xl">
           Catálogo de Prendas

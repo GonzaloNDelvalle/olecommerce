@@ -7,6 +7,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { useCartStore } from "@/store/cart.store";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import type { AnnouncementDTO } from "@/modules/content/announcements";
+
+export interface ShopHeaderProps {
+  seasonLabel: string;
+  announcements: AnnouncementDTO[];
+  announcementRotateSeconds: number;
+}
 
 function subscribeToScroll(onChange: () => void) {
   window.addEventListener("scroll", onChange, { passive: true });
@@ -14,14 +22,21 @@ function subscribeToScroll(onChange: () => void) {
 }
 import { SearchBar } from "@/components/shop/SearchBar";
 
-const NAV_LINKS = [
-  { href: "/productos", label: "Catálogo" },
-  { href: "/productos?orden=recientes", label: "FW'26" },
-  { href: "/productos?categoria=partes-de-arriba", label: "Sastrería" },
-  { href: "/productos?categoria=denim", label: "Denim" },
-];
+function buildNavLinks(seasonLabel: string) {
+  return [
+    { href: "/productos", label: "Catálogo" },
+    { href: "/productos?orden=recientes", label: seasonLabel || "Novedades" },
+    { href: "/productos?categoria=partes-de-arriba", label: "Sastrería" },
+    { href: "/productos?categoria=denim", label: "Denim" },
+  ];
+}
 
-function ShopHeaderInner() {
+function ShopHeaderInner({
+  seasonLabel,
+  announcements,
+  announcementRotateSeconds,
+}: ShopHeaderProps) {
+  const NAV_LINKS = buildNavLinks(seasonLabel);
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -58,6 +73,10 @@ function ShopHeaderInner() {
           : "border-b border-stone-200 bg-white text-stone-900"
       }`}
     >
+      <AnnouncementBar
+        messages={announcements}
+        rotateSeconds={announcementRotateSeconds}
+      />
       <div className="mx-auto grid h-20 max-w-7xl grid-cols-3 items-center px-4 sm:px-6 lg:px-8">
         {/* 1. Izquierda: Navegación Editorial Espaciada (Desktop) / Botón Menú (Mobile) */}
         <div className="flex items-center">
@@ -223,14 +242,14 @@ function ShopHeaderInner() {
   );
 }
 
-export function ShopHeader() {
+export function ShopHeader(props: ShopHeaderProps) {
   return (
     <Suspense
       fallback={
         <header className="sticky top-0 z-50 h-20 border-b border-stone-200 bg-white" />
       }
     >
-      <ShopHeaderInner />
+      <ShopHeaderInner {...props} />
     </Suspense>
   );
 }
