@@ -5,7 +5,7 @@ import { hashPassword, verifyPassword } from "better-auth/crypto";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { getAppUrl } from "@/lib/app-url";
+import { getAppUrl, getTrustedOrigins } from "@/lib/app-url";
 import {
   sendAccountExistsEmail,
   sendEmailVerificationEmail,
@@ -29,7 +29,7 @@ const appUrl = getAppUrl();
 export const auth = betterAuth({
   appName: "OL. Indumenti",
   baseURL: appUrl,
-  trustedOrigins: [appUrl],
+  trustedOrigins: getTrustedOrigins(),
   database: prismaAdapter(db, { provider: "postgresql" }),
   advanced: {
     database: { generateId: "uuid" },
