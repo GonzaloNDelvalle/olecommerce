@@ -220,6 +220,37 @@ export async function getLatestProducts(
 }
 
 /**
+ * Productos destacados (marcados en el admin) para la sección 3D de la
+ * portada. Si no hay suficientes, completa con los más nuevos.
+ */
+export async function getFeaturedProducts(
+  take = 6
+): Promise<ProductListItemDTO[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(CACHE_TAGS.catalog);
+
+  const featured = await db.product.findMany({
+    where: { status: ProductStatus.ACTIVE, isFeatured: true },
+    orderBy: { updatedAt: "desc" },
+    take,
+    include: LIST_INCLUDE,
+  });
+  if (featured.length >= take) return featured.map(toListItem);
+
+  const filler = await db.product.findMany({
+    where: {
+      status: ProductStatus.ACTIVE,
+      id: { notIn: featured.map((p) => p.id) },
+    },
+    orderBy: { createdAt: "desc" },
+    take: take - featured.length,
+    include: LIST_INCLUDE,
+  });
+  return [...featured, ...filler].map(toListItem);
+}
+
+/**
  * Detalle de un producto activo por UUID o slug. El stock disponible cambia con
  * cada compra, por eso esta entrada vive pocos minutos y además se invalida
  * por etiqueta cuando se reserva o libera stock de ese producto.

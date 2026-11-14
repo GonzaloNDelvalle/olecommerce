@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { subscribeToNewsletter } from "@/modules/newsletter/newsletter.actions";
 
-/** Formulario de suscripción del banner oscuro de la portada. */
+/** Formulario de suscripción del bloque chocolate de la portada. */
 export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
@@ -31,9 +31,9 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
     return (
       <p
         role="status"
-        className="mx-auto mt-10 flex max-w-md items-start justify-center gap-2 text-xs leading-relaxed text-stone-200 sm:text-sm"
+        className="flex max-w-md items-start gap-2 text-[15px] leading-relaxed text-cream"
       >
-        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D2B48C]" />
+        <Check className="mt-0.5 size-5 shrink-0 text-sand" aria-hidden="true" />
         {result.text}
       </p>
     );
@@ -43,13 +43,13 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="mx-auto mt-10 max-w-md"
+      className="w-full max-w-lg"
     >
-      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end">
+      <label htmlFor="newsletter-email" className="mb-2.5 block text-[13px] font-semibold text-cream">
+        Tu email
+      </label>
+      <div className="flex flex-col gap-2.5 sm:flex-row">
         <div className="w-full flex-1">
-          <label htmlFor="newsletter-email" className="sr-only">
-            Correo electrónico
-          </label>
           <input
             id="newsletter-email"
             name="email"
@@ -58,10 +58,10 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Ingresá tu correo electrónico..."
+            placeholder="nombre@email.com"
             aria-invalid={result?.tone === "error"}
             aria-describedby="newsletter-feedback newsletter-legal"
-            className="w-full border-0 border-b border-stone-100/40 bg-transparent px-1 py-3 text-xs tracking-wider text-stone-100 placeholder:text-stone-400 focus:border-[#D2B48C] focus:outline-none sm:text-sm"
+            className="h-[52px] w-full rounded-full border border-sand bg-transparent px-5 text-base text-paper placeholder:text-stone-300 focus:border-paper focus:outline-none"
           />
           {/* Campo trampa para bots: oculto para personas y lectores de pantalla */}
           <input
@@ -79,21 +79,21 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex shrink-0 items-center gap-2 border-b border-[#D2B48C] px-2 py-3 text-xs font-semibold tracking-[0.25em] text-stone-100 uppercase transition-colors hover:border-stone-100 hover:text-[#D2B48C] disabled:opacity-60"
+          className="pressable inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-full bg-paper px-7 text-[15px] font-semibold text-ink transition-colors hover:bg-cream disabled:opacity-60"
         >
-          <span>{isPending ? "Enviando..." : buttonLabel}</span>
+          <span>{isPending ? "Enviando…" : buttonLabel}</span>
           {isPending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           ) : (
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="size-4" aria-hidden="true" />
           )}
         </button>
       </div>
 
-      <p id="newsletter-feedback" role="alert" className="mt-3 min-h-4 text-xs text-red-300">
+      <p id="newsletter-feedback" role="alert" className="mt-3 min-h-5 text-[13px] font-medium text-[#F3C9BF]">
         {result?.tone === "error" ? result.text : ""}
       </p>
-      <p id="newsletter-legal" className="mt-1 text-[10px] leading-relaxed text-stone-400">
+      <p id="newsletter-legal" className="mt-1 text-xs leading-relaxed text-cream/80">
         Al suscribirte aceptás recibir novedades por email. Podés darte de baja
         cuando quieras desde el link de cada envío.
       </p>

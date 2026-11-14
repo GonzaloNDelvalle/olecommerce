@@ -3,16 +3,15 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 interface SearchBarProps {
-  isTransparent?: boolean;
   onAfterSubmit?: () => void;
+  autoFocus?: boolean;
+  className?: string;
 }
 
-function SearchBarInner({
-  isTransparent = false,
-  onAfterSubmit,
-}: SearchBarProps) {
+function SearchBarInner({ onAfterSubmit, autoFocus, className }: SearchBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentQuery = searchParams.get("q") ?? "";
@@ -26,89 +25,52 @@ function SearchBarInner({
     setQuery(currentQuery);
   }
 
-  function buildTargetUrl(nextQuery: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("pagina");
+  function targetUrl(nextQuery: string) {
     const trimmed = nextQuery.trim();
-
-    if (trimmed) {
-      params.set("q", trimmed);
-    } else {
-      params.delete("q");
-    }
-
-    const queryString = params.toString();
-    return queryString ? `/productos?${queryString}` : "/productos";
+    return trimmed ? `/productos?q=${encodeURIComponent(trimmed)}` : "/productos";
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    router.push(buildTargetUrl(query));
+    router.push(targetUrl(query));
     onAfterSubmit?.();
   }
 
-  function handleClear() {
-    setQuery("");
-    router.push(buildTargetUrl(""));
-  }
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      role="search"
-      className="relative flex w-full items-center"
-    >
+    <form onSubmit={handleSubmit} role="search" className={cn("relative flex w-full items-center", className)}>
       <Search
-        strokeWidth={1.4}
-        className={`pointer-events-none absolute left-0 h-3.5 w-3.5 transition-colors ${
-          isTransparent ? "text-stone-200" : "text-stone-400"
-        }`}
+        strokeWidth={1.6}
+        aria-hidden="true"
+        className="pointer-events-none absolute left-5 size-5 text-stone-500"
       />
       <input
         type="search"
         value={query}
+        autoFocus={autoFocus}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="BUSCAR PRENDA..."
-        aria-label="Buscar prendas en el catálogo"
-        className={`w-full rounded-none border-0 border-b py-1.5 pr-6 pl-6 text-[11px] font-light tracking-[0.18em] uppercase transition-colors focus:outline-none ${
-          isTransparent
-            ? "border-white/40 bg-transparent text-white placeholder:text-stone-200/75 focus:border-white"
-            : "border-stone-300 bg-transparent text-stone-900 placeholder:text-stone-400 focus:border-stone-900"
-        }`}
+        placeholder="Buscá abrigos, tejidos, pantalones…"
+        aria-label="Buscar en la tienda"
+        enterKeyHint="search"
+        className="h-14 w-full rounded-full border border-stone-300 bg-white pr-14 pl-14 text-base text-ink placeholder:text-stone-500 focus:border-ink focus:outline-none"
       />
       {query && (
         <button
           type="button"
-          onClick={handleClear}
-          aria-label="Limpiar búsqueda"
-          className={`absolute right-0 p-0.5 transition-colors ${
-            isTransparent
-              ? "text-stone-200 hover:text-white"
-              : "text-stone-400 hover:text-stone-900"
-          }`}
+          onClick={() => setQuery("")}
+          aria-label="Borrar búsqueda"
+          className="absolute right-2 inline-flex size-11 items-center justify-center rounded-full text-stone-500 hover:text-ink"
         >
-          <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <X className="size-4" strokeWidth={1.8} />
         </button>
       )}
     </form>
   );
 }
 
-export function SearchBar({ isTransparent = false, onAfterSubmit }: SearchBarProps) {
+export function SearchBar(props: SearchBarProps) {
   return (
-    <Suspense
-      fallback={
-        <div
-          className={`h-7 w-full animate-pulse border-b ${
-            isTransparent ? "border-white/25" : "border-stone-200"
-          }`}
-        />
-      }
-    >
-      <SearchBarInner
-        isTransparent={isTransparent}
-        onAfterSubmit={onAfterSubmit}
-      />
+    <Suspense fallback={<div className="h-14 w-full rounded-full border border-stone-200 bg-white" />}>
+      <SearchBarInner {...props} />
     </Suspense>
   );
 }

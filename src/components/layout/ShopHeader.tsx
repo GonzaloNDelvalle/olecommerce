@@ -1,17 +1,25 @@
 "use client";
 
-import { Suspense, useState, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ArrowLeft, Lock, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { useCartStore } from "@/store/cart.store";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { SearchBar } from "@/components/shop/SearchBar";
 import type { AnnouncementDTO } from "@/modules/content/announcements";
+import { DURATION, EASE_OUT } from "@/lib/motion";
+import { cn } from "@/lib/cn";
+
+export interface NavLink {
+  href: string;
+  label: string;
+}
 
 export interface ShopHeaderProps {
-  seasonLabel: string;
+  navLinks: NavLink[];
   announcements: AnnouncementDTO[];
   announcementRotateSeconds: number;
 }
@@ -20,235 +28,200 @@ function subscribeToScroll(onChange: () => void) {
   window.addEventListener("scroll", onChange, { passive: true });
   return () => window.removeEventListener("scroll", onChange);
 }
-import { SearchBar } from "@/components/shop/SearchBar";
 
-function buildNavLinks(seasonLabel: string) {
-  return [
-    { href: "/productos", label: "Catálogo" },
-    { href: "/productos?orden=recientes", label: seasonLabel || "Novedades" },
-    { href: "/productos?categoria=partes-de-arriba", label: "Sastrería" },
-    { href: "/productos?categoria=denim", label: "Denim" },
-  ];
+const iconButton =
+  "pressable relative inline-flex size-11 items-center justify-center rounded-full text-ink transition-colors duration-150 hover:bg-ink/5";
+
+/** Header mínimo del checkout: sin navegación que distraiga de pagar. */
+function CheckoutHeader() {
+  return (
+    <header className="border-b border-stone-200 bg-paper">
+      <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-10">
+        <Link href="/productos" className="inline-flex items-center gap-2 text-sm font-semibold text-ink hover:text-chocolate">
+          <ArrowLeft className="size-4" strokeWidth={1.8} aria-hidden="true" />
+          <span className="hidden sm:inline">Seguir comprando</span>
+        </Link>
+        <Link href="/" className="display text-[34px] font-semibold tracking-normal text-ink">
+          OL.
+        </Link>
+        <span className="inline-flex items-center gap-1.5 text-[13px] text-stone-600">
+          <Lock className="size-4" strokeWidth={1.8} aria-hidden="true" />
+          Compra segura
+        </span>
+      </div>
+    </header>
+  );
 }
 
-function ShopHeaderInner({
-  seasonLabel,
-  announcements,
-  announcementRotateSeconds,
-}: ShopHeaderProps) {
-  const NAV_LINKS = buildNavLinks(seasonLabel);
+function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }: ShopHeaderProps) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const hydrated = useHydrated();
 
-  const mounted = useHydrated();
   const isScrolled = useSyncExternalStore(
     subscribeToScroll,
-    () => window.scrollY > 36,
-    () => false
+    () => window.scrollY > 24,
+    () => false,
   );
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [panel, setPanel] = useState<"menu" | "search" | null>(null);
 
   const openCart = useCartStore((state) => state.openCart);
-  const totalItems = useCartStore((state) =>
-    state.items.reduce((acc, item) => acc + item.quantity, 0)
-  );
+  const totalItems = useCartStore((state) => state.items.reduce((acc, item) => acc + item.quantity, 0));
 
-  // Transparente únicamente en la portada (/) cuando está arriba sobre el hero video
-  const isTransparent = isHome && !isScrolled && !isSearchOpen && !isMobileMenuOpen;
+  // Cerrar paneles al navegar
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
+    setPanel(null);
+  }
 
-  const navLinkClass = `text-[11px] font-light tracking-[0.2em] uppercase transition-colors duration-300 ${
-    isTransparent
-      ? "text-white/90 hover:text-[#D2B48C]"
-      : "text-stone-700 hover:text-stone-950"
-  }`;
+  useEffect(() => {
+    if (!panel) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPanel(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panel]);
+
+  if (pathname.startsWith("/checkout")) return <CheckoutHeader />;
+
+  // Sobre el hero de la portada el vidrio arranca invisible y aparece al scrollear.
+  const showGlass = !isHome || isScrolled || panel !== null;
+  const count = hydrated ? totalItems : 0;
 
   return (
-    <header
-      className={`${
-        isHome ? "fixed top-0 right-0 left-0" : "sticky top-0"
-      } z-50 transition-all duration-500 ease-out ${
-        isTransparent
-          ? "border-b border-white/15 bg-transparent text-white"
-          : "border-b border-stone-200 bg-white text-stone-900"
-      }`}
-    >
-      <AnnouncementBar
-        messages={announcements}
-        rotateSeconds={announcementRotateSeconds}
-      />
-      <div className="mx-auto grid h-20 max-w-7xl grid-cols-3 items-center px-4 sm:px-6 lg:px-8">
-        {/* 1. Izquierda: Navegación Editorial Espaciada (Desktop) / Botón Menú (Mobile) */}
-        <div className="flex items-center">
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            aria-label="Abrir menú de navegación"
-            className={`inline-flex items-center gap-2 text-[11px] font-light tracking-[0.2em] uppercase lg:hidden ${
-              isTransparent ? "text-white" : "text-stone-900"
-            }`}
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-4 w-4" strokeWidth={1.4} />
-            ) : (
-              <Menu className="h-4 w-4" strokeWidth={1.4} />
+    <>
+      <AnnouncementBar messages={announcements} rotateSeconds={announcementRotateSeconds} />
+      <header
+        className="sticky top-0 z-50 px-3 pt-3 sm:px-6 lg:px-10"
+        style={{ viewTransitionName: "site-header" }}
+      >
+        <div className="relative mx-auto max-w-[1360px]">
+          <div
+            className={cn(
+              "relative flex h-14 items-center justify-between rounded-full px-1.5 sm:h-16 sm:pr-3 sm:pl-3 lg:pl-7",
             )}
-            <span className="hidden sm:inline">Menú</span>
-          </button>
-
-          <nav
-            aria-label="Navegación principal"
-            className="hidden items-center gap-8 lg:flex"
           >
-            {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className={navLinkClass}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        {/* 2. Centro: Isotipo "OL." en Serif Imponente */}
-        <div className="flex justify-center">
-          <Link
-            href="/"
-            className={`font-serif text-3xl font-normal tracking-[0.18em] uppercase transition-colors duration-300 sm:text-4xl ${
-              isTransparent
-                ? "text-white hover:text-[#D2B48C]"
-                : "text-stone-950 hover:text-[#5C4033]"
-            }`}
-          >
-            OL.
-          </Link>
-        </div>
-
-        {/* 3. Derecha: Buscador, Mi Cuenta y Carrito (Arquitectura de bordes rectos) */}
-        <div className="flex items-center justify-end gap-5 sm:gap-7">
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen((prev) => !prev)}
-            aria-label="Buscar prendas"
-            className={`inline-flex items-center gap-2 text-[11px] font-light tracking-[0.2em] uppercase transition-colors ${
-              isTransparent
-                ? "text-white/90 hover:text-[#D2B48C]"
-                : "text-stone-700 hover:text-stone-950"
-            }`}
-          >
-            <Search className="h-3.5 w-3.5" strokeWidth={1.4} />
-            <span className="hidden md:inline">Buscar</span>
-          </button>
-
-          <Link
-            href="/mi-cuenta"
-            title="Mi Cuenta / Mis Pedidos"
-            aria-label="Ir a Mi Cuenta"
-            className={`inline-flex items-center gap-2 text-[11px] font-light tracking-[0.2em] uppercase transition-colors ${
-              isTransparent
-                ? "text-white/90 hover:text-[#D2B48C]"
-                : "text-stone-700 hover:text-stone-950"
-            }`}
-          >
-            <User className="h-3.5 w-3.5" strokeWidth={1.4} />
-            <span className="hidden xl:inline">Cuenta</span>
-          </Link>
-
-          <button
-            type="button"
-            onClick={openCart}
-            aria-label="Abrir carrito de compras"
-            className={`inline-flex items-center gap-2 text-[11px] font-normal tracking-[0.2em] uppercase transition-colors ${
-              isTransparent
-                ? "text-white hover:text-[#D2B48C]"
-                : "text-stone-900 hover:text-[#5C4033]"
-            }`}
-          >
-            <ShoppingBag className="h-3.5 w-3.5" strokeWidth={1.4} />
-            <span className="hidden sm:inline">Carrito</span>
+            {/* Capa de vidrio: solo se anima su opacidad, nunca el blur */}
             <span
-              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-none border px-1.5 text-[10px] font-medium tracking-normal transition-colors ${
-                isTransparent
-                  ? "border-white/50 bg-white/10 text-white"
-                  : "border-stone-900 bg-stone-900 text-white"
-              }`}
-            >
-              {mounted ? totalItems : 0}
-            </span>
-          </button>
-        </div>
-      </div>
+              aria-hidden="true"
+              className={cn(
+                "glass-light pointer-events-none absolute inset-0 rounded-full shadow-[0_8px_30px_rgba(44,33,25,0.08)] transition-opacity duration-300",
+                showGlass ? "opacity-100" : "opacity-0",
+              )}
+            />
 
-      {/* Barra Desplegable de Búsqueda Editorial */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-stone-200 bg-white text-stone-900"
-          >
-            <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4 sm:px-6">
-              <div className="flex-1">
-                <SearchBar
-                  isTransparent={false}
-                  onAfterSubmit={() => setIsSearchOpen(false)}
-                />
-              </div>
+            {/* Izquierda */}
+            <div className="relative flex flex-1 items-center">
               <button
                 type="button"
-                onClick={() => setIsSearchOpen(false)}
-                className="text-[10px] font-light tracking-[0.2em] text-stone-500 uppercase hover:text-stone-950"
+                onClick={() => setPanel((p) => (p === "menu" ? null : "menu"))}
+                aria-expanded={panel === "menu"}
+                aria-controls="header-panel"
+                aria-label={panel === "menu" ? "Cerrar menú" : "Abrir menú"}
+                className={cn(iconButton, "lg:hidden")}
               >
-                Cerrar
+                {panel === "menu" ? <X className="size-5" strokeWidth={1.6} /> : <Menu className="size-5" strokeWidth={1.6} />}
+              </button>
+              <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex">
+                {navLinks.map((link) => {
+                  const active = pathname === link.href.split("?")[0] && link.href !== "/productos";
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "py-2 text-sm font-medium text-ink transition-colors duration-150 hover:text-chocolate",
+                        active && "text-chocolate underline decoration-1 underline-offset-[6px]",
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Centro */}
+            <Link href="/" aria-label="OL. Indumenti, inicio" className="display relative text-[30px] font-semibold tracking-normal text-ink sm:text-[34px]">
+              OL.
+            </Link>
+
+            {/* Derecha */}
+            <div className="relative flex flex-1 items-center justify-end gap-0.5">
+              <button
+                type="button"
+                onClick={() => setPanel((p) => (p === "search" ? null : "search"))}
+                aria-expanded={panel === "search"}
+                aria-controls="header-panel"
+                aria-label="Buscar"
+                className={iconButton}
+              >
+                <Search className="size-5" strokeWidth={1.6} />
+              </button>
+              <Link href="/mi-cuenta" aria-label="Mi cuenta" className={cn(iconButton, "hidden lg:inline-flex")}>
+                <User className="size-5" strokeWidth={1.6} />
+              </Link>
+              <button
+                type="button"
+                onClick={openCart}
+                aria-label={`Abrir carrito, ${count} ${count === 1 ? "producto" : "productos"}`}
+                className={cn(iconButton, "hidden lg:inline-flex")}
+              >
+                <ShoppingBag className="size-5" strokeWidth={1.6} />
+                {count > 0 && (
+                  <span className="tabular absolute top-1 right-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-chocolate px-1 text-[11px] font-bold text-paper">
+                    {count}
+                  </span>
+                )}
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
 
-      {/* Menú Móvil Editorial */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.nav
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            aria-label="Menú móvil"
-            className="overflow-hidden border-t border-stone-200 bg-white text-stone-900 lg:hidden"
-          >
-            <div className="flex flex-col space-y-4 px-6 py-6">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-xs font-light tracking-[0.22em] text-stone-800 uppercase transition-colors hover:text-[#5C4033]"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="pt-2">
-                <SearchBar
-                  isTransparent={false}
-                  onAfterSubmit={() => setIsMobileMenuOpen(false)}
-                />
-              </div>
-            </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-    </header>
+          {/* Panel desplegable: menú (mobile) o buscador */}
+          <AnimatePresence>
+            {panel && (
+              <motion.div
+                id="header-panel"
+                key={panel}
+                initial={{ opacity: 0, scale: 0.97, y: -6 }}
+                animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: DURATION.dropdownIn, ease: EASE_OUT } }}
+                exit={{ opacity: 0, scale: 0.98, transition: { duration: DURATION.dropdownOut, ease: EASE_OUT } }}
+                style={{ transformOrigin: "top center" }}
+                className="absolute inset-x-0 top-[calc(100%+8px)] rounded-[28px] border border-stone-200 bg-paper p-4 shadow-[0_24px_60px_rgba(44,33,25,0.16)] sm:p-6"
+              >
+                {panel === "search" ? (
+                  <div className="mx-auto max-w-2xl">
+                    <SearchBar autoFocus onAfterSubmit={() => setPanel(null)} />
+                  </div>
+                ) : (
+                  <nav aria-label="Menú" className="flex flex-col">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="display border-b border-stone-200 py-3 text-[32px] text-ink last:border-0 hover:text-chocolate"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                    <Link href="/mi-cuenta" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink">
+                      <User className="size-4" strokeWidth={1.8} aria-hidden="true" /> Mi cuenta
+                    </Link>
+                  </nav>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </header>
+    </>
   );
 }
 
 export function ShopHeader(props: ShopHeaderProps) {
   return (
-    <Suspense
-      fallback={
-        <header className="sticky top-0 z-50 h-20 border-b border-stone-200 bg-white" />
-      }
-    >
+    <Suspense fallback={<div className="h-[76px]" />}>
       <ShopHeaderInner {...props} />
     </Suspense>
   );

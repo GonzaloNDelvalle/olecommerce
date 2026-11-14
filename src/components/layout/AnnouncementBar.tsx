@@ -62,13 +62,13 @@ export function AnnouncementBar({
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="flex h-9 items-center justify-center bg-stone-900 px-4 text-center text-[10px] font-light tracking-[0.22em] text-stone-100 uppercase sm:text-[11px]"
+      className="flex h-9 items-center justify-center bg-espresso px-4 text-center text-xs font-medium tracking-[0.12em] text-cream uppercase"
     >
       <p aria-live="polite" className="truncate">
         {current.linkUrl && isSafeAnnouncementLink(current.linkUrl) ? (
           <Link
             href={current.linkUrl}
-            className="underline-offset-4 transition-colors hover:text-[#D2B48C] hover:underline"
+            className="underline-offset-4 transition-colors hover:text-sand hover:underline"
           >
             {content}
           </Link>
