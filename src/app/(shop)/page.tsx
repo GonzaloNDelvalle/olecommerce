@@ -15,6 +15,7 @@ import { CampaignMedia } from "@/components/shop/home/CampaignMedia";
 import { FeaturedCarousel } from "@/components/shop/home/FeaturedCarousel";
 import { RevealLines } from "@/components/motion/RevealLines";
 import { buttonVariants } from "@/components/ui/button";
+import { Reveal } from "@/components/motion/Reveal";
 import { categoryHref } from "@/modules/products/urls";
 
 function collectionLine(collectionName: string, seasonLabel: string) {
@@ -65,13 +66,13 @@ async function NewArrivals() {
   const products = await getLatestProducts(8);
   if (products.length === 0) return null;
   return (
-    <div data-reveal="stagger" className="grid grid-cols-2 gap-x-2.5 gap-y-8 sm:gap-x-4 sm:gap-y-10 lg:grid-cols-4">
+    <Reveal variant="stagger" className="grid grid-cols-2 gap-x-2.5 gap-y-8 sm:gap-x-4 sm:gap-y-10 lg:grid-cols-4">
       {products.map((product) => (
         <div key={product.id} data-reveal-item>
           <ProductCard product={product} />
         </div>
       ))}
-    </div>
+    </Reveal>
   );
 }
 
@@ -136,18 +137,18 @@ export default async function HomePage() {
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink/0 from-40% to-ink/60" />
           <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pb-8 sm:px-10 sm:pb-14 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-4 text-paper">
-              {content.campaignEyebrow && <p className="eyebrow text-sand" data-reveal="up">{content.campaignEyebrow}</p>}
+              {content.campaignEyebrow && <Reveal as="p" className="eyebrow text-sand">{content.campaignEyebrow}</Reveal>}
               <RevealLines
                 id="campaign-title"
                 lines={[content.campaignTitle]}
                 className="display max-w-[12ch] text-[clamp(52px,8vw,104px)] text-paper"
               />
             </div>
-            <div data-reveal="up">
+            <Reveal>
               <Suspense fallback={null}>
                 <CampaignCategories />
               </Suspense>
-            </div>
+            </Reveal>
           </div>
         </section>
       )}
@@ -156,17 +157,17 @@ export default async function HomePage() {
       <section aria-labelledby="featured-title" className="overflow-hidden bg-cream">
         <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-20 sm:px-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:py-28">
           <div className="flex flex-col gap-5">
-            <p className="eyebrow text-caramel" data-reveal="up">
+            <Reveal as="p" className="eyebrow text-caramel">
               Selección {content.seasonLabel}
-            </p>
+            </Reveal>
             <RevealLines
               id="featured-title"
               lines={[content.collectionName]}
               className="display text-[clamp(44px,5.5vw,72px)] text-ink"
             />
-            <p className="max-w-[360px] text-base leading-relaxed text-stone-700" data-reveal="up">
+            <Reveal as="p" className="max-w-[360px] text-base leading-relaxed text-stone-700">
               Las piezas que eligimos de la temporada. Arrastrá para recorrerlas.
-            </p>
+            </Reveal>
           </div>
           <Suspense fallback={<div className="h-[520px]" />}>
             <FeaturedSection />
@@ -178,9 +179,9 @@ export default async function HomePage() {
       <section aria-labelledby="new-title" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-10 lg:py-28">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4 sm:mb-10">
           <div className="flex flex-col gap-2.5">
-            <p className="eyebrow text-chocolate" data-reveal="up">
+            <Reveal as="p" className="eyebrow text-chocolate">
               Recién llegado{content.seasonLabel ? ` · ${content.seasonLabel}` : ""}
-            </p>
+            </Reveal>
             <RevealLines id="new-title" lines={["Novedades"]} className="display text-[clamp(40px,4.5vw,56px)] text-ink" />
           </div>
           <Link
@@ -211,9 +212,9 @@ export default async function HomePage() {
                 <p className="max-w-[440px] text-base leading-relaxed text-cream">{content.newsletterText}</p>
               )}
             </div>
-            <div data-reveal="up">
+            <Reveal>
               <NewsletterForm buttonLabel={content.newsletterButtonLabel} />
-            </div>
+            </Reveal>
           </div>
         </section>
       )}

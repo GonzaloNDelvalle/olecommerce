@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { ShopHeader, type NavLink } from "@/components/layout/ShopHeader";
 import { ShopFooter } from "@/components/layout/ShopFooter";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
@@ -50,7 +50,9 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           supportEmail={settings.supportEmail}
         />
 
-        <MobileTabBar />
+        <Suspense fallback={null}>
+          <MobileTabBar />
+        </Suspense>
         <CartDrawer />
 
         {/* Apariciones al scrollear (DESIGN.md §8) */}

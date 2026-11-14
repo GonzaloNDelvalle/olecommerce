@@ -2,11 +2,17 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight } from "lucide-react";
-import { getProductByIdOrSlug } from "@/modules/products/queries";
-import { ProductVariantSelector } from "@/modules/products/components/ProductVariantSelector";
+import { getCatalogPage, getProductByIdOrSlug } from "@/modules/products/queries";
+import { ProductView } from "@/modules/products/components/ProductView";
+import { ProductCard } from "@/modules/products/components/ProductCard";
+import { Breadcrumbs } from "@/components/shop/Breadcrumbs";
+import { RevealLines } from "@/components/motion/RevealLines";
+import { categoryHref, productHref } from "@/modules/products/urls";
+import { getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
+import { JsonLd } from "@/modules/seo/json-ld";
 import { applyDiscount } from "@/modules/orders/pricing";
 import { getAppUrl } from "@/lib/app-url";
+import { Reveal } from "@/components/motion/Reveal";
 import type { ProductDetailDTO } from "@/modules/products/types";
 
 interface ProductDetailPageProps {
@@ -33,11 +39,11 @@ export async function generateMetadata({
   return {
     title: product.name,
     description,
-    alternates: { canonical: `/productos/${product.slug}` },
+    alternates: { canonical: productHref(product.slug) },
     openGraph: {
       title: product.name,
       description,
-      url: `/productos/${product.slug}`,
+      url: productHref(product.slug),
       images: image ? [{ url: image, alt: product.name }] : undefined,
     },
   };
@@ -62,7 +68,7 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
     material: product.composition ?? undefined,
     offers: {
       "@type": "Offer",
-      url: `${appUrl}/productos/${product.slug}`,
+      url: `${appUrl}${productHref(product.slug)}`,
       priceCurrency: "ARS",
       price,
       availability: inStock
@@ -72,78 +78,69 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
     },
   };
 
+  return <JsonLd data={jsonLd} />;
+}
+
+async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
+  const { items } = await getCatalogPage({ categorySlug: product.category.slug });
+  const related = items.filter((item) => item.id !== product.id).slice(0, 4);
+  if (related.length === 0) return null;
   return (
-    <script
-      type="application/ld+json"
-      // JSON.stringify escapa comillas; se neutraliza "<" para evitar cerrar el <script>
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
-      }}
-    />
+    <section aria-labelledby="related-title" className="pt-24 pb-8 lg:pt-28">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <RevealLines id="related-title" lines={["Completá el look"]} className="display text-[clamp(36px,4vw,48px)] text-ink" />
+        <Link href={categoryHref(product.category.slug)} className="inline-flex min-h-11 items-center border-b border-current text-sm font-semibold hover:text-chocolate">
+          Más {product.category.name.toLowerCase()}
+        </Link>
+      </div>
+      <Reveal variant="stagger" className="grid grid-cols-2 gap-x-2.5 gap-y-8 sm:gap-x-4 lg:grid-cols-4">
+        {related.map((item) => (
+          <div key={item.id} data-reveal-item>
+            <ProductCard product={item} />
+          </div>
+        ))}
+      </Reveal>
+    </section>
   );
 }
 
-async function ProductDetailContent({
-  paramsPromise,
-}: {
-  paramsPromise: Promise<{ id: string }>;
-}) {
+async function ProductDetailContent({ paramsPromise }: { paramsPromise: Promise<{ id: string }> }) {
   const { id } = await paramsPromise;
-  const product = await getProductByIdOrSlug(id);
+  const [product, settings] = await Promise.all([getProductByIdOrSlug(id), getStoreSettings()]);
+  if (!product) notFound();
 
-  if (!product) {
-    notFound();
-  }
+  const transferDiscount = isBankTransferAvailable(settings) ? settings.bankTransferDiscountPercentage : 0;
 
   return (
     <>
       <ProductJsonLd product={product} />
-
-      {/* Breadcrumb Editorial Minimalista */}
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-10 flex flex-wrap items-center gap-2 text-[11px] tracking-[0.18em] text-stone-400 uppercase"
-      >
-        <Link href="/" className="transition-colors hover:text-[#5C4033]">
-          OL.
-        </Link>
-        <ChevronRight className="h-3 w-3 text-stone-300" />
-        <Link
-          href="/productos"
-          className="transition-colors hover:text-[#5C4033]"
-        >
-          Catálogo
-        </Link>
-        <ChevronRight className="h-3 w-3 text-stone-300" />
-        <Link
-          href={`/productos?categoria=${product.category.slug}`}
-          className="transition-colors hover:text-[#5C4033]"
-        >
-          {product.category.name}
-        </Link>
-        <ChevronRight className="h-3 w-3 text-stone-300" />
-        <span className="font-medium text-stone-900">{product.name}</span>
-      </nav>
-
-      {/* Layout Editorial de 2 Columnas: Lookbook Vertical (Izq) + Ficha Sticky (Der) */}
-      <ProductVariantSelector product={product} />
+      <div className="pb-5">
+        <Breadcrumbs
+          crumbs={[
+            { name: "Inicio", path: "/" },
+            { name: product.category.name, path: categoryHref(product.category.slug) },
+            { name: product.name },
+          ]}
+        />
+      </div>
+      <ProductView product={product} transferDiscount={transferDiscount} installments={0} />
+      <Suspense fallback={null}>
+        <RelatedProducts product={product} />
+      </Suspense>
     </>
   );
 }
 
 function ProductDetailSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16 xl:gap-20">
-      <div className="space-y-6 lg:col-span-7">
-        <div className="aspect-[3/4] w-full animate-pulse rounded-none bg-stone-100" />
-        <div className="aspect-[3/4] w-full animate-pulse rounded-none bg-stone-100" />
-      </div>
-      <div className="flex flex-col gap-4 bg-white lg:col-span-5 lg:pl-2">
-        <div className="h-3 w-32 animate-pulse rounded-none bg-stone-100" />
-        <div className="h-9 w-3/4 animate-pulse rounded-none bg-stone-100" />
-        <div className="h-6 w-28 animate-pulse rounded-none bg-stone-100" />
-        <div className="mt-4 h-24 w-full animate-pulse rounded-none bg-stone-100" />
-        <div className="mt-6 h-12 w-full animate-pulse rounded-none bg-stone-200" />
+    <div className="grid gap-8 pt-9 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-14" aria-hidden="true">
+      <div className="aspect-[4/5] w-full animate-pulse bg-cream" />
+      <div className="flex flex-col gap-4">
+        <div className="h-3 w-40 animate-pulse bg-cream" />
+        <div className="h-14 w-3/4 animate-pulse bg-cream" />
+        <div className="h-7 w-32 animate-pulse bg-cream" />
+        <div className="mt-6 h-12 w-full animate-pulse rounded-full bg-cream" />
+        <div className="h-14 w-full animate-pulse rounded-full bg-cream" />
       </div>
     </div>
   );
@@ -151,7 +148,7 @@ function ProductDetailSkeleton() {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   return (
-    <main className="mx-auto w-full max-w-7xl bg-white px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+    <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 sm:px-10">
       <Suspense fallback={<ProductDetailSkeleton />}>
         <ProductDetailContent paramsPromise={params} />
       </Suspense>

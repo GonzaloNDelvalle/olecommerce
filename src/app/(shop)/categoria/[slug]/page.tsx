@@ -58,7 +58,27 @@ async function Catalog({ slug, searchParams }: { slug: string; searchParams: Pro
   );
 }
 
-export default async function CategoryPage({
+export default function CategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<CatalogSearchParams>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-[1440px] px-4 pt-24 sm:px-10">
+          <CatalogSkeleton />
+        </main>
+      }
+    >
+      <CategoryContent params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function CategoryContent({
   params,
   searchParams,
 }: {

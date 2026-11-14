@@ -4,6 +4,7 @@ import { getActiveCategories, getAvailableSizes, getCatalogPage } from "@/module
 import { ProductCard } from "@/modules/products/components/ProductCard";
 import { CatalogFilterBar, type CatalogFilterState } from "@/components/shop/CatalogFilterBar";
 import { CatalogPagination } from "@/components/shop/CatalogPagination";
+import { Reveal } from "@/components/motion/Reveal";
 import { buttonVariants } from "@/components/ui/button";
 
 export type CatalogSearchParams = CatalogFilterState & { pagina?: string };
@@ -76,16 +77,13 @@ export async function CatalogView({
           )}
         </div>
       ) : (
-        <div
-          data-reveal="stagger"
-          className="grid grid-cols-2 gap-x-2.5 gap-y-8 pt-8 sm:gap-x-4 sm:gap-y-12 lg:grid-cols-4"
-        >
+        <Reveal variant="stagger" className="grid grid-cols-2 gap-x-2.5 gap-y-8 pt-8 sm:gap-x-4 sm:gap-y-12 lg:grid-cols-4">
           {catalog.items.map((product, i) => (
             <div key={product.id} data-reveal-item>
               <ProductCard product={product} priority={i < 4} />
             </div>
           ))}
-        </div>
+        </Reveal>
       )}
 
       <CatalogPagination
