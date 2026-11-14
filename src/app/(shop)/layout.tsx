@@ -9,6 +9,8 @@ import { getAnnouncementMessages, getSiteContent } from "@/modules/content/site-
 import { getActiveCategories } from "@/modules/products/queries";
 import { getActiveShippingMethods, getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
 import { categoryHref } from "@/modules/products/urls";
+import { JsonLd } from "@/modules/seo/json-ld";
+import { getAppUrl } from "@/lib/app-url";
 
 export default async function ShopLayout({ children }: { children: ReactNode }) {
   // Contenido editable desde /admin (cacheado; se invalida al guardar)
@@ -62,6 +64,43 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           <MobileTabBar />
         </Suspense>
         <CartDrawer freeShippingThreshold={freeShippingThreshold} transferDiscount={transferDiscount} />
+
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "ClothingStore",
+                "@id": `${getAppUrl()}/#store`,
+                name: settings.storeName,
+                url: getAppUrl(),
+                logo: `${getAppUrl()}/apple-icon`,
+                image: `${getAppUrl()}/opengraph-image`,
+                email: settings.supportEmail,
+                ...(settings.whatsappNumber ? { telephone: settings.whatsappNumber } : {}),
+                ...(settings.showroomAddress
+                  ? { address: { "@type": "PostalAddress", streetAddress: settings.showroomAddress, addressCountry: "AR" } }
+                  : {}),
+                ...(settings.instagramUrl ? { sameAs: [settings.instagramUrl] } : {}),
+                currenciesAccepted: "ARS",
+                paymentAccepted: "Mercado Pago, transferencia bancaria",
+              },
+              {
+                "@type": "WebSite",
+                "@id": `${getAppUrl()}/#website`,
+                url: getAppUrl(),
+                name: settings.storeName,
+                inLanguage: "es-AR",
+                publisher: { "@id": `${getAppUrl()}/#store` },
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: { "@type": "EntryPoint", urlTemplate: `${getAppUrl()}/productos?q={search_term_string}` },
+                  "query-input": "required name=search_term_string",
+                },
+              },
+            ],
+          }}
+        />
 
         {/* Apariciones al scrollear (DESIGN.md §8) */}
         <RevealObserver />

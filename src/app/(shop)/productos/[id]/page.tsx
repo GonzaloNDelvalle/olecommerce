@@ -10,6 +10,7 @@ import { RevealLines } from "@/components/motion/RevealLines";
 import { categoryHref, productHref } from "@/modules/products/urls";
 import { getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
 import { JsonLd } from "@/modules/seo/json-ld";
+import { formatARS } from "@/lib/format";
 import { applyDiscount } from "@/modules/orders/pricing";
 import { getAppUrl } from "@/lib/app-url";
 import { Reveal } from "@/components/motion/Reveal";
@@ -23,7 +24,10 @@ interface ProductDetailPageProps {
 
 function plainText(text: string, max = 160): string {
   const clean = text.replace(/\s+/g, " ").trim();
-  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
+  if (clean.length <= max) return clean;
+  // Cortar en el último espacio para no partir palabras
+  const cut = clean.slice(0, max - 1);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max * 0.6)).replace(/[s,.;:]+$/, "")}…`;
 }
 
 export async function generateMetadata({
@@ -31,17 +35,24 @@ export async function generateMetadata({
 }: ProductDetailPageProps): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductByIdOrSlug(id);
-  if (!product) return { title: "Producto no encontrado" };
+  if (!product) return { title: "Producto no encontrado", robots: { index: false } };
 
-  const description = plainText(product.description);
+  // Meta descripción con precio y llamado a la acción (≤155 caracteres)
+  const price = formatARS(applyDiscount(product.basePrice, product.discountPercentage));
+  const suffix = ` ${price}. Envíos a todo el país.`;
+  const description = `${plainText(product.description, 155 - suffix.length)}${suffix}`;
   const image = product.images[0]?.url ?? product.variants[0]?.imageUrl;
 
   return {
-    title: product.name,
+    // ≤60 caracteres con la marca: la categoría solo entra si hay lugar
+    title:
+      `${product.name} · ${product.category.name} | OL. Indumenti`.length <= 60
+        ? `${product.name} · ${product.category.name}`
+        : product.name,
     description,
     alternates: { canonical: productHref(product.slug) },
     openGraph: {
-      title: product.name,
+      title: `${product.name} | OL. Indumenti`,
       description,
       url: productHref(product.slug),
       images: image ? [{ url: image, alt: product.name }] : undefined,
@@ -59,6 +70,8 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${appUrl}${productHref(product.slug)}#product`,
+    url: `${appUrl}${productHref(product.slug)}`,
     name: product.name,
     description: plainText(product.description, 500),
     image: images.length > 0 ? images : undefined,
@@ -66,6 +79,8 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
     brand: { "@type": "Brand", name: "OL. Indumenti" },
     category: product.category.name,
     material: product.composition ?? undefined,
+    color: [...new Set(product.variants.map((v) => v.color.name))].join(", ") || undefined,
+    size: [...new Set(product.variants.map((v) => v.size.name))].join(", ") || undefined,
     offers: {
       "@type": "Offer",
       url: `${appUrl}${productHref(product.slug)}`,
@@ -75,6 +90,18 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
+      seller: { "@id": `${appUrl}/#store` },
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "AR",
+        returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: 10,
+        returnMethod: "https://schema.org/ReturnByMail",
+      },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: "AR" },
+      },
     },
   };
 

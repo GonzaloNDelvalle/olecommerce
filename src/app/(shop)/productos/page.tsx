@@ -4,12 +4,22 @@ import { getSiteContent } from "@/modules/content/site-content";
 import { CatalogView, CatalogSkeleton, type CatalogSearchParams } from "@/components/shop/CatalogView";
 import { Breadcrumbs } from "@/components/shop/Breadcrumbs";
 
-export const metadata: Metadata = {
-  title: "Tienda: toda la colección",
-  description:
-    "Toda la colección de OL. Indumenti: abrigos, tejidos, sastrería y básicos en tonos tierra. Filtrá por talle y precio. Envíos a todo el país y 3 cuotas sin interés.",
-  alternates: { canonical: "/productos" },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<CatalogSearchParams>;
+}): Promise<Metadata> {
+  const { pagina, q } = await searchParams;
+  const page = Number(pagina) > 1 ? Number(pagina) : 1;
+  return {
+    title: page > 1 ? `Tienda · página ${page}` : "Tienda: toda la colección",
+    description:
+      "Toda la colección de OL. Indumenti: sastrería, tejidos y básicos en tonos tierra. Filtrá por talle y precio. Envíos a todo el país.",
+    // Cada página de la paginación es su propia URL canónica; las búsquedas no se indexan
+    alternates: { canonical: page > 1 ? `/productos?pagina=${page}` : "/productos" },
+    ...(q ? { robots: { index: false, follow: true } } : {}),
+  };
+}
 
 async function CatalogEyebrow() {
   const { collectionName, seasonLabel } = await getSiteContent();

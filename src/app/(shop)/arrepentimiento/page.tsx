@@ -3,7 +3,8 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { RevocationForm } from "@/modules/legal/components/RevocationForm";
 
 export const metadata = {
-  title: "Botón de Arrepentimiento | OL Indumenti",
+  title: "Botón de arrepentimiento",
+  alternates: { canonical: "/arrepentimiento" },
   description:
     "Formulario de revocación de compra conforme a la Resolución 424/2020 de la Secretaría de Comercio Interior y Ley de Defensa del Consumidor.",
 };

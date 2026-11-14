@@ -21,8 +21,15 @@ export async function generateStaticParams(): Promise<Params[]> {
   return categories.map((c) => ({ slug: c.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<CatalogSearchParams>;
+}): Promise<Metadata> {
+  const [{ slug }, { pagina }] = await Promise.all([params, searchParams]);
+  const page = Number(pagina) > 1 ? Number(pagina) : 1;
   const category = await findCategory(slug);
   if (!category) return { title: "Categoría no encontrada", robots: { index: false } };
 
@@ -31,9 +38,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     `${category.name} de OL. Indumenti: ${category.productsCount} ${plural(category.productsCount, "prenda", "prendas")} en tonos tierra. Envíos a todo el país y 3 cuotas sin interés.`;
 
   return {
-    title: category.name,
+    title: page > 1 ? `${category.name} · página ${page}` : category.name,
     description,
-    alternates: { canonical: categoryHref(category.slug) },
+    alternates: { canonical: page > 1 ? `${categoryHref(category.slug)}?pagina=${page}` : categoryHref(category.slug) },
     openGraph: {
       title: `${category.name} | OL. Indumenti`,
       description,
