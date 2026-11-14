@@ -303,17 +303,17 @@ export function ProductView({ product, transferDiscount, installments }: Product
         </div>
 
         <div className="grid grid-cols-3 gap-2 text-[13px] text-stone-700">
-          <div className="flex flex-col gap-1 bg-cream p-3.5">
+          <div className="flex min-w-0 flex-col gap-1 bg-cream p-3">
             <span className="font-semibold text-ink">Envíos</span>
             <span>a todo el país</span>
           </div>
-          <div className="flex flex-col gap-1 bg-cream p-3.5">
+          <div className="flex min-w-0 flex-col gap-1 bg-cream p-3">
             <span className="font-semibold text-ink">Cambios</span>
             <span>30 días sin cargo</span>
           </div>
-          <div className="flex flex-col gap-1 bg-cream p-3.5">
-            <span className="font-semibold text-ink">Arrepentimiento</span>
-            <span>10 días</span>
+          <div className="flex min-w-0 flex-col gap-1 bg-cream p-3">
+            <span className="font-semibold text-ink">Devolución</span>
+            <span>10 días para arrepentirte</span>
           </div>
         </div>
 

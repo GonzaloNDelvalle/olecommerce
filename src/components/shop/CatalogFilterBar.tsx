@@ -101,7 +101,7 @@ export function CatalogFilterBar({
   return (
     <div className="flex flex-col">
       {/* Categorías */}
-      <nav aria-label="Categorías" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-5 sm:mx-0 sm:flex-wrap sm:px-0">
+      <nav aria-label="Categorías" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
         <Link href="/productos" aria-current={!activeCategorySlug ? "page" : undefined} className={cn(pill, !activeCategorySlug && pillOn)}>
           Todo
         </Link>
@@ -123,7 +123,7 @@ export function CatalogFilterBar({
       {/* Barra sticky: filtros + orden */}
       <div className="sticky top-[76px] z-30 -mx-4 border-y border-stone-200 bg-paper/95 px-4 py-3 backdrop-blur-sm sm:top-[88px] sm:mx-0 sm:px-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 overflow-x-auto">
+          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none]">
             <button type="button" onClick={() => setSheetOpen(true)} className={pill} aria-haspopup="dialog">
               <SlidersHorizontal className="size-4" strokeWidth={1.8} aria-hidden="true" />
               Filtros

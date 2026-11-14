@@ -38,7 +38,7 @@ export function ShopFooter({
           <p className="eyebrow text-stone-400">{[collectionName, seasonLabel].filter(Boolean).join(" · ")}</p>
         </div>
 
-        <nav aria-label="Tienda" className="flex flex-col gap-3 text-sm">
+        <nav aria-label="Tienda" className="flex min-w-0 flex-col gap-3 text-sm">
           <h2 className={headingClass}>Tienda</h2>
           <Link href="/productos" className={linkClass}>
             Ver todo
@@ -50,7 +50,7 @@ export function ShopFooter({
           ))}
         </nav>
 
-        <nav aria-label="Ayuda" className="flex flex-col gap-3 text-sm">
+        <nav aria-label="Ayuda" className="flex min-w-0 flex-col gap-3 text-sm">
           <h2 className={headingClass}>Ayuda</h2>
           <Link href="/mi-cuenta" className={linkClass}>
             Mis pedidos
@@ -58,7 +58,7 @@ export function ShopFooter({
           <Link href="/arrepentimiento" className={linkClass}>
             Botón de arrepentimiento
           </Link>
-          <a href={`mailto:${supportEmail}`} className={linkClass}>
+          <a href={`mailto:${supportEmail}`} className={`${linkClass} [overflow-wrap:anywhere]`}>
             {supportEmail}
           </a>
           {whatsappHref && (
@@ -69,7 +69,7 @@ export function ShopFooter({
         </nav>
 
         {instagramUrl && (
-          <nav aria-label="Redes" className="flex flex-col gap-3 text-sm">
+          <nav aria-label="Redes" className="flex min-w-0 flex-col gap-3 text-sm">
             <h2 className={headingClass}>Seguinos</h2>
             <a href={instagramUrl} target="_blank" rel="noreferrer" className={`${linkClass} inline-flex items-center gap-1`}>
               Instagram <ArrowUpRight className="size-3.5" aria-hidden="true" />

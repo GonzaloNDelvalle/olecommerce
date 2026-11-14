@@ -64,7 +64,7 @@ export function AnnouncementBar({
       onBlur={() => setPaused(false)}
       className="flex h-9 items-center justify-center bg-espresso px-4 text-center text-xs font-medium tracking-[0.12em] text-cream uppercase"
     >
-      <p aria-live="polite" className="truncate">
+      <p aria-live="polite" className="min-w-0 max-w-full truncate">
         {current.linkUrl && isSafeAnnouncementLink(current.linkUrl) ? (
           <Link
             href={current.linkUrl}
