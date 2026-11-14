@@ -17,6 +17,25 @@ test("el catálogo lista prendas y pagina", async ({ page }) => {
   await expect(cards.first()).toBeVisible();
 });
 
+test("las URLs viejas de categoría redirigen con 301 a /categoria/[slug]", async ({ request }) => {
+  const response = await request.get("/productos?categoria=tejidos&orden=precio_asc", { maxRedirects: 0 });
+  expect(response.status()).toBe(301);
+  expect(response.headers().location).toMatch(/\/categoria\/tejidos\?orden=precio_asc$/);
+});
+
+test("la página de categoría tiene H1, canonical y migas estructuradas", async ({ page }) => {
+  await page.goto("/productos");
+  const firstCategory = page.locator('nav[aria-label="Categorías"] a[href^="/categoria/"]').first();
+  const href = await firstCategory.getAttribute("href");
+  await page.goto(href!);
+  await expect(page.locator("h1")).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`${href}$`));
+
+  const scripts = await page.locator('script[type="application/ld+json"]').allTextContents();
+  const types = scripts.map((s) => JSON.parse(s)["@type"]);
+  expect(types).toContain("BreadcrumbList");
+});
+
 test("la búsqueda ignora acentos", async ({ page }) => {
   await page.goto("/productos?q=pantalon");
   await expect(page.getByText(/pantal[oó]n/i).first()).toBeVisible();
