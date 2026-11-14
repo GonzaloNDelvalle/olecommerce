@@ -122,16 +122,19 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
               >
                 {panel === "menu" ? <X className="size-5" strokeWidth={1.6} /> : <Menu className="size-5" strokeWidth={1.6} />}
               </button>
-              <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex">
-                {navLinks.map((link) => {
+              <nav aria-label="Principal" className="hidden items-center gap-6 lg:flex xl:gap-7">
+                {navLinks.map((link, i) => {
                   const active = pathname === link.href.split("?")[0] && link.href !== "/productos";
+                  // En desktop chico solo entran los dos primeros links
+                  const compact = i >= 2 ? "hidden xl:inline-block" : "";
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "py-2 text-sm font-medium text-ink transition-colors duration-150 hover:text-chocolate",
+                        "py-2 text-sm font-medium whitespace-nowrap text-ink transition-colors duration-150 hover:text-chocolate",
+                        compact,
                         active && "text-chocolate underline decoration-1 underline-offset-[6px]",
                       )}
                     >

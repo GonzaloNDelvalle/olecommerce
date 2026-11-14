@@ -184,6 +184,25 @@ html[data-reveal] [data-reveal="stagger"]:not([data-revealed]) > [data-reveal-it
   transform: none;
 }
 
+/* Delay por columna (no por índice): cada fila arranca junta. Escalones no uniformes. */
+[data-reveal="stagger"] > :nth-child(2n + 2) {
+  --reveal-delay: 60ms;
+}
+@media (width >= 64rem) {
+  [data-reveal="stagger"] > :nth-child(n) {
+    --reveal-delay: 0ms;
+  }
+  [data-reveal="stagger"] > :nth-child(4n + 2) {
+    --reveal-delay: 50ms;
+  }
+  [data-reveal="stagger"] > :nth-child(4n + 3) {
+    --reveal-delay: 90ms;
+  }
+  [data-reveal="stagger"] > :nth-child(4n + 4) {
+    --reveal-delay: 120ms;
+  }
+}
+
 /* Títulos: cada línea sube desde una máscara */
 html[data-reveal] [data-reveal="lines"]:not([data-revealed]) {
   opacity: 1;

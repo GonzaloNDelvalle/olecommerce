@@ -157,11 +157,11 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-20 sm:px-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:py-28">
           <div className="flex flex-col gap-5">
             <p className="eyebrow text-caramel" data-reveal="up">
-              {content.collectionName}
+              Selección {content.seasonLabel}
             </p>
             <RevealLines
               id="featured-title"
-              lines={["La materia", "del invierno"]}
+              lines={[content.collectionName]}
               className="display text-[clamp(44px,5.5vw,72px)] text-ink"
             />
             <p className="max-w-[360px] text-base leading-relaxed text-stone-700" data-reveal="up">

@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from "react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
 
 interface RevealLinesProps {
   /** Cada entrada es una línea visual del titular. */
@@ -17,7 +17,7 @@ export function RevealLines({ lines, as: Tag = "h2", className, id }: RevealLine
     <Tag id={id} className={className} data-reveal="lines">
       {lines.map((line, i) => (
         <span key={i} className="reveal-line">
-          <span>{line}</span>
+          <span style={{ "--line": i } as CSSProperties}>{line}</span>
         </span>
       ))}
     </Tag>

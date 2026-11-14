@@ -135,7 +135,7 @@ export function FeaturedCarousel({ products }: { products: ProductListItemDTO[] 
   return (
     <div className="flex flex-col gap-6">
       <motion.div
-        className="relative h-[470px] cursor-grab touch-pan-y [perspective:1600px] [transform-style:preserve-3d] active:cursor-grabbing sm:h-[520px]"
+        className="relative h-[470px] cursor-grab touch-pan-y [perspective:1600px] active:cursor-grabbing sm:h-[520px] lg:[clip-path:inset(-10%_-100vw_-10%_0)]"
         onPan={onPan}
         onPanStart={() => {
           position.stop();

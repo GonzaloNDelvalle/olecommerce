@@ -88,7 +88,7 @@ export function HeroMedia({ imageUrl, videoUrl, alt }: HeroMediaProps) {
           fetchPriority="high"
           sizes="(max-width: 1024px) 100vw, 58vw"
           className={cn(
-            "object-cover mix-blend-multiply transition-opacity duration-500",
+            "object-cover transition-opacity duration-500",
             ready && "opacity-0",
           )}
         />
@@ -97,7 +97,7 @@ export function HeroMedia({ imageUrl, videoUrl, alt }: HeroMediaProps) {
       {enable3D && imageUrl && (
         <div
           className={cn(
-            "absolute inset-0 mix-blend-multiply transition-opacity duration-500",
+            "absolute inset-0 transition-opacity duration-500",
             ready ? "opacity-100" : "opacity-0",
           )}
         >

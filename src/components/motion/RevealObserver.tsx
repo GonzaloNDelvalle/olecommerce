@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { staggerDelay } from "@/lib/motion";
 
 /**
  * Activa las apariciones al scrollear (DESIGN.md §8) para todo elemento con
@@ -35,20 +34,6 @@ export function RevealObserver() {
     const prepare = (el: Element, immediate: boolean) => {
       if (observed.has(el)) return;
       observed.add(el);
-
-      if (el.getAttribute("data-reveal") === "stagger") {
-        // Delay por columna, no por índice global: cada fila arranca junta.
-        const items = Array.from(el.querySelectorAll(":scope > [data-reveal-item]"));
-        const cols = Number(getComputedStyle(el).gridTemplateColumns.split(" ").length) || 1;
-        items.forEach((item, i) => {
-          (item as HTMLElement).style.setProperty("--reveal-delay", `${staggerDelay(i % cols)}ms`);
-        });
-      }
-      if (el.getAttribute("data-reveal") === "lines") {
-        el.querySelectorAll(".reveal-line > span").forEach((span, i) => {
-          (span as HTMLElement).style.setProperty("--line", String(i));
-        });
-      }
 
       if (immediate) {
         reveal(el);

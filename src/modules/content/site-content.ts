@@ -58,8 +58,45 @@ export const DEFAULT_SITE_CONTENT: SiteContentDTO = {
 };
 
 /** Lectura directa (sin caché), para el panel de administración. */
+const CAMPAIGN_FIELDS = [
+  "campaignEnabled",
+  "campaignEyebrow",
+  "campaignTitle",
+  "campaignImageUrl",
+  "campaignVideoUrl",
+] as const;
+
+/**
+ * Lee la fila de contenido. Si la base todavía no tiene las columnas de la
+ * campaña (deploy antes de la migración), las lee sin ellas y usa los valores
+ * por defecto, en vez de romper la portada.
+ */
+async function findSiteContentRow() {
+  try {
+    return await db.siteContent.findUnique({ where: { id: 1 } });
+  } catch (error) {
+    // P2022: columna inexistente (la migración de la campaña no se aplicó)
+    if ((error as { code?: string } | null)?.code !== "P2022") throw error;
+    const omit = Object.fromEntries(CAMPAIGN_FIELDS.map((key) => [key, true])) as Record<
+      (typeof CAMPAIGN_FIELDS)[number],
+      true
+    >;
+    const row = await db.siteContent.findUnique({ where: { id: 1 }, omit });
+    return row
+      ? {
+          ...row,
+          campaignEnabled: false,
+          campaignEyebrow: DEFAULT_SITE_CONTENT.campaignEyebrow,
+          campaignTitle: DEFAULT_SITE_CONTENT.campaignTitle,
+          campaignImageUrl: null,
+          campaignVideoUrl: null,
+        }
+      : null;
+  }
+}
+
 export async function readSiteContent(): Promise<SiteContentDTO> {
-  const row = await db.siteContent.findUnique({ where: { id: 1 } });
+  const row = await findSiteContentRow();
   if (!row) return DEFAULT_SITE_CONTENT;
   return {
     collectionName: row.collectionName,
