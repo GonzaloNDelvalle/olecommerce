@@ -107,6 +107,29 @@ Todo elemento clickeable tiene: hover (si hay puntero fino), `:active` (`scale(0
 - **WebGL** (React Three Fiber) solo en el hero de la home y en la sección destacada. Se carga después de que pinta la imagen del hero (que es el LCP), se pausa fuera de pantalla y no se carga con reduced motion, `saveData` o equipos de baja gama.
 - **CSS/motion 3D** en el resto: profundidad en la galería de la ficha (arrastrable 1:1 en mobile), planos con perspectiva en la sección destacada.
 
----
+## 8. Aparición al scrollear
 
-_Las decisiones de layout por página se agregan acá después de aprobar los mockups._
+El contenido entra a medida que aparece en pantalla, para que la página se sienta viva sin frenar la lectura.
+
+- **Una vez por elemento** (`once: true`), disparado cuando entra ~15% en pantalla (`margin: "0px 0px -15% 0px"`). Al volver a subir no se repite.
+- **Bloques**: opacidad 0→1 + `translateY(24px)`→0, 500ms `--ease-out`.
+- **Títulos editoriales** (h1/h2 serif): cada línea sube desde una máscara (`clip-path`/overflow hidden + `translateY(100%)`), 600ms, 80ms entre líneas.
+- **Imágenes grandes**: revelado con `clip-path: inset(0 0 100% 0)` → `inset(0)` 700ms `--ease-in-out`, la imagen escala 1.08→1 al mismo tiempo.
+- **Grillas de productos**: stagger 40–70ms no uniforme por fila, una sola entrada por grilla.
+- **Campaña (video a pantalla completa)**: parallax suave del medio (±6% de desplazamiento, atado al scroll, solo `transform`).
+- **Nunca** en: header, filtros, carrito, checkout, formularios, precios, contenido above-the-fold del catálogo y la ficha (se ve de entrada, sin esperar).
+- Contenido visible sin JS: el estado inicial oculto se aplica solo cuando el script ya montó (no se esconde nada en el HTML del servidor, así no se rompe el SEO ni el LCP).
+- Reduced motion: solo fundido de opacidad 200ms, sin desplazamiento, sin parallax.
+
+## 9. Layout por página (aprobado)
+
+Mockups: [OL. Rediseño — Mockups](https://claude.ai/artifact/DgYAaUfxjYfaPvvqPwpY8Y). Layout de la dirección B (inmersiva) con la paleta clara de A.
+
+- **Header**: píldora flotante de vidrio con nav a la izquierda, logo "OL." al centro, buscar/cuenta/carrito a la derecha. Sobre el hero arranca transparente.
+- **Home**: hero crema con el abrigo 3D flotando (WebGL) y titular serif gigante → **campaña a pantalla completa** (video o imagen editable desde el admin, titular, botón pausar, accesos a categorías como chips de vidrio) → sección 3D "La materia del invierno" (carrusel de cards en profundidad, arrastrable) → Novedades (grilla 4 col, "agregar rápido" en vidrio al hover) → el look de la temporada (imagen + lista de prendas + "Comprar el look") → newsletter chocolate → footer espresso.
+- **Categoría `/categoria/[slug]`**: migas, H1 serif grande + texto corto, subcategorías en pills, barra de filtros sticky (Filtros, Talle, Color, Precio, Ordenar), chips de filtros activos, grilla 4 col (2 en mobile), "Ver más" con progreso, bloque de texto SEO al final.
+- **Ficha**: galería con miniaturas + imagen principal y controles flotantes de vidrio (anterior/siguiente, girar, ampliar); panel sticky con colección, nombre, precio + cuotas, colores, talles (sin stock tachado, aviso de pocas unidades), CTA que cambia a "Agregado ✓", beneficios, acordeones. Mobile: galería a pantalla completa con swipe y barra de compra fija de vidrio. Abajo "Completá el look".
+- **Carrito**: drawer derecho de 480px, fondo blanco sólido, barra de envío gratis, cantidades, "Combina con", subtotal y "Finalizar compra".
+- **Checkout**: sin nav, 3 pasos (datos, entrega, pago), resumen crema sticky, errores inline con cómo corregirlos.
+- **Mi cuenta**: menú lateral en pills, pedidos como cards con línea de estado.
+- **Mobile**: barra de navegación inferior de vidrio (Inicio, Tienda, Cuenta, Carrito).
