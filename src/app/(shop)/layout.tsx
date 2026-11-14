@@ -3,6 +3,7 @@ import { ShopHeader } from "@/components/layout/ShopHeader";
 import { ShopFooter } from "@/components/layout/ShopFooter";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SmoothScrollProvider } from "@/components/layout/SmoothScrollProvider";
+import { RevealObserver } from "@/components/motion/RevealObserver";
 import {
   getAnnouncementMessages,
   getSiteContent,
@@ -21,7 +22,7 @@ export default async function ShopLayout({
 
   return (
     <SmoothScrollProvider>
-      <div className="flex min-h-screen flex-col bg-white text-stone-900">
+      <div className="flex min-h-screen flex-col bg-paper text-ink">
         {/* Barra de Navegación Editorial (Transparente en Hero / Blanca Pura al scrollear) */}
         <ShopHeader
           seasonLabel={content.seasonLabel}
@@ -40,6 +41,9 @@ export default async function ShopLayout({
 
         {/* Drawer Lateral del Carrito (Zustand Persist) */}
         <CartDrawer />
+
+        {/* Apariciones al scrollear (DESIGN.md §8) */}
+        <RevealObserver />
       </div>
     </SmoothScrollProvider>
   );

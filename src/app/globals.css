@@ -1,16 +1,54 @@
 @import "tailwindcss";
 
+/*
+ * Sistema de diseño de la tienda. Las reglas viven en DESIGN.md:
+ * cualquier color, easing o material nuevo se agrega primero ahí.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #1c1917;
+  --background: #faf7f2;
+  --foreground: #15110e;
+
+  /* Movimiento */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-press: 140ms;
+  --duration-hover: 150ms;
+  --duration-reveal: 500ms;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Paleta OL. — ver DESIGN.md §1 */
+  --color-ink: #15110e;
+  --color-espresso: #2c2119;
+  --color-chocolate: #5c4033;
+  --color-caramel: #8e5a35;
+  --color-sand: #d2b48c;
+  --color-cream: #efe6d8;
+  --color-cream-deep: #e4d7c3;
+  --color-paper: #faf7f2;
+  --color-olive: #5f6342;
+  --color-olive-deep: #3f4229;
+  --color-brick: #9e3b2e;
+
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-cormorant), Georgia, Cambria, "Times New Roman", serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ---------- Base ---------- */
+
+html,
+body {
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -18,6 +56,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1,
@@ -25,7 +64,226 @@ h2 {
   font-family: var(--font-serif);
 }
 
-/* Reglas base recomendadas para Lenis Smooth Scroll */
+a,
+button,
+[role="button"],
+label,
+summary {
+  touch-action: manipulation;
+}
+
+/* Inputs a 16px como mínimo: iOS no hace zoom al enfocarlos */
+input,
+select,
+textarea {
+  font-size: max(16px, 1em);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-chocolate);
+  outline-offset: 2px;
+}
+
+/* ---------- Utilidades de marca ---------- */
+
+/* Titular editorial: serif, tracking negativo, interlineado apretado */
+@utility display {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Eyebrow / label en mayúsculas. Nunca menos de 12px. */
+@utility eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Material vidrio (DESIGN.md §5). El blur nunca se anima.
+ * Fallback sólido sin backdrop-filter o con reduced transparency.
+ */
+@utility glass-light {
+  background-color: rgb(250 247 242 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background-color: var(--color-paper);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@utility glass-dark {
+  background-color: rgb(44 33 25 / 0.72);
+  border: 1px solid rgb(210 180 140 / 0.2);
+  color: var(--color-paper);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+
+  @supports not (backdrop-filter: blur(1px)) {
+    background-color: var(--color-espresso);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-espresso);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Feedback de presión para cualquier elemento clickeable */
+@utility pressable {
+  transition: transform var(--duration-press) var(--ease-out);
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+/* ---------- Aparición al scrollear (DESIGN.md §8) ----------
+ * Solo se oculta algo cuando RevealObserver ya montó (html[data-reveal]).
+ * Sin JS, el HTML del servidor se ve completo.
+ */
+html[data-reveal] [data-reveal]:not([data-revealed]) {
+  opacity: 0;
+}
+
+html[data-reveal] [data-reveal="up"]:not([data-revealed]) {
+  transform: translateY(24px);
+}
+
+[data-reveal="up"],
+[data-reveal-item] {
+  transition:
+    opacity var(--duration-reveal) var(--ease-out),
+    transform var(--duration-reveal) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+/* El contenedor de un stagger no se oculta: se ocultan sus hijos */
+html[data-reveal] [data-reveal="stagger"]:not([data-revealed]) {
+  opacity: 1;
+}
+html[data-reveal] [data-reveal="stagger"]:not([data-revealed]) > [data-reveal-item] {
+  opacity: 0;
+  transform: translateY(24px);
+}
+[data-reveal="stagger"] > [data-reveal-item] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Títulos: cada línea sube desde una máscara */
+html[data-reveal] [data-reveal="lines"]:not([data-revealed]) {
+  opacity: 1;
+}
+[data-reveal="lines"] .reveal-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+[data-reveal="lines"] .reveal-line > span {
+  display: inline-block;
+  transition: transform 600ms var(--ease-out);
+  transition-delay: calc(var(--line, 0) * 80ms + var(--reveal-delay, 0ms));
+}
+html[data-reveal] [data-reveal="lines"]:not([data-revealed]) .reveal-line > span {
+  transform: translateY(105%);
+}
+
+/* Imágenes grandes: cortina de abajo hacia arriba + leve zoom de salida */
+[data-reveal="image"] {
+  overflow: hidden;
+  transition:
+    clip-path 700ms var(--ease-in-out),
+    opacity 300ms var(--ease-out);
+}
+[data-reveal="image"] > :is(img, picture, video, div) {
+  transition: transform 900ms var(--ease-out);
+}
+html[data-reveal] [data-reveal="image"]:not([data-revealed]) {
+  opacity: 1;
+  clip-path: inset(0 0 100% 0);
+}
+html[data-reveal] [data-reveal="image"]:not([data-revealed]) > :is(img, picture, video, div) {
+  transform: scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-reveal] [data-reveal]:not([data-revealed]),
+  html[data-reveal] [data-reveal="stagger"]:not([data-revealed]) > [data-reveal-item] {
+    transform: none;
+  }
+  html[data-reveal] [data-reveal="lines"]:not([data-revealed]) {
+    opacity: 0;
+  }
+  html[data-reveal] [data-reveal="lines"]:not([data-revealed]) .reveal-line > span,
+  html[data-reveal] [data-reveal="image"]:not([data-revealed]) > :is(img, picture, video, div) {
+    transform: none;
+  }
+  html[data-reveal] [data-reveal="image"]:not([data-revealed]) {
+    clip-path: none;
+    opacity: 0;
+  }
+  [data-reveal],
+  [data-reveal-item],
+  [data-reveal] .reveal-line > span {
+    transition: opacity 200ms ease !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ---------- View Transitions entre páginas ---------- */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(.morph) {
+  animation-duration: 400ms;
+  animation-timing-function: var(--ease-in-out);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: via-blur;
+}
+@keyframes via-blur {
+  30% {
+    filter: blur(2px);
+  }
+}
+
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ---------- Lenis ---------- */
 html.lenis,
 html.lenis body {
   height: auto;
@@ -45,10 +303,18 @@ html.lenis body {
 
 /* Entrada suave de los mensajes de la barra de anuncios */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(2px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-\[fade-in_400ms_ease-out\] { animation: none; }
+  .animate-\[fade-in_400ms_ease-out\] {
+    animation: none;
+  }
 }

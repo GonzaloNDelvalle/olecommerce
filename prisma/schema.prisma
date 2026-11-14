@@ -577,6 +577,13 @@ model SiteContent {
   heroImageUrl String? @map("hero_image_url")
   heroVideoUrl String? @map("hero_video_url")
 
+  // Campaña a pantalla completa (imagen o video) debajo del hero
+  campaignEnabled  Boolean @default(true) @map("campaign_enabled")
+  campaignEyebrow  String  @default("Campaña") @map("campaign_eyebrow") @db.VarChar(120)
+  campaignTitle    String  @default("Hecho para durar") @map("campaign_title") @db.VarChar(80)
+  campaignImageUrl String? @map("campaign_image_url")
+  campaignVideoUrl String? @map("campaign_video_url")
+
   // Banner de newsletter (sección oscura al final de la portada)
   newsletterEnabled     Boolean @default(true) @map("newsletter_enabled")
   newsletterEyebrow     String  @default("Manifiesto OL.") @map("newsletter_eyebrow") @db.VarChar(120)

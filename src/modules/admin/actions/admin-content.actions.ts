@@ -44,6 +44,11 @@ const siteContentSchema = z.object({
   heroCtaHref: linkSchema,
   heroImageUrl: optionalText(1000),
   heroVideoUrl: optionalText(1000),
+  campaignEnabled: z.boolean(),
+  campaignEyebrow: z.string().trim().max(120),
+  campaignTitle: z.string().trim().min(2, "Ingresá el título de la campaña").max(80),
+  campaignImageUrl: optionalText(1000),
+  campaignVideoUrl: optionalText(1000),
   newsletterEnabled: z.boolean(),
   newsletterEyebrow: z.string().trim().max(120),
   newsletterTitle: z.string().trim().min(2, "Ingresá el título del newsletter").max(160),
@@ -77,6 +82,8 @@ export async function updateAdminSiteContent(
   try {
     if (data.heroImageUrl) data.heroImageUrl = assertAllowedMediaUrl(data.heroImageUrl);
     if (data.heroVideoUrl) data.heroVideoUrl = assertAllowedMediaUrl(data.heroVideoUrl);
+    if (data.campaignImageUrl) data.campaignImageUrl = assertAllowedMediaUrl(data.campaignImageUrl);
+    if (data.campaignVideoUrl) data.campaignVideoUrl = assertAllowedMediaUrl(data.campaignVideoUrl);
   } catch (error) {
     return {
       success: false,
@@ -87,6 +94,13 @@ export async function updateAdminSiteContent(
     return {
       success: false,
       error: "El banner necesita al menos una imagen o un video de fondo.",
+    };
+  }
+
+  if (data.campaignEnabled && !data.campaignImageUrl && !data.campaignVideoUrl) {
+    return {
+      success: false,
+      error: "La campaña necesita una imagen o un video (o desactivala).",
     };
   }
 

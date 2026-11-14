@@ -40,6 +40,11 @@ const HERO_FIELDS: TextField[] = [
   { name: "heroCtaHref", label: "Link del botón", placeholder: "/productos", maxLength: 255, hint: "Una página de la tienda, ej: /productos?categoria=denim" },
 ];
 
+const CAMPAIGN_FIELDS: TextField[] = [
+  { name: "campaignEyebrow", label: "Volanta", placeholder: "Campaña FW'26", maxLength: 120 },
+  { name: "campaignTitle", label: "Título", placeholder: "Hecho para durar", maxLength: 80 },
+];
+
 const NEWSLETTER_FIELDS: TextField[] = [
   { name: "newsletterEyebrow", label: "Volanta", placeholder: "Manifiesto OL.", maxLength: 120, wide: true },
   { name: "newsletterTitle", label: "Frase principal", placeholder: "“Prendas versátiles. Estado de calma y equilibrio.”", maxLength: 160, wide: true },
@@ -67,6 +72,8 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
       newsletterText: values.newsletterText ?? "",
       heroImageUrl: values.heroImageUrl ?? "",
       heroVideoUrl: values.heroVideoUrl ?? "",
+      campaignImageUrl: values.campaignImageUrl ?? "",
+      campaignVideoUrl: values.campaignVideoUrl ?? "",
     };
     startTransition(async () => {
       const result = await updateAdminSiteContent(payload);
@@ -141,6 +148,37 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
           <HeroVideoUpload
             value={values.heroVideoUrl}
             onChange={(url) => update("heroVideoUrl", url)}
+          />
+        </div>
+      </AdminCard>
+
+      <AdminCard
+        title="Campaña a pantalla completa"
+        description="La sección con foto o video que ocupa todo el ancho, debajo del banner principal. Sobre ella se muestran las categorías."
+      >
+        <label className="mb-5 inline-flex items-center gap-2 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            checked={values.campaignEnabled}
+            onChange={(e) => update("campaignEnabled", e.target.checked)}
+            className="h-4 w-4 rounded border-stone-300"
+          />
+          Mostrar la campaña en la portada
+        </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {CAMPAIGN_FIELDS.map(renderField)}
+        </div>
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <SingleImageDropzone
+            label="Imagen"
+            helperText="Se usa si no hay video, y como portada mientras el video carga"
+            subfolder="hero"
+            value={values.campaignImageUrl ?? ""}
+            onChange={(url) => update("campaignImageUrl", url || null)}
+          />
+          <HeroVideoUpload
+            value={values.campaignVideoUrl}
+            onChange={(url) => update("campaignVideoUrl", url)}
           />
         </div>
       </AdminCard>

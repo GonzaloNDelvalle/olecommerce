@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Cormorant_Garamond,
   Plus_Jakarta_Sans,
@@ -31,6 +31,13 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#2c2119",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(getAppUrl()),
   openGraph: {
@@ -53,7 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es-AR"
       className={`${cormorantSerif.variable} ${jakartaSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-white font-sans text-stone-900 selection:bg-stone-900 selection:text-stone-50">
+      <body className="flex min-h-full flex-col bg-paper font-sans text-ink selection:bg-chocolate selection:text-paper">
         {children}
         <Analytics />
         <SpeedInsights />
