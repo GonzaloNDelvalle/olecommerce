@@ -38,7 +38,7 @@ test("la página de categoría tiene H1, canonical y migas estructuradas", async
 
 test("la búsqueda ignora acentos", async ({ page }) => {
   await page.goto("/productos?q=pantalon");
-  await expect(page.getByText(/pantal[oó]n/i).first()).toBeVisible();
+  await expect(page.locator("main").getByText(/pantal[oó]n/i).first()).toBeVisible();
 });
 
 test("la ficha tiene datos estructurados y permite agregar al carrito", async ({
@@ -48,11 +48,13 @@ test("la ficha tiene datos estructurados y permite agregar al carrito", async ({
   await page.locator('a[href^="/productos/"]').first().click();
   await expect(page).toHaveURL(/\/productos\/[a-z0-9-]+$/);
 
-  const jsonLd = await page
-    .locator('script[type="application/ld+json"]')
-    .first()
-    .textContent();
-  const data = JSON.parse(jsonLd ?? "{}");
+  // Esperar a que la ficha reemplace al listado antes de leer los datos estructurados
+  const readBlocks = async () =>
+    (await page.locator('script[type="application/ld+json"]').allTextContents()).map((s) => JSON.parse(s));
+  await expect.poll(async () => (await readBlocks()).some((b) => b["@type"] === "Product")).toBe(true);
+  const blocks = await readBlocks();
+  expect(blocks.map((b) => b["@type"])).toContain("BreadcrumbList");
+  const data = blocks.find((b) => b["@type"] === "Product") ?? {};
   expect(data["@type"]).toBe("Product");
   expect(data.offers.priceCurrency).toBe("ARS");
 });
