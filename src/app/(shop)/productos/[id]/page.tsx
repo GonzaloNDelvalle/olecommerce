@@ -10,6 +10,7 @@ import { RevealLines } from "@/components/motion/RevealLines";
 import { categoryHref, productHref } from "@/modules/products/urls";
 import { getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
 import { JsonLd } from "@/modules/seo/json-ld";
+import { buttonVariants } from "@/components/ui/button";
 import { formatARS } from "@/lib/format";
 import { applyDiscount } from "@/modules/orders/pricing";
 import { getAppUrl } from "@/lib/app-url";
@@ -116,7 +117,7 @@ async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
     <section aria-labelledby="related-title" className="pt-24 pb-8 lg:pt-28">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <RevealLines id="related-title" lines={["Completá el look"]} className="display text-[clamp(36px,4vw,48px)] text-ink" />
-        <Link href={categoryHref(product.category.slug)} className="inline-flex min-h-11 items-center border-b border-current text-sm font-semibold hover:text-chocolate">
+        <Link href={categoryHref(product.category.slug)} className={buttonVariants({ variant: "secondary", size: "md" })}>
           Más {product.category.name.toLowerCase()}
         </Link>
       </div>

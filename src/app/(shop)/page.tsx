@@ -95,65 +95,43 @@ export default async function HomePage() {
 
   return (
     <main>
-      {/* 1. HERO — prenda 3D sobre crema. Se mete debajo del header flotante. */}
-      <section aria-labelledby="hero-title" className="relative -mt-[68px] overflow-hidden bg-cream sm:-mt-[76px]">
-        <div className="mx-auto grid min-h-[100svh] max-w-[1440px] grid-rows-[auto_minmax(320px,1fr)] items-center gap-6 px-4 pt-[100px] pb-10 sm:px-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:grid-rows-1 lg:pt-[120px] lg:pb-16">
-          <div className="relative z-10 flex flex-col gap-6 lg:gap-7">
-            {content.heroEyebrow && (
-              <p className={`eyebrow text-chocolate ${heroIn}`}>{content.heroEyebrow}</p>
-            )}
-            <h1
-              id="hero-title"
-              className={`display text-[clamp(56px,9vw,128px)] leading-[0.95] text-ink ${heroIn} [animation-delay:100ms]`}
-            >
-              {content.heroTitle}
-            </h1>
-            {content.heroSubtitle && (
-              <p className={`max-w-[420px] text-base leading-relaxed text-stone-700 sm:text-lg ${heroIn} [animation-delay:200ms]`}>
-                {content.heroSubtitle}
-              </p>
-            )}
-            <div className={`flex flex-col gap-3 sm:flex-row ${heroIn} [animation-delay:300ms]`}>
-              <Link href={content.heroCtaHref} className={buttonVariants({ size: "lg" })}>
-                {content.heroCtaLabel}
-                <ArrowRight className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
-              </Link>
-              <Link href="/productos?orden=recientes" className={buttonVariants({ variant: "secondary", size: "lg" })}>
-                Novedades
-              </Link>
-            </div>
-          </div>
+      {/* 1. HERO — imagen o video a pantalla completa (editable en /admin/contenido).
+          Se mete debajo del header de vidrio. */}
+      <section aria-labelledby="hero-title" className="relative -mt-[68px] h-[100svh] min-h-[620px] overflow-hidden bg-espresso sm:-mt-[76px]">
+        <div className="absolute inset-0">
+          <HeroMedia imageUrl={content.heroImageUrl} videoUrl={content.heroVideoUrl} alt={content.heroTitle} />
+        </div>
+        {/* Velo para que el texto claro siempre sea legible sobre la foto */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/35 to-ink/80" />
 
-          <div className="relative h-full min-h-[320px] lg:min-h-[640px]">
-            <HeroMedia imageUrl={content.heroImageUrl} videoUrl={content.heroVideoUrl} alt={content.heroTitle} />
+        <div className="relative z-10 mx-auto flex h-full max-w-[1100px] flex-col items-center justify-end gap-6 px-4 pb-[12svh] text-center [text-shadow:0_2px_24px_rgba(21,17,14,0.45)] sm:px-10">
+          {content.heroEyebrow && (
+            <p className={`eyebrow text-cream ${heroIn}`}>{content.heroEyebrow}</p>
+          )}
+          <h1
+            id="hero-title"
+            className={`display text-[clamp(56px,10vw,140px)] leading-[0.95] text-paper ${heroIn} [animation-delay:100ms]`}
+          >
+            {content.heroTitle}
+          </h1>
+          {content.heroSubtitle && (
+            <p className={`max-w-[520px] text-base leading-relaxed text-cream sm:text-lg ${heroIn} [animation-delay:200ms]`}>
+              {content.heroSubtitle}
+            </p>
+          )}
+          <div className={`flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row ${heroIn} [animation-delay:300ms]`}>
+            <Link href={content.heroCtaHref} className={buttonVariants({ variant: "light", size: "lg" })}>
+              {content.heroCtaLabel}
+              <ArrowRight className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
+            </Link>
+            <Link href="/productos?orden=recientes" className={buttonVariants({ variant: "glass", size: "lg" })}>
+              Novedades
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* 2. CAMPAÑA — imagen o video a pantalla completa con parallax */}
-      {content.campaignEnabled && campaignHasMedia && (
-        <section aria-labelledby="campaign-title" className="relative h-[85svh] min-h-[560px] overflow-hidden bg-espresso">
-          <CampaignMedia imageUrl={content.campaignImageUrl} videoUrl={content.campaignVideoUrl} />
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink/0 from-40% to-ink/60" />
-          <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pb-8 sm:px-10 sm:pb-14 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex flex-col gap-4 text-paper">
-              {content.campaignEyebrow && <Reveal as="p" className="eyebrow text-sand">{content.campaignEyebrow}</Reveal>}
-              <RevealLines
-                id="campaign-title"
-                lines={[content.campaignTitle]}
-                className="display max-w-[12ch] text-[clamp(52px,8vw,104px)] text-paper"
-              />
-            </div>
-            <Reveal>
-              <Suspense fallback={null}>
-                <CampaignCategories />
-              </Suspense>
-            </Reveal>
-          </div>
-        </section>
-      )}
-
-      {/* 3. DESTACADOS — carrusel 3D arrastrable */}
+      {/* 2. DESTACADOS — carrusel 3D arrastrable */}
       <section aria-labelledby="featured-title" className="overflow-hidden bg-cream">
         <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-20 sm:px-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:py-28">
           <div className="flex flex-col gap-5">
@@ -175,7 +153,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 4. NOVEDADES */}
+      {/* 3. NOVEDADES */}
       <section aria-labelledby="new-title" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-10 lg:py-28">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4 sm:mb-10">
           <div className="flex flex-col gap-2.5">
@@ -186,7 +164,7 @@ export default async function HomePage() {
           </div>
           <Link
             href="/productos?orden=recientes"
-            className="inline-flex min-h-11 items-center gap-1.5 border-b border-current text-sm font-semibold text-ink hover:text-chocolate"
+            className={buttonVariants({ variant: "secondary", size: "md" })}
           >
             Ver todas las novedades
             <ArrowRight className="size-4" aria-hidden="true" />
@@ -196,6 +174,29 @@ export default async function HomePage() {
           <NewArrivals />
         </Suspense>
       </section>
+
+      {/* 4. CAMPAÑA — imagen o video a pantalla completa con parallax */}
+      {content.campaignEnabled && campaignHasMedia && (
+        <section aria-labelledby="campaign-title" className="relative h-[85svh] min-h-[560px] overflow-hidden bg-espresso">
+          <CampaignMedia imageUrl={content.campaignImageUrl} videoUrl={content.campaignVideoUrl} />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink/0 from-40% to-ink/60" />
+          <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pb-8 sm:px-10 sm:pb-14 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-4 text-paper">
+              {content.campaignEyebrow && <Reveal as="p" className="eyebrow text-sand">{content.campaignEyebrow}</Reveal>}
+              <RevealLines
+                id="campaign-title"
+                lines={[content.campaignTitle]}
+                className="display max-w-[12ch] text-[clamp(52px,8vw,104px)] text-paper"
+              />
+            </div>
+            <Reveal>
+              <Suspense fallback={null}>
+                <CampaignCategories />
+              </Suspense>
+            </Reveal>
+          </div>
+        </section>
+      )}
 
       {/* 5. NEWSLETTER — editable en /admin/contenido */}
       {content.newsletterEnabled && (

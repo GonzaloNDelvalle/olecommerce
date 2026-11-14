@@ -193,7 +193,7 @@ export function CatalogFilterBar({
           <Link
             href={basePath}
             scroll={false}
-            className="min-h-9 px-2 text-[13px] font-semibold text-chocolate underline underline-offset-4"
+            className="pressable inline-flex h-9 items-center rounded-full border border-chocolate/40 px-3.5 text-[13px] font-semibold text-chocolate hover:border-chocolate"
           >
             Limpiar todo
           </Link>

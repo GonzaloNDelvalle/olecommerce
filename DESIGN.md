@@ -87,7 +87,7 @@ Superficies que flotan sobre imagen o sobre contenido que scrollea. Nunca para c
 
 | Variante | Fondo | Blur | Borde | Texto |
 |---|---|---|---|---|
-| `glass-light` | paper 72% | 16px + `saturate(1.4)` | 1px blanco 40% (arriba) | ink, peso 500+ |
+| `glass-light` | paper 62% | 24px + `saturate(1.8)` | 1px blanco 65% + brillo interior arriba + sombra | ink, peso 500+ |
 | `glass-dark` | espresso 72% | 16px + `saturate(1.4)` | 1px sand 20% | paper / sand |
 
 Contraste medido sobre negro, blanco y chocolate: ink sobre `glass-light` ≥ 8.9; paper sobre `glass-dark` ≥ 5.8.
@@ -125,11 +125,13 @@ El contenido entra a medida que aparece en pantalla, para que la página se sien
 
 Mockups: [OL. Rediseño — Mockups](https://claude.ai/artifact/DgYAaUfxjYfaPvvqPwpY8Y). Layout de la dirección B (inmersiva) con la paleta clara de A.
 
-- **Header**: píldora flotante de vidrio con nav a la izquierda, logo "OL." al centro, buscar/cuenta/carrito a la derecha. Sobre el hero arranca transparente.
-- **Home**: hero crema con el abrigo 3D flotando (WebGL) y titular serif gigante → **campaña a pantalla completa** (video o imagen editable desde el admin, titular, botón pausar, accesos a categorías como chips de vidrio) → sección 3D "La materia del invierno" (carrusel de cards en profundidad, arrastrable) → Novedades (grilla 4 col, "agregar rápido" en vidrio al hover) → el look de la temporada (imagen + lista de prendas + "Comprar el look") → newsletter chocolate → footer espresso.
+- **Header**: píldora flotante de vidrio siempre visible (también sobre el hero) con nav a la izquierda, logo "OL." al centro, buscar/cuenta/carrito a la derecha. Al scrollear suma un poco de tinte.
+- **Cards de producto**: sobre la foto solo va el descuento (pastilla chica de 11px en la esquina) y, al hover, un botón redondo de 36px. Colección y categoría van debajo del nombre.
+- **Botones**: toda acción tiene forma (pastilla rellena o con borde). El texto subrayado queda solo para links dentro de un párrafo.
+- **Home**: **hero a pantalla completa** (imagen con efecto tela WebGL, o video; titular serif claro centrado abajo sobre un velo oscuro; botón claro + botón de vidrio) → sección 3D "La materia del invierno" (carrusel de cards en profundidad, arrastrable) → Novedades (grilla 4 col) → campaña a pantalla completa (video o imagen editable, chips de categorías de vidrio) → newsletter chocolate → footer espresso.
 - **Categoría `/categoria/[slug]`**: migas, H1 serif grande + texto corto, subcategorías en pills, barra de filtros sticky (Filtros, Talle, Color, Precio, Ordenar), chips de filtros activos, grilla 4 col (2 en mobile), "Ver más" con progreso, bloque de texto SEO al final.
 - **Ficha**: galería con miniaturas + imagen principal y controles flotantes de vidrio (anterior/siguiente, girar, ampliar); panel sticky con colección, nombre, precio + cuotas, colores, talles (sin stock tachado, aviso de pocas unidades), CTA que cambia a "Agregado ✓", beneficios, acordeones. Mobile: galería a pantalla completa con swipe y barra de compra fija de vidrio. Abajo "Completá el look".
-- **Carrito**: drawer derecho de 480px, fondo blanco sólido, barra de envío gratis, cantidades, "Combina con", subtotal y "Finalizar compra".
+- **Carrito**: drawer derecho de 480px, fondo blanco sólido, barra de envío gratis, cantidades, "Combina con" (destacados que no están en el carrito, con "Elegir talle"), subtotal y "Finalizar compra".
 - **Checkout**: sin nav, 3 pasos (datos, entrega, pago), resumen crema sticky, errores inline con cómo corregirlos.
 - **Mi cuenta**: menú lateral en pills, pedidos como cards con línea de estado.
 - **Mobile**: barra de navegación inferior de vidrio (Inicio, Tienda, Cuenta, Carrito).

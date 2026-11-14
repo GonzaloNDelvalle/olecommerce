@@ -1,6 +1,7 @@
 import { ViewTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import type { ProductListItemDTO } from "@/modules/products/types";
 import { productHref } from "@/modules/products/urls";
 import { formatARS } from "@/lib/format";
@@ -74,21 +75,19 @@ export function ProductCard({ product, priority = false, sizes }: ProductCardPro
           <span className="eyebrow absolute inset-0 flex items-center justify-center text-stone-500">Sin imagen</span>
         )}
 
-        <span className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
-          {percent > 0 && (
-            <span className="eyebrow bg-brick px-2.5 py-1.5 text-paper">−{percent}%</span>
-          )}
-          {product.collection && (
-            <span className="eyebrow bg-paper px-2.5 py-1.5 text-caramel">{product.collection.name}</span>
-          )}
-        </span>
+        {/* Solo el descuento va sobre la foto, chico y en la esquina */}
+        {percent > 0 && (
+          <span className="tabular absolute top-2.5 left-2.5 rounded-full bg-brick px-2 py-0.5 text-[11px] font-bold text-paper">
+            −{percent}%
+          </span>
+        )}
 
-        {/* Atajo de vidrio que aparece al hover (solo con mouse) */}
+        {/* Atajo mínimo al hover (solo con mouse): no tapa la prenda */}
         <span
           aria-hidden="true"
-          className="glass-light absolute inset-x-3 bottom-3 hidden h-12 translate-y-2 items-center justify-center rounded-full text-sm font-semibold text-ink opacity-0 transition-[opacity,transform] duration-200 ease-out [@media(hover:hover)_and_(pointer:fine)]:flex group-hover:translate-y-0 group-hover:opacity-100"
+          className="glass-light absolute right-2.5 bottom-2.5 hidden size-9 translate-y-1 items-center justify-center rounded-full text-ink opacity-0 transition-[opacity,transform] duration-200 ease-out [@media(hover:hover)_and_(pointer:fine)]:flex group-hover:translate-y-0 group-hover:opacity-100"
         >
-          Ver talles y colores
+          <ArrowUpRight className="size-4" strokeWidth={1.8} />
         </span>
       </Link>
 
@@ -106,7 +105,10 @@ export function ProductCard({ product, priority = false, sizes }: ProductCardPro
             )}
           </p>
         </div>
-        <p className="text-[13px] text-stone-600">{product.category.name}</p>
+        <p className="text-[13px] text-stone-600">
+          {product.category.name}
+          {product.collection && <span className="text-caramel"> · {product.collection.name}</span>}
+        </p>
       </div>
     </article>
   );

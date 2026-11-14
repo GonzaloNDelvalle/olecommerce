@@ -86,7 +86,7 @@ export function ProductGallery({ productId, images, badge }: ProductGalleryProps
             </div>
           ))}
         </div>
-        {badge && <span className="eyebrow absolute top-4 left-4 bg-brick px-2.5 py-1.5 text-[11px] text-paper">{badge}</span>}
+        {badge && <span className="tabular absolute top-3 left-3 rounded-full bg-brick px-2.5 py-0.5 text-xs font-bold text-paper">{badge}</span>}
         {count > 1 && (
           <div className="glass-light absolute bottom-4 left-1/2 flex h-9 -translate-x-1/2 items-center gap-2.5 rounded-full px-3.5">
             <span className="flex gap-1.5" aria-hidden="true">
@@ -148,7 +148,7 @@ export function ProductGallery({ productId, images, badge }: ProductGalleryProps
             </div>
           </ViewTransition>
 
-          {badge && <span className="eyebrow absolute top-4 left-4 bg-brick px-2.5 py-1.5 text-[11px] text-paper">{badge}</span>}
+          {badge && <span className="tabular absolute top-3 left-3 rounded-full bg-brick px-2.5 py-0.5 text-xs font-bold text-paper">{badge}</span>}
 
           <div
             className="glass-light absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full p-1.5"

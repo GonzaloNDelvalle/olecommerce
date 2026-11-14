@@ -293,7 +293,7 @@ export function ProductView({ product, transferDiscount, installments }: Product
           <p role="status" aria-live="polite" className={cn("min-h-5 text-center text-[13px]", error ? "font-semibold text-brick" : "text-stone-600")}>
             {error ??
               (justAdded ? (
-                <button type="button" onClick={() => useCartStore.getState().openCart()} className="font-semibold text-ink underline underline-offset-4">
+                <button type="button" onClick={() => useCartStore.getState().openCart()} className="pressable inline-flex h-9 items-center rounded-full border border-ink px-4 font-semibold text-ink hover:bg-ink hover:text-paper">
                   Ver carrito
                 </button>
               ) : (

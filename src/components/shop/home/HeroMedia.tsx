@@ -57,16 +57,7 @@ export function HeroMedia({ imageUrl, videoUrl, alt }: HeroMediaProps) {
   const handleReady = useCallback(() => setReady(true), []);
 
   return (
-    <div ref={ref} className="relative h-full w-full [perspective:1400px]">
-      {/* Planos de profundidad detrás de la prenda */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-[9%_10%_6%_13%] bg-cream-deep [transform:rotateY(-14deg)_translateZ(-120px)]"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute inset-[4%_4%_3%_7%] bg-paper/60 [transform:rotateY(-14deg)_translateZ(-60px)]"
-      />
+    <div ref={ref} className="relative h-full w-full overflow-hidden">
 
       {videoUrl ? (
         <video
@@ -86,7 +77,7 @@ export function HeroMedia({ imageUrl, videoUrl, alt }: HeroMediaProps) {
           fill
           priority
           fetchPriority="high"
-          sizes="(max-width: 1024px) 100vw, 58vw"
+          sizes="100vw"
           className={cn(
             "object-cover transition-opacity duration-500",
             ready && "opacity-0",

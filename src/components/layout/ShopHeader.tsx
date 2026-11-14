@@ -84,8 +84,8 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
 
   if (pathname.startsWith("/checkout")) return <CheckoutHeader />;
 
-  // Sobre el hero de la portada el vidrio arranca invisible y aparece al scrollear.
-  const showGlass = !isHome || isScrolled || panel !== null;
+  // El vidrio siempre está; al scrollear se vuelve un poco más denso para separar del contenido.
+  const denseGlass = isScrolled || panel !== null || !isHome;
   const count = hydrated ? totalItems : 0;
 
   return (
@@ -96,17 +96,20 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
         style={{ viewTransitionName: "site-header" }}
       >
         <div className="relative mx-auto max-w-[1360px]">
-          <div
-            className={cn(
-              "relative flex h-14 items-center justify-between rounded-full px-1.5 sm:h-16 sm:pr-3 sm:pl-3 lg:pl-7",
-            )}
-          >
+          <div className="relative flex h-14 items-center justify-between rounded-full px-1.5 sm:h-16 sm:pr-3 sm:pl-3 lg:pl-7">
+            {/* Capa extra de tinte al scrollear: solo se anima su opacidad */}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute inset-0 rounded-full bg-paper/25 transition-opacity duration-300",
+                denseGlass ? "opacity-100" : "opacity-0",
+              )}
+            />
             {/* Capa de vidrio: solo se anima su opacidad, nunca el blur */}
             <span
               aria-hidden="true"
               className={cn(
-                "glass-light pointer-events-none absolute inset-0 rounded-full shadow-[0_8px_30px_rgba(44,33,25,0.08)] transition-opacity duration-300",
-                showGlass ? "opacity-100" : "opacity-0",
+                "glass-light pointer-events-none absolute inset-0 rounded-full",
               )}
             />
 

@@ -6,7 +6,7 @@ import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SmoothScrollProvider } from "@/components/layout/SmoothScrollProvider";
 import { RevealObserver } from "@/components/motion/RevealObserver";
 import { getAnnouncementMessages, getSiteContent } from "@/modules/content/site-content";
-import { getActiveCategories } from "@/modules/products/queries";
+import { getActiveCategories, getFeaturedProducts } from "@/modules/products/queries";
 import { getActiveShippingMethods, getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
 import { categoryHref } from "@/modules/products/urls";
 import { JsonLd } from "@/modules/seo/json-ld";
@@ -14,12 +14,13 @@ import { getAppUrl } from "@/lib/app-url";
 
 export default async function ShopLayout({ children }: { children: ReactNode }) {
   // Contenido editable desde /admin (cacheado; se invalida al guardar)
-  const [content, announcements, categories, settings, shippingMethods] = await Promise.all([
+  const [content, announcements, categories, settings, shippingMethods, suggestions] = await Promise.all([
     getSiteContent(),
     getAnnouncementMessages(),
     getActiveCategories(),
     getStoreSettings(),
     getActiveShippingMethods(),
+    getFeaturedProducts(8),
   ]);
 
   // Envío gratis: el umbral más bajo entre los envíos a domicilio que lo tienen
@@ -63,7 +64,18 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
         <Suspense fallback={null}>
           <MobileTabBar />
         </Suspense>
-        <CartDrawer freeShippingThreshold={freeShippingThreshold} transferDiscount={transferDiscount} />
+        <CartDrawer
+          freeShippingThreshold={freeShippingThreshold}
+          transferDiscount={transferDiscount}
+          suggestions={suggestions.map((p) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            price: p.finalPrice,
+            imageUrl: p.primaryImage?.url ?? null,
+            imageAlt: p.primaryImage?.altText ?? p.name,
+          }))}
+        />
 
         <JsonLd
           data={{

@@ -10,7 +10,18 @@ import { buttonVariants } from "@/components/ui/button";
 import { productHref } from "@/modules/products/urls";
 import { formatARS, plural } from "@/lib/format";
 
+export interface CartSuggestion {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  imageUrl: string | null;
+  imageAlt: string;
+}
+
 interface CartDrawerProps {
+  /** Productos para "Combina con" (se excluyen los que ya están en el carrito). */
+  suggestions: CartSuggestion[];
   /** Monto desde el que el envío a domicilio es gratis (null = no hay envío gratis). */
   freeShippingThreshold: number | null;
   /** % de descuento por transferencia (0 = no disponible). */
@@ -24,7 +35,7 @@ const stepButton =
  * Carrito (DESIGN.md §9): panel derecho de fondo sólido (sin vidrio, para
  * legibilidad), barra de envío gratis y acceso directo al checkout.
  */
-export function CartDrawer({ freeShippingThreshold, transferDiscount }: CartDrawerProps) {
+export function CartDrawer({ freeShippingThreshold, transferDiscount, suggestions }: CartDrawerProps) {
   const hydrated = useHydrated();
   const items = useCartStore((s) => s.items);
   const isOpen = useCartStore((s) => s.isOpen);
@@ -33,6 +44,42 @@ export function CartDrawer({ freeShippingThreshold, transferDiscount }: CartDraw
   const removeItem = useCartStore((s) => s.removeItem);
 
   if (!hydrated) return null;
+
+  const inCart = new Set(items.map((i) => i.productId));
+  const picks = suggestions.filter((p) => !inCart.has(p.id)).slice(0, 4);
+
+  const suggestionBlock =
+    picks.length > 0 ? (
+      <section aria-labelledby="cart-suggestions" className="flex flex-col gap-3.5 px-6 pt-2 pb-6">
+        <h3 id="cart-suggestions" className="eyebrow text-chocolate">
+          Combina con
+        </h3>
+        <ul className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-1 [scrollbar-width:none]">
+          {picks.map((p) => (
+            <li key={p.id} className="w-[132px] shrink-0 snap-start">
+              <Link href={productHref(p.slug)} onClick={closeCart} className="group flex flex-col gap-2">
+                <span className="relative block aspect-[3/4] overflow-hidden bg-cream">
+                  {p.imageUrl && (
+                    <Image
+                      src={p.imageUrl}
+                      alt={p.imageAlt}
+                      fill
+                      sizes="132px"
+                      className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+                    />
+                  )}
+                </span>
+                <span className="line-clamp-2 text-[13px] leading-snug font-semibold text-ink">{p.name}</span>
+                <span className="tabular -mt-1 text-[13px] text-stone-700">{formatARS(p.price)}</span>
+                <span className="inline-flex h-9 items-center justify-center rounded-full border border-ink text-[13px] font-semibold text-ink transition-colors duration-150 group-hover:bg-ink group-hover:text-paper">
+                  Elegir talle
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null;
 
   const subtotal = items.reduce((acc, i) => acc + i.unitPrice * i.quantity, 0);
   const count = items.reduce((acc, i) => acc + i.quantity, 0);
@@ -76,7 +123,7 @@ export function CartDrawer({ freeShippingThreshold, transferDiscount }: CartDraw
               Finalizar compra
               <ArrowRight className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
             </Link>
-            <button type="button" onClick={closeCart} className="min-h-11 text-sm font-semibold underline underline-offset-4">
+            <button type="button" onClick={closeCart} className={buttonVariants({ variant: "secondary", size: "lg", block: true })}>
               Seguir comprando
             </button>
           </div>
@@ -84,6 +131,7 @@ export function CartDrawer({ freeShippingThreshold, transferDiscount }: CartDraw
       }
     >
       {items.length === 0 ? (
+        <>
         <div className="flex flex-col items-center gap-5 px-6 py-16 text-center">
           <span className="inline-flex size-16 items-center justify-center rounded-full bg-cream text-chocolate">
             <ShoppingBag className="size-7" strokeWidth={1.4} aria-hidden="true" />
@@ -94,6 +142,8 @@ export function CartDrawer({ freeShippingThreshold, transferDiscount }: CartDraw
             Ir a la tienda
           </Link>
         </div>
+        {suggestionBlock}
+        </>
       ) : (
         <>
           {remaining !== null && (
@@ -159,7 +209,7 @@ export function CartDrawer({ freeShippingThreshold, transferDiscount }: CartDraw
                     <button
                       type="button"
                       onClick={() => removeItem(item.variantId)}
-                      className="min-h-11 px-1 text-[13px] text-stone-600 underline underline-offset-4 hover:text-ink"
+                      className="pressable inline-flex h-9 items-center rounded-full border border-stone-300 px-3.5 text-[13px] font-semibold text-stone-700 hover:border-ink hover:text-ink"
                     >
                       Quitar
                     </button>
@@ -171,6 +221,7 @@ export function CartDrawer({ freeShippingThreshold, transferDiscount }: CartDraw
               </li>
             ))}
           </ul>
+          {suggestionBlock}
         </>
       )}
     </Sheet>

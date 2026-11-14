@@ -87,12 +87,13 @@ function ClothPlane({ src, onReady }: { src: string; onReady: () => void }) {
     pointer.current.y = MathUtils.damp(pointer.current.y, state.pointer.y, 4, delta);
     m.uniforms.uTime.value += delta;
     m.uniforms.uPointer.value.set(pointer.current.x, pointer.current.y);
-    mesh.current.rotation.y = pointer.current.x * 0.18;
-    mesh.current.rotation.x = -pointer.current.y * 0.1;
+    // Giro sutil: el plano es más grande que la pantalla y nunca muestra sus bordes
+    mesh.current.rotation.y = pointer.current.x * 0.06;
+    mesh.current.rotation.x = -pointer.current.y * 0.04;
   });
 
   return (
-    <mesh ref={mesh} scale={[viewport.width * 0.96, viewport.height * 0.96, 1]}>
+    <mesh ref={mesh} scale={[viewport.width * 1.16, viewport.height * 1.16, 1]}>
       <planeGeometry args={[1, 1, 64, 64]} />
       <shaderMaterial
         ref={material}
