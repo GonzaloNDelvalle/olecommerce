@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import { CACHE_TAGS } from "@/lib/cache-tags";
 import type { ShippingRule } from "@/modules/orders/pricing";
+import { parseRateTable } from "@/modules/orders/shipping-rates";
 
 /**
  * Configuración de la tienda (datos de contacto, transferencia bancaria) y
@@ -100,5 +101,6 @@ export async function getActiveShippingMethods(): Promise<ShippingRule[]> {
         : Number(method.freeShippingThreshold),
     estimatedDelivery: method.estimatedDelivery,
     provinces: method.provinces,
+    rateTable: parseRateTable(method.rateTable),
   }));
 }

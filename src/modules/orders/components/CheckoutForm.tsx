@@ -13,6 +13,13 @@ import {
   ShoppingBag,
   Check,
 } from "lucide-react";
+import { quoteShippingForCart, type ShippingQuotesResult } from "@/modules/orders/shipping-quote.actions";
+import {
+  QUOTE_UNAVAILABLE_MESSAGES,
+  parsePostalCode,
+  quoteShipping,
+  type ShippingQuote,
+} from "@/modules/orders/shipping-rates";
 import { useCartStore } from "@/store/cart.store";
 import {
   ARGENTINA_PROVINCES,
@@ -22,7 +29,6 @@ import {
 import { processCheckoutOrder } from "@/modules/orders/checkout.actions";
 import {
   computeOrderTotals,
-  computeShippingCost,
   isShippingAvailableFor,
   type ShippingRule,
 } from "@/modules/orders/pricing";
@@ -94,6 +100,47 @@ export function CheckoutForm({
   const selectedPaymentMethod = watch("paymentMethod");
   const selectedProvince = watch("state");
   const selectedShippingMethodId = watch("shippingMethodId");
+  const postalCode = watch("postalCode");
+
+  // Cotización por CP y peso (solo para métodos con tabla de tarifas)
+  const hasRateTables = shippingMethods.some((m) => m.rateTable);
+  const [quotes, setQuotes] = useState<ShippingQuotesResult | null>(null);
+  const [isQuoting, setIsQuoting] = useState(false);
+  const quoteKey = `${parsePostalCode(postalCode) ?? ""}|${items.map((i) => `${i.variantId}x${i.quantity}`).join(",")}`;
+
+  useEffect(() => {
+    if (!hasRateTables) return;
+    const code = parsePostalCode(postalCode);
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      if (code === null || items.length === 0) {
+        setQuotes(null);
+        return;
+      }
+      setIsQuoting(true);
+      const result = await quoteShippingForCart({
+        postalCode: String(code),
+        items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+      });
+      if (!cancelled) {
+        setQuotes(result);
+        setIsQuoting(false);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // quoteKey resume CP + carrito: evita recotizar en cada render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteKey, hasRateTables]);
+
+  function quoteFor(method: ShippingRule, subtotalValue: number): ShippingQuote {
+    if (!method.rateTable) {
+      return quoteShipping(method, { postalCode: null, weightGrams: 0, subtotal: subtotalValue });
+    }
+    return quotes?.[method.id] ?? { available: false, reason: "postal_code_required" };
+  }
 
   const availableMethods = shippingMethods.filter((method) =>
     isShippingAvailableFor(method, selectedProvince)
@@ -194,9 +241,8 @@ export function CheckoutForm({
   const subtotal = getSubtotal();
   const subtotalForShipping = subtotal;
   const isBankTransfer = selectedPaymentMethod === "BANK_TRANSFER";
-  const shippingCost = selectedMethod
-    ? computeShippingCost(selectedMethod, subtotal)
-    : 0;
+  const selectedQuote = selectedMethod ? quoteFor(selectedMethod, subtotal) : null;
+  const shippingCost = selectedQuote?.available ? selectedQuote.cost : 0;
   const totals = computeOrderTotals({
     subtotal,
     shippingCost,
@@ -482,13 +528,15 @@ export function CheckoutForm({
               <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {availableMethods.map((method) => {
                   const isSelected = selectedMethod?.id === method.id;
-                  const cost = computeShippingCost(method, subtotalForShipping);
+                  const quote = quoteFor(method, subtotalForShipping);
+                  const cost = quote.available ? quote.cost : null;
                   return (
                     <button
                       key={method.id}
                       type="button"
                       onClick={() => selectShippingMethod(method)}
                       aria-pressed={isSelected}
+                      aria-describedby={quote.available ? undefined : `quote-${method.id}`}
                       className={`flex cursor-pointer flex-col justify-between rounded-xl border p-4 text-left transition-[border-color,box-shadow] duration-150 ${
                         isSelected
                           ? "border-ink bg-white shadow-[0_0_0_1px_var(--color-ink)]"
@@ -514,15 +562,29 @@ export function CheckoutForm({
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium tracking-[0.18em] whitespace-nowrap text-ink uppercase">
-                            {cost === 0 ? "Sin cargo" : arsFormatter.format(cost)}
+                          <span className="tabular text-sm font-semibold whitespace-nowrap text-ink">
+                            {isQuoting && method.rateTable
+                              ? "Cotizando…"
+                              : cost === null
+                                ? "—"
+                                : cost === 0
+                                  ? "Sin cargo"
+                                  : arsFormatter.format(cost)}
                           </span>
                           {isSelected && (
                             <Check className="h-4 w-4 text-ink" strokeWidth={1.6} />
                           )}
                         </div>
                       </div>
-                      {method.freeShippingThreshold !== null && cost > 0 && (
+                      {!quote.available && !isQuoting && (
+                        <span id={`quote-${method.id}`} className="mt-3 block text-xs text-stone-600">
+                          {QUOTE_UNAVAILABLE_MESSAGES[quote.reason]}
+                        </span>
+                      )}
+                      {quote.available && quote.zoneName && (
+                        <span className="mt-2 block text-xs text-stone-600">Zona {quote.zoneName}</span>
+                      )}
+                      {method.freeShippingThreshold !== null && cost !== null && cost > 0 && (
                         <span className="mt-3 block text-xs font-normal tracking-wide text-chocolate">
                           Gratis desde {arsFormatter.format(method.freeShippingThreshold)}
                         </span>
@@ -690,7 +752,7 @@ export function CheckoutForm({
               <div className="flex justify-between text-stone-600">
                 <span className="">Envío</span>
                 <span className="tabular text-sm font-semibold text-ink">
-                  {!selectedMethod
+                  {!selectedMethod || !selectedQuote?.available
                     ? "—"
                     : shippingCost === 0
                       ? "Sin cargo"

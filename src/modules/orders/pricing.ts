@@ -10,6 +10,8 @@ export function applyDiscount(price: number, discountPercentage: number): number
   return Math.round(price * (1 - pct / 100));
 }
 
+import type { RateTable } from "@/modules/orders/shipping-rates";
+
 export type DeliveryType = "HOME_DELIVERY" | "PICKUP";
 
 export interface ShippingRule {
@@ -23,6 +25,8 @@ export interface ShippingRule {
   estimatedDelivery: string | null;
   /** Provincias habilitadas; vacío = todo el país */
   provinces: string[];
+  /** Tarifa por CP y peso; null = precio fijo (`price`). */
+  rateTable: RateTable | null;
 }
 
 export function isShippingAvailableFor(

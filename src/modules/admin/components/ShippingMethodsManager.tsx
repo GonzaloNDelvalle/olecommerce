@@ -18,6 +18,13 @@ import {
   adminPrimaryButtonClass,
   adminSecondaryButtonClass,
 } from "@/modules/admin/components/AdminUi";
+import {
+  EMPTY_RATE_TABLE,
+  RateTableEditor,
+  draftToRateTable,
+  rateTableToDraft,
+  type RateTableDraft,
+} from "@/modules/admin/components/RateTableEditor";
 
 const arsFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -34,6 +41,8 @@ type Draft = {
   freeShippingThreshold: string;
   estimatedDelivery: string;
   provinces: string[];
+  pricing: "flat" | "table";
+  rateTable: RateTableDraft;
   isActive: boolean;
   sortOrder: string;
 };
@@ -46,6 +55,8 @@ const EMPTY_DRAFT: Draft = {
   freeShippingThreshold: "",
   estimatedDelivery: "",
   provinces: [],
+  pricing: "flat",
+  rateTable: EMPTY_RATE_TABLE,
   isActive: true,
   sortOrder: "0",
 };
@@ -61,6 +72,8 @@ function toDraft(method: AdminShippingMethodDTO): Draft {
       method.freeShippingThreshold === null ? "" : String(method.freeShippingThreshold),
     estimatedDelivery: method.estimatedDelivery ?? "",
     provinces: method.provinces,
+    pricing: method.rateTable ? "table" : "flat",
+    rateTable: method.rateTable ? rateTableToDraft(method.rateTable) : EMPTY_RATE_TABLE,
     isActive: method.isActive,
     sortOrder: String(method.sortOrder),
   };
@@ -94,7 +107,17 @@ export function ShippingMethodsManager({
 
   function handleSave() {
     if (!draft) return;
+    let rateTable: ShippingMethodInput["rateTable"] = null;
+    if (draft.pricing === "table") {
+      const converted = draftToRateTable(draft.rateTable);
+      if ("error" in converted) {
+        setMessage({ tone: "error", text: converted.error });
+        return;
+      }
+      rateTable = converted.table;
+    }
     const payload: ShippingMethodInput = {
+      rateTable,
       id: draft.id,
       name: draft.name,
       description: draft.description,
@@ -184,7 +207,11 @@ export function ShippingMethodsManager({
                       {method.type === "PICKUP" ? "Retiro" : "Domicilio"}
                     </td>
                     <td className="py-3 pr-4 text-stone-900">
-                      {method.price === 0 ? "Sin cargo" : arsFormatter.format(method.price)}
+                      {method.rateTable
+                        ? `Por CP y peso (${method.rateTable.zones.length} zona${method.rateTable.zones.length === 1 ? "" : "s"})`
+                        : method.price === 0
+                          ? "Sin cargo"
+                          : arsFormatter.format(method.price)}
                     </td>
                     <td className="py-3 pr-4 text-stone-600">
                       {method.freeShippingThreshold === null
@@ -248,7 +275,20 @@ export function ShippingMethodsManager({
                 <option value="PICKUP">Retiro en showroom / punto</option>
               </select>
             </div>
-            <div>
+            <fieldset className="sm:col-span-2">
+              <legend className={adminLabelClass}>Cómo se calcula el costo</legend>
+              <div className="mt-2 flex flex-wrap gap-4 text-sm text-stone-700">
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="sm-pricing" checked={draft.pricing === "flat"} onChange={() => update("pricing", "flat")} />
+                  Precio fijo
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="sm-pricing" checked={draft.pricing === "table"} onChange={() => update("pricing", "table")} disabled={draft.type === "PICKUP"} />
+                  Por código postal y peso (tarifario del correo)
+                </label>
+              </div>
+            </fieldset>
+            <div className={draft.pricing === "table" ? "hidden" : undefined}>
               <label className={adminLabelClass} htmlFor="sm-price">Costo (ARS)</label>
               <input id="sm-price" type="number" min={0} className={`mt-1.5 ${adminInputClass}`} value={draft.price} onChange={(e) => update("price", e.target.value)} />
             </div>
@@ -273,6 +313,15 @@ export function ShippingMethodsManager({
               Activo en el checkout
             </label>
           </div>
+
+          {draft.pricing === "table" && draft.type !== "PICKUP" && (
+            <div className="mt-6">
+              <p className={adminLabelClass}>Tarifas por zona y peso</p>
+              <div className="mt-3">
+                <RateTableEditor value={draft.rateTable} onChange={(next) => update("rateTable", next)} />
+              </div>
+            </div>
+          )}
 
           <fieldset className="mt-6">
             <legend className={adminLabelClass}>

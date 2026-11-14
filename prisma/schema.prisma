@@ -490,6 +490,8 @@ model ShippingMethod {
   estimatedDelivery     String?            @map("estimated_delivery") @db.VarChar(80)
   // Provincias habilitadas; vacío = todo el país
   provinces             String[]           @default([])
+  // Tarifa por código postal y peso (zonas + tramos). null = precio fijo.
+  rateTable             Json?              @map("rate_table")
   isActive              Boolean            @default(true) @map("is_active")
   sortOrder             Int                @default(0) @map("sort_order")
 

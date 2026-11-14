@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { ShippingMethodType } from "@prisma/client";
+import { Prisma, ShippingMethodType } from "@prisma/client";
+import { parseRateTable, rateTableSchema, type RateTable } from "@/modules/orders/shipping-rates";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
 import { CACHE_TAGS, expireTagsNow } from "@/lib/cache-tags";
@@ -106,6 +107,7 @@ export interface AdminShippingMethodDTO {
   freeShippingThreshold: number | null;
   estimatedDelivery: string | null;
   provinces: string[];
+  rateTable: RateTable | null;
   isActive: boolean;
   sortOrder: number;
   ordersCount: number;
@@ -120,6 +122,7 @@ const shippingMethodSchema = z.object({
   freeShippingThreshold: z.number().positive().nullable(),
   estimatedDelivery: optionalText(80),
   provinces: z.array(z.enum(ARGENTINA_PROVINCES)).max(24),
+  rateTable: rateTableSchema.nullable(),
   isActive: z.boolean(),
   sortOrder: z.number().int().min(0).max(999),
 });
@@ -146,6 +149,7 @@ export async function getAdminShippingMethods(): Promise<AdminShippingMethodDTO[
         : Number(method.freeShippingThreshold),
     estimatedDelivery: method.estimatedDelivery,
     provinces: method.provinces,
+    rateTable: parseRateTable(method.rateTable),
     isActive: method.isActive,
     sortOrder: method.sortOrder,
     ordersCount: method._count.orders,
@@ -165,7 +169,9 @@ export async function saveAdminShippingMethod(
     };
   }
 
-  const { id, ...data } = parsed.data;
+  const { id, rateTable, ...rest } = parsed.data;
+  // null en una columna JSON se guarda como NULL de SQL (precio fijo)
+  const data = { ...rest, rateTable: rateTable ?? Prisma.DbNull };
   if (id) {
     await db.shippingMethod.update({ where: { id }, data });
   } else {

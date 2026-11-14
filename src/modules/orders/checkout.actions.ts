@@ -21,9 +21,13 @@ import { consumeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import {
   applyDiscount,
   computeOrderTotals,
-  computeShippingCost,
   isShippingAvailableFor,
 } from "@/modules/orders/pricing";
+import {
+  QUOTE_UNAVAILABLE_MESSAGES,
+  packageWeight,
+  quoteShipping,
+} from "@/modules/orders/shipping-rates";
 import {
   getActiveShippingMethods,
   getStoreSettings,
@@ -145,6 +149,7 @@ export async function processCheckoutOrder(
               basePrice: true,
               discountPercentage: true,
               status: true,
+              weightInGrams: true,
             },
           },
           size: { select: { name: true } },
@@ -155,6 +160,7 @@ export async function processCheckoutOrder(
       const variantMap = new Map(dbVariants.map((v) => [v.id, v]));
 
       let calculatedSubtotal = 0;
+      const packageItems: { weightGrams: number; quantity: number }[] = [];
       const orderItemsToCreate: {
         variantId: string;
         productName: string;
@@ -209,6 +215,7 @@ export async function processCheckoutOrder(
 
         const itemSubtotal = effectiveUnitPrice * requestedItem.quantity;
         calculatedSubtotal += itemSubtotal;
+        packageItems.push({ weightGrams: variant.product.weightInGrams, quantity: requestedItem.quantity });
 
         orderItemsToCreate.push({
           variantId: variant.id,
@@ -269,10 +276,20 @@ export async function processCheckoutOrder(
         }
       }
 
+      // Costo de envío calculado acá (CP + peso real de las prendas), nunca el del navegador
+      const quote = quoteShipping(shippingMethod, {
+        postalCode: customer.postalCode,
+        weightGrams: shippingMethod.rateTable ? packageWeight(packageItems, shippingMethod.rateTable) : 0,
+        subtotal: calculatedSubtotal,
+      });
+      if (!quote.available) {
+        throw new Error(QUOTE_UNAVAILABLE_MESSAGES[quote.reason]);
+      }
+
       const isBankTransfer = customer.paymentMethod === "BANK_TRANSFER";
       const { discountAmount, shippingCost, totalAmount } = computeOrderTotals({
         subtotal: calculatedSubtotal,
-        shippingCost: computeShippingCost(shippingMethod, calculatedSubtotal),
+        shippingCost: quote.cost,
         isBankTransfer,
         bankTransferDiscountPercentage: settings.bankTransferDiscountPercentage,
       });
