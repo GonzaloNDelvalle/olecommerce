@@ -7,17 +7,25 @@ import { SmoothScrollProvider } from "@/components/layout/SmoothScrollProvider";
 import { RevealObserver } from "@/components/motion/RevealObserver";
 import { getAnnouncementMessages, getSiteContent } from "@/modules/content/site-content";
 import { getActiveCategories } from "@/modules/products/queries";
-import { getStoreSettings } from "@/modules/settings/store-settings";
+import { getActiveShippingMethods, getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
 import { categoryHref } from "@/modules/products/urls";
 
 export default async function ShopLayout({ children }: { children: ReactNode }) {
   // Contenido editable desde /admin (cacheado; se invalida al guardar)
-  const [content, announcements, categories, settings] = await Promise.all([
+  const [content, announcements, categories, settings, shippingMethods] = await Promise.all([
     getSiteContent(),
     getAnnouncementMessages(),
     getActiveCategories(),
     getStoreSettings(),
+    getActiveShippingMethods(),
   ]);
+
+  // Envío gratis: el umbral más bajo entre los envíos a domicilio que lo tienen
+  const thresholds = shippingMethods
+    .filter((m) => m.type === "HOME_DELIVERY" && m.freeShippingThreshold !== null)
+    .map((m) => m.freeShippingThreshold as number);
+  const freeShippingThreshold = thresholds.length ? Math.min(...thresholds) : null;
+  const transferDiscount = isBankTransferAvailable(settings) ? settings.bankTransferDiscountPercentage : 0;
 
   const categoryLinks: NavLink[] = categories
     .filter((c) => c.productsCount > 0)
@@ -53,7 +61,7 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
         <Suspense fallback={null}>
           <MobileTabBar />
         </Suspense>
-        <CartDrawer />
+        <CartDrawer freeShippingThreshold={freeShippingThreshold} transferDiscount={transferDiscount} />
 
         {/* Apariciones al scrollear (DESIGN.md §8) */}
         <RevealObserver />
