@@ -76,10 +76,10 @@ export function ProductCard({ product, priority = false, sizes }: ProductCardPro
 
         <span className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
           {percent > 0 && (
-            <span className="eyebrow bg-brick px-2.5 py-1.5 text-[11px] text-paper">−{percent}%</span>
+            <span className="eyebrow bg-brick px-2.5 py-1.5 text-paper">−{percent}%</span>
           )}
           {product.collection && (
-            <span className="eyebrow bg-paper px-2.5 py-1.5 text-[11px] text-caramel">{product.collection.name}</span>
+            <span className="eyebrow bg-paper px-2.5 py-1.5 text-caramel">{product.collection.name}</span>
           )}
         </span>
 

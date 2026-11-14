@@ -37,10 +37,10 @@ export function CopyButton({
     <button
       type="button"
       onClick={handleCopy}
-      className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-medium transition-colors ${
+      className={`inline-flex min-h-11 items-center gap-1.5 text-[13px] font-semibold transition-colors ${
         copied
-          ? "text-emerald-700 font-semibold"
-          : "text-stone-500 hover:text-stone-900"
+          ? "text-olive-deep font-semibold"
+          : "text-stone-500 hover:text-ink"
       } ${className}`}
       title="Copiar al portapapeles"
     >

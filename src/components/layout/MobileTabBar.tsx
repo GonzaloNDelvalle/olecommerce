@@ -8,7 +8,7 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { cn } from "@/lib/cn";
 
 const tabClass =
-  "pressable relative flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-full px-2 py-1.5 text-[11px] font-semibold text-stone-700";
+  "pressable relative flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-full px-2 py-1.5 text-xs font-semibold text-stone-700";
 
 /**
  * Barra de navegación inferior de vidrio, solo en mobile (DESIGN.md §9).
