@@ -37,7 +37,7 @@ const HERO_FIELDS: TextField[] = [
   { name: "heroTitle", label: "Título", placeholder: "Neutral State - SS'27", maxLength: 80, wide: true },
   { name: "heroSubtitle", label: "Bajada (opcional)", maxLength: 300, wide: true },
   { name: "heroCtaLabel", label: "Texto del botón", placeholder: "Explorar", maxLength: 40 },
-  { name: "heroCtaHref", label: "Link del botón", placeholder: "/productos", maxLength: 255, hint: "Una página de la tienda, ej: /productos?categoria=denim" },
+  { name: "heroCtaHref", label: "Link del botón", placeholder: "/productos", maxLength: 255, hint: "Una página de la tienda, ej: /categoria/denim" },
 ];
 
 const CAMPAIGN_FIELDS: TextField[] = [

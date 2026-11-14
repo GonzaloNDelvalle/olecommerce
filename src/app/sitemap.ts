@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...categories
       .filter((category) => category.productsCount > 0)
       .map((category) => ({
-        url: `${appUrl}/productos?categoria=${encodeURIComponent(category.slug)}`,
+        url: `${appUrl}/categoria/${encodeURIComponent(category.slug)}`,
         changeFrequency: "weekly" as const,
         priority: 0.7,
       })),

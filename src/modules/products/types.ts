@@ -6,6 +6,8 @@ export interface PublicCategoryDTO {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
+  imageUrl: string | null;
   productsCount: number;
 }
 

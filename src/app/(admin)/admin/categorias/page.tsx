@@ -221,7 +221,7 @@ function AdminCategoriesManager() {
                       </td>
 
                       <td className="px-6 py-4 font-mono text-xs text-stone-500">
-                        ?categoria={cat.slug}
+                        /categoria/{cat.slug}
                       </td>
 
                       <td className="px-6 py-4 text-center">

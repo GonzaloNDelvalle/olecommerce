@@ -87,6 +87,8 @@ export async function getActiveCategories(): Promise<PublicCategoryDTO[]> {
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
+    description: cat.description,
+    imageUrl: cat.imageUrl,
     productsCount: cat._count.products,
   }));
 }

@@ -232,7 +232,7 @@ export function AnnouncementsManager({
                 id="ann-link"
                 value={draft.linkUrl}
                 onChange={(e) => update("linkUrl", e.target.value)}
-                placeholder="/productos?categoria=denim"
+                placeholder="/categoria/denim"
                 className={`mt-1.5 ${adminInputClass}`}
               />
             </div>
