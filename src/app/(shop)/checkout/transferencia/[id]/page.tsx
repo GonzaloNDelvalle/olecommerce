@@ -20,7 +20,7 @@ export default function TransferRedirectPage({
     <Suspense
       fallback={
         <div className="mx-auto max-w-2xl px-4 py-16">
-          <div className="h-96 animate-pulse rounded-none border border-stone-200 bg-white" />
+          <div className="h-96 animate-pulse border border-stone-200 bg-white" />
         </div>
       }
     >

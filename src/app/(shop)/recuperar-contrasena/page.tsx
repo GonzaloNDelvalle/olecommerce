@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
               className={AUTH_INPUT_CLASS}
             />
             {errors.email && (
-              <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+              <p className="mt-1.5 text-[13px] font-medium text-brick">
                 {errors.email.message}
               </p>
             )}
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
             className={AUTH_BUTTON_CLASS}
           >
             {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {isSubmitting ? "ENVIANDO..." : "ENVIAR LINK"}
+            {isSubmitting ? "Enviando…" : "Enviar link"}
           </button>
         </form>
       )}

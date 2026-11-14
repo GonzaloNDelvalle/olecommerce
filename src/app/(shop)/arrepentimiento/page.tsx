@@ -23,13 +23,10 @@ export default function RevocationPage() {
         </div>
 
         <header className="mb-10 text-center">
-          <p className="font-serif text-3xl tracking-tight text-ink">
-            OL.
-          </p>
-          <h1 className="mt-4 font-serif text-3xl tracking-wide uppercase text-ink sm:text-4xl">
+          <h1 className="display mt-4 text-[clamp(40px,6vw,56px)] text-ink">
             Botón de Arrepentimiento
           </h1>
-          <p className="mt-3 font-sans text-xs uppercase tracking-[0.2em] text-stone-500">
+          <p className="mx-auto mt-3 max-w-sm text-[15px] text-stone-700">
             Defensa de las y los Consumidores · Res. 424/2020
           </p>
           <div className="mt-4 flex items-center justify-center gap-2 text-stone-600 font-sans text-xs font-normal">
@@ -38,7 +35,7 @@ export default function RevocationPage() {
           </div>
         </header>
 
-        <section className="mb-8 font-sans text-xs font-normal leading-relaxed text-stone-600 bg-white/70 border border-stone-200 p-5 rounded-none">
+        <section className="mb-8 font-sans text-xs font-normal leading-relaxed text-stone-600 bg-white/70 border border-stone-200 p-5">
           <p>
             De conformidad con el <strong>artículo 34 de la Ley N° 24.240</strong> y la{" "}
             <strong>Resolución 424/2020</strong> de la Secretaría de Comercio Interior de la Nación,

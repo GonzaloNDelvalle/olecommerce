@@ -7,6 +7,8 @@ import { z } from "zod";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { submitRevocationRequestAction } from "@/modules/legal/actions/revocation.actions";
 
+import { INPUT_CLASS, LABEL_CLASS, SUBMIT_CLASS } from "@/components/ui/form";
+
 const revocationSchema = z.object({
   email: z.string().email("Ingresá un correo electrónico válido."),
   orderNumber: z
@@ -20,10 +22,6 @@ const revocationSchema = z.object({
 
 type RevocationFormValues = z.infer<typeof revocationSchema>;
 
-const INPUT_CLASS =
-  "w-full bg-transparent border-0 border-b border-stone-300 focus:border-ink rounded-none px-0 py-3 font-sans text-sm font-normal text-ink placeholder:text-stone-500 focus:outline-none transition-colors";
-const LABEL_CLASS =
-  "block font-sans text-xs uppercase tracking-[0.2em] text-stone-600";
 
 export function RevocationForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -66,8 +64,8 @@ export function RevocationForm() {
 
   if (successMessage) {
     return (
-      <div className="rounded-none border border-stone-200 bg-white p-8 text-center sm:p-12">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-none bg-stone-100 text-ink">
+      <div className="border border-stone-200 bg-white p-8 text-center sm:p-12">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center bg-cream text-ink">
           <CheckCircle2 className="h-6 w-6 text-olive-deep" />
         </div>
         <h3 className="mt-4 font-serif text-2xl uppercase tracking-wide text-ink">
@@ -93,9 +91,9 @@ export function RevocationForm() {
   }
 
   return (
-    <div className="rounded-none border border-stone-200 bg-white p-8 sm:p-10">
+    <div className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-[0_20px_60px_rgba(44,33,25,0.06)] sm:p-9">
       {serverError && (
-        <div className="mb-6 flex items-start gap-2.5 rounded-none border border-red-200 bg-red-50/70 p-4 font-sans text-xs font-normal text-red-800">
+        <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-brick/30 bg-brick/5 p-4 text-sm text-brick">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-brick" />
           <p>{serverError}</p>
         </div>
@@ -115,7 +113,7 @@ export function RevocationForm() {
             className={INPUT_CLASS}
           />
           {errors.email && (
-            <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+            <p className="mt-1.5 text-[13px] font-medium text-brick">
               {errors.email.message}
             </p>
           )}
@@ -133,7 +131,7 @@ export function RevocationForm() {
             className={INPUT_CLASS}
           />
           {errors.orderNumber && (
-            <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+            <p className="mt-1.5 text-[13px] font-medium text-brick">
               {errors.orderNumber.message}
             </p>
           )}
@@ -151,7 +149,7 @@ export function RevocationForm() {
             rows={3}
             placeholder="Comentario adicional o motivo de la devolución..."
             {...register("reason")}
-            className="w-full bg-transparent border-0 border-b border-stone-300 focus:border-ink rounded-none px-0 py-3 font-sans text-sm font-normal text-ink placeholder:text-stone-500 focus:outline-none transition-colors resize-none"
+            className="w-full bg-transparent border-0 border-b border-stone-300 focus:border-ink px-0 py-3 font-sans text-sm font-normal text-ink placeholder:text-stone-500 focus:outline-none transition-colors resize-none"
           />
         </div>
 
@@ -159,15 +157,15 @@ export function RevocationForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-none bg-ink px-6 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-espresso disabled:cursor-not-allowed disabled:bg-stone-400"
+            className={SUBMIT_CLASS}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ENVIANDO SOLICITUD...
+                Enviando solicitud…
               </>
             ) : (
-              "CONFIRMAR REVOCACIÓN DE COMPRA"
+              "Confirmar arrepentimiento"
             )}
           </button>
         </div>

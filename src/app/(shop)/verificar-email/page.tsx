@@ -75,7 +75,7 @@ function VerifyEmailCard() {
 export default function VerifyEmailPage() {
   return (
     <AuthShell title="Confirmar email">
-      <Suspense fallback={<div className="h-32 animate-pulse bg-stone-100" />}>
+      <Suspense fallback={<div className="h-32 animate-pulse bg-cream" />}>
         <VerifyEmailCard />
       </Suspense>
     </AuthShell>

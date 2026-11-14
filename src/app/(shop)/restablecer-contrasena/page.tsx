@@ -99,7 +99,7 @@ function ResetPasswordForm() {
           className={AUTH_INPUT_CLASS}
         />
         {errors.password && (
-          <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+          <p className="mt-1.5 text-[13px] font-medium text-brick">
             {errors.password.message}
           </p>
         )}
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
           className={AUTH_INPUT_CLASS}
         />
         {errors.confirmPassword && (
-          <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+          <p className="mt-1.5 text-[13px] font-medium text-brick">
             {errors.confirmPassword.message}
           </p>
         )}
@@ -127,7 +127,7 @@ function ResetPasswordForm() {
         className={AUTH_BUTTON_CLASS}
       >
         {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-        {isSubmitting ? "GUARDANDO..." : "GUARDAR CONTRASEÑA"}
+        {isSubmitting ? "Guardando…" : "Guardar contraseña"}
       </button>
     </form>
   );
@@ -136,7 +136,7 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <AuthShell title="Nueva contraseña">
-      <Suspense fallback={<div className="h-48 animate-pulse bg-stone-100" />}>
+      <Suspense fallback={<div className="h-48 animate-pulse bg-cream" />}>
         <ResetPasswordForm />
       </Suspense>
     </AuthShell>

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -24,28 +25,28 @@ const EDITORIAL_STATUS_CONFIG: Record<
   { label: string; className: string }
 > = {
   PENDING: {
-    label: "PENDIENTE DE PAGO",
-    className: "border-amber-300 bg-amber-50/70 text-amber-900",
+    label: "Pago pendiente",
+    className: "border-brick/30 bg-brick/5 text-brick",
   },
   PAID: {
-    label: "PAGADO · EN PREPARACIÓN",
-    className: "border-emerald-300 bg-olive/10/70 text-emerald-900",
+    label: "Pagado · en preparación",
+    className: "border-olive/30 bg-olive/10 text-olive-deep",
   },
   PROCESSING: {
-    label: "EN PREPARACIÓN",
-    className: "border-stone-300 bg-stone-100 text-stone-800",
+    label: "En preparación",
+    className: "border-stone-300 bg-cream text-ink",
   },
   SHIPPED: {
-    label: "DESPACHADO",
-    className: "border-ink bg-ink text-white",
+    label: "En camino",
+    className: "border-caramel/40 bg-cream text-chocolate",
   },
   DELIVERED: {
-    label: "ENTREGADO",
-    className: "border-stone-300 bg-stone-100 text-stone-800",
+    label: "Entregado",
+    className: "border-stone-300 bg-cream text-ink",
   },
   CANCELLED: {
-    label: "CANCELADO",
-    className: "border-red-200 bg-red-50/70 text-red-800",
+    label: "Cancelado",
+    className: "border-stone-300 bg-cream text-stone-700",
   },
 };
 
@@ -105,17 +106,17 @@ async function CustomerAccountContent() {
       {/* SECCIÓN MIS PEDIDOS */}
       <section className="mt-12">
         <div className="mb-8 flex items-baseline justify-between">
-          <h2 className="font-serif text-2xl tracking-wide text-ink uppercase">
-            Mis Pedidos
+          <h2 className="display text-[36px] text-ink">
+            Mis pedidos
           </h2>
-          <span className="font-sans text-xs font-normal tracking-[0.15em] text-stone-500 uppercase">
+          <span className="text-sm text-stone-600">
             {profile.orders.length}{" "}
             {profile.orders.length === 1 ? "orden registrada" : "órdenes registradas"}
           </span>
         </div>
 
         {profile.orders.length === 0 ? (
-          <div className="rounded-none border border-stone-200 bg-white px-6 py-16 text-center">
+          <div className="rounded-2xl border border-stone-200 bg-white px-6 py-16 text-center">
             <p className="font-serif text-2xl text-ink">
               Aún no registrás pedidos en tu cuenta
             </p>
@@ -125,9 +126,9 @@ async function CustomerAccountContent() {
             </p>
             <Link
               href="/productos"
-              className="mt-8 inline-flex h-12 items-center justify-center rounded-none bg-ink px-8 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-espresso"
+              className="pressable mt-8 inline-flex h-14 items-center justify-center rounded-full bg-ink px-8 text-[15px] font-semibold text-paper hover:bg-espresso"
             >
-              EXPLORAR COLECCIÓN
+              Ir a la tienda
             </Link>
           </div>
         ) : (
@@ -147,13 +148,13 @@ async function CustomerAccountContent() {
               return (
                 <article
                   key={order.id}
-                  className="mb-6 rounded-none border border-stone-200 bg-white p-6"
+                  className="mb-6 rounded-2xl border border-stone-200 bg-white p-6"
                 >
                   {/* CABECERA DE PEDIDO */}
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 pb-5">
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                       <div>
-                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
+                        <p className="eyebrow text-stone-600">
                           N° DE ORDEN
                         </p>
                         <p className="mt-0.5 font-serif text-xl text-ink">
@@ -162,8 +163,8 @@ async function CustomerAccountContent() {
                       </div>
 
                       <div>
-                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
-                          FECHA DE COMPRA
+                        <p className="eyebrow text-stone-600">
+                          Fecha
                         </p>
                         <p className="mt-0.5 font-sans text-xs font-normal text-stone-700">
                           {dateFormatter.format(new Date(order.createdAt))}
@@ -171,8 +172,8 @@ async function CustomerAccountContent() {
                       </div>
 
                       <div>
-                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
-                          MEDIO DE PAGO
+                        <p className="eyebrow text-stone-600">
+                          Medio de pago
                         </p>
                         <p className="mt-0.5 font-sans text-xs font-normal text-stone-700">
                           {isBankTransfer
@@ -182,8 +183,8 @@ async function CustomerAccountContent() {
                       </div>
 
                       <div>
-                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
-                          TOTAL ABONADO
+                        <p className="eyebrow text-stone-600">
+                          Total
                         </p>
                         <p className="mt-0.5 font-sans text-sm font-medium text-ink">
                           {arsFormatter.format(order.totalAmount)}
@@ -193,7 +194,7 @@ async function CustomerAccountContent() {
 
                     <div className="flex items-center gap-3">
                       <span
-                        className={`inline-block rounded-none border px-3 py-1 font-sans text-xs tracking-[0.18em] uppercase ${statusInfo.className}`}
+                        className={`inline-flex h-7 items-center rounded-full border px-3 text-xs font-semibold ${statusInfo.className}`}
                       >
                         {statusInfo.label}
                       </span>
@@ -202,12 +203,12 @@ async function CustomerAccountContent() {
 
                   {/* SEGUIMIENTO LOGÍSTICO (SHIPPED) */}
                   {isShipped && (
-                    <div className="mt-5 flex flex-col justify-between gap-4 rounded-none border border-stone-200 bg-paper p-5 sm:flex-row sm:items-center">
+                    <div className="mt-5 flex flex-col justify-between gap-4 border border-stone-200 bg-paper p-5 sm:flex-row sm:items-center">
                       <div className="flex items-start gap-3.5">
                         <Truck className="mt-0.5 h-4 w-4 shrink-0 text-stone-800" />
                         <div>
-                          <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
-                            SEGUIMIENTO LOGÍSTICO
+                          <p className="eyebrow text-stone-600">
+                            Seguimiento
                           </p>
                           <p className="mt-1 font-sans text-xs font-normal text-stone-800">
                             Transportista:{" "}
@@ -227,9 +228,9 @@ async function CustomerAccountContent() {
                         href={trackingUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-none bg-ink px-5 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-espresso"
+                        className="pressable inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-paper hover:bg-espresso"
                       >
-                        RASTREAR PAQUETE
+                        Seguir envío
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </div>
@@ -237,46 +238,43 @@ async function CustomerAccountContent() {
 
                   {/* ACCIÓN RÁPIDA PARA TRANSFERENCIA PENDIENTE */}
                   {order.status === "PENDING" && isBankTransfer && (
-                    <div className="mt-5 flex flex-col justify-between gap-4 rounded-none border border-stone-200 bg-paper p-4 sm:flex-row sm:items-center">
+                    <div className="mt-5 flex flex-col justify-between gap-4 border border-stone-200 bg-paper p-4 sm:flex-row sm:items-center">
                       <p className="font-sans text-xs font-normal text-stone-600">
                         Orden pendiente de transferencia bancaria. Recordá
                         enviar el comprobante para confirmar tu despacho.
                       </p>
                       <Link
                         href={`/checkout/confirmacion/${order.id}`}
-                        className="inline-flex h-9 shrink-0 items-center justify-center rounded-none border border-ink bg-white px-4 font-sans text-xs tracking-[0.18em] text-ink uppercase transition-colors hover:bg-ink hover:text-white"
+                        className="pressable inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-ink bg-white px-5 text-sm font-semibold text-ink hover:bg-ink hover:text-paper"
                       >
-                        VER DATOS BANCARIOS
+                        Ver datos de pago
                       </Link>
                     </div>
                   )}
 
                   {/* MINIATURAS DE PRENDAS COMPRADAS */}
                   <div className="mt-5">
-                    <p className="mb-3 font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
-                      PRENDAS DEL PEDIDO ({order.items.length})
+                    <p className="mb-3 eyebrow text-stone-600">
+                      Prendas ({order.items.length})
                     </p>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {order.items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-4 rounded-none border border-stone-100 bg-paper/60 p-3"
+                          className="flex items-center gap-4 border border-stone-100 bg-paper/60 p-3"
                         >
                           {item.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.imageUrl}
-                              alt={item.productName}
-                              className="aspect-[3/4] w-14 shrink-0 rounded-none object-cover bg-stone-100"
-                            />
+                            <span className="relative aspect-[3/4] w-14 shrink-0 overflow-hidden bg-cream">
+                              <Image src={item.imageUrl} alt={item.productName} fill sizes="56px" className="object-cover" />
+                            </span>
                           ) : (
-                            <div className="flex aspect-[3/4] w-14 shrink-0 items-center justify-center rounded-none border border-stone-200 bg-stone-100 font-serif text-xs text-stone-500">
+                            <div className="flex aspect-[3/4] w-14 shrink-0 items-center justify-center border border-stone-200 bg-cream font-serif text-xs text-stone-500">
                               OL.
                             </div>
                           )}
 
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-serif text-base text-ink">
+                            <p className="truncate text-sm font-semibold text-ink">
                               {item.productName}
                             </p>
                             <p className="mt-0.5 font-sans text-xs font-normal text-stone-500">
@@ -303,9 +301,9 @@ async function CustomerAccountContent() {
                     </span>
                     <Link
                       href={`/checkout/confirmacion/${order.id}`}
-                      className="border-b border-stone-300 pb-0.5 font-sans text-xs tracking-[0.18em] text-stone-600 uppercase transition-colors hover:border-ink hover:text-ink"
+                      className="inline-flex min-h-11 items-center text-sm font-semibold text-chocolate underline underline-offset-4"
                     >
-                      VER RECIBO DIGITAL
+                      Ver comprobante
                     </Link>
                   </div>
                 </article>
@@ -324,8 +322,8 @@ export default function CustomerAccountPage() {
       <Suspense
         fallback={
           <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="h-24 animate-pulse rounded-none border-b border-stone-200 bg-stone-100/60" />
-            <div className="mt-12 h-72 animate-pulse rounded-none border border-stone-200 bg-white" />
+            <div className="h-24 animate-pulse border-b border-stone-200 bg-cream/60" />
+            <div className="mt-12 h-72 animate-pulse rounded-2xl border border-stone-200 bg-white" />
           </div>
         }
       >

@@ -12,10 +12,8 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-errors";
 
-const INPUT_CLASS =
-  "w-full bg-transparent border-0 border-b border-stone-300 focus:border-ink rounded-none px-0 py-3 font-sans text-sm font-normal text-ink placeholder:text-stone-500 focus:outline-none transition-colors";
-const LABEL_CLASS =
-  "block font-sans text-xs uppercase tracking-[0.2em] text-stone-600";
+
+import { INPUT_CLASS, LABEL_CLASS, SUBMIT_CLASS } from "@/components/ui/form";
 
 export default function RegisterPage() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -67,9 +65,9 @@ export default function RegisterPage() {
     return (
       <main className="min-h-[calc(100vh-5rem)] bg-paper">
         <div className="mx-auto max-w-md px-4 py-20">
-          <div className="rounded-none border border-stone-200 bg-white p-8 text-center sm:p-10">
+          <div className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-[0_20px_60px_rgba(44,33,25,0.06)] text-center sm:p-9">
             <MailCheck className="mx-auto h-8 w-8 text-ink" strokeWidth={1.25} />
-            <h1 className="mt-6 font-serif text-3xl tracking-wide text-ink uppercase">
+            <h1 className="display mt-6 text-[clamp(40px,6vw,56px)] text-ink">
               Revisá tu email
             </h1>
             <p className="mt-4 font-sans text-sm leading-relaxed font-normal text-stone-600">
@@ -96,20 +94,17 @@ export default function RegisterPage() {
     <main className="min-h-[calc(100vh-5rem)] bg-paper">
       <div className="mx-auto max-w-md px-4 py-20">
         <header className="mb-10 text-center">
-          <p className="font-serif text-3xl tracking-tight text-ink">
-            OL.
-          </p>
-          <h1 className="mt-4 font-serif text-3xl tracking-wide text-ink uppercase">
-            CREAR CUENTA
+          <h1 className="display mt-4 text-[clamp(40px,6vw,56px)] text-ink">
+            Crear cuenta
           </h1>
-          <p className="mt-2.5 font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
+          <p className="mx-auto mt-3 max-w-sm text-[15px] text-stone-700">
             ESPACIO PERSONAL &amp; SEGUIMIENTO DE ENVÍOS
           </p>
         </header>
 
-        <div className="rounded-none border border-stone-200 bg-white p-8 sm:p-10">
+        <div className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-[0_20px_60px_rgba(44,33,25,0.06)] sm:p-9">
           {serverError && (
-            <div className="mb-6 flex items-start gap-2.5 rounded-none border border-red-200 bg-red-50/70 p-4 font-sans text-xs font-normal text-red-800">
+            <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-brick/30 bg-brick/5 p-4 text-sm text-brick">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-brick" />
               <p>{serverError}</p>
             </div>
@@ -134,7 +129,7 @@ export default function RegisterPage() {
                   className={INPUT_CLASS}
                 />
                 {errors.firstName && (
-                  <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+                  <p className="mt-1.5 text-[13px] font-medium text-brick">
                     {errors.firstName.message}
                   </p>
                 )}
@@ -153,7 +148,7 @@ export default function RegisterPage() {
                   className={INPUT_CLASS}
                 />
                 {errors.lastName && (
-                  <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+                  <p className="mt-1.5 text-[13px] font-medium text-brick">
                     {errors.lastName.message}
                   </p>
                 )}
@@ -173,7 +168,7 @@ export default function RegisterPage() {
                 className={INPUT_CLASS}
               />
               {errors.email && (
-                <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+                <p className="mt-1.5 text-[13px] font-medium text-brick">
                   {errors.email.message}
                 </p>
               )}
@@ -193,7 +188,7 @@ export default function RegisterPage() {
                   className={INPUT_CLASS}
                 />
                 {errors.documentNumber && (
-                  <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+                  <p className="mt-1.5 text-[13px] font-medium text-brick">
                     {errors.documentNumber.message}
                   </p>
                 )}
@@ -227,7 +222,7 @@ export default function RegisterPage() {
                   className={INPUT_CLASS}
                 />
                 {errors.password && (
-                  <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+                  <p className="mt-1.5 text-[13px] font-medium text-brick">
                     {errors.password.message}
                   </p>
                 )}
@@ -246,7 +241,7 @@ export default function RegisterPage() {
                   className={INPUT_CLASS}
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-1.5 font-sans text-xs font-normal text-brick">
+                  <p className="mt-1.5 text-[13px] font-medium text-brick">
                     {errors.confirmPassword.message}
                   </p>
                 )}
@@ -257,15 +252,15 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-none bg-ink px-6 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-espresso disabled:cursor-not-allowed disabled:bg-stone-400"
+                className={SUBMIT_CLASS}
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    CREANDO CUENTA...
+                    Creando cuenta…
                   </>
                 ) : (
-                  "CREAR CUENTA"
+                  "Crear cuenta"
                 )}
               </button>
             </div>

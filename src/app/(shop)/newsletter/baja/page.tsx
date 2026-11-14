@@ -64,7 +64,7 @@ function UnsubscribeCard() {
 export default function NewsletterUnsubscribePage() {
   return (
     <AuthShell title="Newsletter">
-      <Suspense fallback={<div className="h-32 animate-pulse bg-stone-100" />}>
+      <Suspense fallback={<div className="h-32 animate-pulse bg-cream" />}>
         <UnsubscribeCard />
       </Suspense>
     </AuthShell>
