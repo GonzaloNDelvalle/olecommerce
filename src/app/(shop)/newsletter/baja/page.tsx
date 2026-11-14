@@ -44,7 +44,7 @@ function UnsubscribeCard() {
 
   return (
     <div className="text-center">
-      <p className="font-sans text-sm leading-relaxed font-light text-stone-600">
+      <p className="font-sans text-sm leading-relaxed font-normal text-stone-600">
         ¿Querés dejar de recibir nuestro newsletter? Podés volver a suscribirte
         cuando quieras desde la portada.
       </p>

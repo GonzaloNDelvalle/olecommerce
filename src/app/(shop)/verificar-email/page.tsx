@@ -37,7 +37,7 @@ function VerifyEmailCard() {
 
   if (!token) {
     return (
-      <p className="text-center font-sans text-sm font-light text-stone-600">
+      <p className="text-center font-sans text-sm font-normal text-stone-600">
         El link está incompleto. Abrilo nuevamente desde el email que te
         enviamos.
       </p>
@@ -55,7 +55,7 @@ function VerifyEmailCard() {
           para recibir un link nuevo.
         </AuthAlert>
       )}
-      <p className="font-sans text-sm leading-relaxed font-light text-stone-600">
+      <p className="font-sans text-sm leading-relaxed font-normal text-stone-600">
         Tocá el botón para confirmar que este email es tuyo y activar tu
         cuenta.
       </p>

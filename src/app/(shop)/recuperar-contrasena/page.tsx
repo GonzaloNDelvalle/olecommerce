@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
               className={AUTH_INPUT_CLASS}
             />
             {errors.email && (
-              <p className="mt-1.5 font-sans text-[11px] font-light text-red-600">
+              <p className="mt-1.5 font-sans text-xs font-normal text-brick">
                 {errors.email.message}
               </p>
             )}
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
       <div className="mt-8 border-t border-stone-200 pt-6 text-center">
         <Link
           href="/login"
-          className="border-b border-stone-900 pb-0.5 font-sans text-[11px] tracking-[0.15em] text-stone-900 uppercase"
+          className="border-b border-ink pb-0.5 font-sans text-xs tracking-[0.15em] text-ink uppercase"
         >
           Volver a iniciar sesión
         </Link>

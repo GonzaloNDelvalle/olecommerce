@@ -21,9 +21,9 @@ const revocationSchema = z.object({
 type RevocationFormValues = z.infer<typeof revocationSchema>;
 
 const INPUT_CLASS =
-  "w-full bg-transparent border-0 border-b border-stone-300 focus:border-stone-900 rounded-none px-0 py-3 font-sans text-sm font-light text-stone-900 placeholder:text-stone-400 focus:outline-none transition-colors";
+  "w-full bg-transparent border-0 border-b border-stone-300 focus:border-ink rounded-none px-0 py-3 font-sans text-sm font-normal text-ink placeholder:text-stone-500 focus:outline-none transition-colors";
 const LABEL_CLASS =
-  "block font-sans text-[10px] uppercase tracking-[0.2em] text-stone-600";
+  "block font-sans text-xs uppercase tracking-[0.2em] text-stone-600";
 
 export function RevocationForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -67,23 +67,23 @@ export function RevocationForm() {
   if (successMessage) {
     return (
       <div className="rounded-none border border-stone-200 bg-white p-8 text-center sm:p-12">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-none bg-stone-100 text-stone-900">
-          <CheckCircle2 className="h-6 w-6 text-emerald-700" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-none bg-stone-100 text-ink">
+          <CheckCircle2 className="h-6 w-6 text-olive-deep" />
         </div>
-        <h3 className="mt-4 font-serif text-2xl uppercase tracking-wide text-stone-900">
+        <h3 className="mt-4 font-serif text-2xl uppercase tracking-wide text-ink">
           Solicitud Registrada
         </h3>
-        <p className="mt-3 font-sans text-xs font-light leading-relaxed text-stone-600">
+        <p className="mt-3 font-sans text-xs font-normal leading-relaxed text-stone-600">
           {successMessage}
         </p>
-        <p className="mt-4 font-sans text-[11px] text-stone-400">
+        <p className="mt-4 font-sans text-xs text-stone-500">
           Revisá tu casilla de correo electrónico (incluso la carpeta de spam o promociones).
         </p>
         <div className="mt-8 border-t border-stone-100 pt-6">
           <button
             type="button"
             onClick={() => setSuccessMessage(null)}
-            className="font-sans text-[11px] tracking-[0.2em] uppercase text-stone-900 underline underline-offset-4 hover:text-stone-600"
+            className="font-sans text-xs tracking-[0.2em] uppercase text-ink underline underline-offset-4 hover:text-stone-600"
           >
             Enviar otra solicitud
           </button>
@@ -95,8 +95,8 @@ export function RevocationForm() {
   return (
     <div className="rounded-none border border-stone-200 bg-white p-8 sm:p-10">
       {serverError && (
-        <div className="mb-6 flex items-start gap-2.5 rounded-none border border-red-200 bg-red-50/70 p-4 font-sans text-xs font-light text-red-800">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+        <div className="mb-6 flex items-start gap-2.5 rounded-none border border-red-200 bg-red-50/70 p-4 font-sans text-xs font-normal text-red-800">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-brick" />
           <p>{serverError}</p>
         </div>
       )}
@@ -115,7 +115,7 @@ export function RevocationForm() {
             className={INPUT_CLASS}
           />
           {errors.email && (
-            <p className="mt-1.5 font-sans text-[11px] font-light text-red-600">
+            <p className="mt-1.5 font-sans text-xs font-normal text-brick">
               {errors.email.message}
             </p>
           )}
@@ -133,11 +133,11 @@ export function RevocationForm() {
             className={INPUT_CLASS}
           />
           {errors.orderNumber && (
-            <p className="mt-1.5 font-sans text-[11px] font-light text-red-600">
+            <p className="mt-1.5 font-sans text-xs font-normal text-brick">
               {errors.orderNumber.message}
             </p>
           )}
-          <p className="mt-1 font-sans text-[11px] font-light text-stone-400">
+          <p className="mt-1 font-sans text-xs font-normal text-stone-500">
             Podés encontrarlo en el asunto de tu correo de confirmación de compra.
           </p>
         </div>
@@ -151,7 +151,7 @@ export function RevocationForm() {
             rows={3}
             placeholder="Comentario adicional o motivo de la devolución..."
             {...register("reason")}
-            className="w-full bg-transparent border-0 border-b border-stone-300 focus:border-stone-900 rounded-none px-0 py-3 font-sans text-sm font-light text-stone-900 placeholder:text-stone-400 focus:outline-none transition-colors resize-none"
+            className="w-full bg-transparent border-0 border-b border-stone-300 focus:border-ink rounded-none px-0 py-3 font-sans text-sm font-normal text-ink placeholder:text-stone-500 focus:outline-none transition-colors resize-none"
           />
         </div>
 
@@ -159,7 +159,7 @@ export function RevocationForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-none bg-stone-900 px-6 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-none bg-ink px-6 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-espresso disabled:cursor-not-allowed disabled:bg-stone-400"
           >
             {isSubmitting ? (
               <>

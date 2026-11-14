@@ -99,7 +99,7 @@ function ResetPasswordForm() {
           className={AUTH_INPUT_CLASS}
         />
         {errors.password && (
-          <p className="mt-1.5 font-sans text-[11px] font-light text-red-600">
+          <p className="mt-1.5 font-sans text-xs font-normal text-brick">
             {errors.password.message}
           </p>
         )}
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
           className={AUTH_INPUT_CLASS}
         />
         {errors.confirmPassword && (
-          <p className="mt-1.5 font-sans text-[11px] font-light text-red-600">
+          <p className="mt-1.5 font-sans text-xs font-normal text-brick">
             {errors.confirmPassword.message}
           </p>
         )}

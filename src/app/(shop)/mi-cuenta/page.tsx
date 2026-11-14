@@ -29,7 +29,7 @@ const EDITORIAL_STATUS_CONFIG: Record<
   },
   PAID: {
     label: "PAGADO · EN PREPARACIÓN",
-    className: "border-emerald-300 bg-emerald-50/70 text-emerald-900",
+    className: "border-emerald-300 bg-olive/10/70 text-emerald-900",
   },
   PROCESSING: {
     label: "EN PREPARACIÓN",
@@ -37,7 +37,7 @@ const EDITORIAL_STATUS_CONFIG: Record<
   },
   SHIPPED: {
     label: "DESPACHADO",
-    className: "border-stone-900 bg-stone-900 text-white",
+    className: "border-ink bg-ink text-white",
   },
   DELIVERED: {
     label: "ENTREGADO",
@@ -85,13 +85,13 @@ async function CustomerAccountContent() {
       {/* CABECERA EDITORIAL DE LA CLIENTA */}
       <header className="flex flex-col justify-between gap-6 border-b border-stone-200 pb-10 sm:flex-row sm:items-end">
         <div>
-          <p className="font-sans text-[10px] tracking-[0.25em] text-stone-500 uppercase">
+          <p className="font-sans text-xs tracking-[0.16em] text-stone-500 uppercase">
             ESPACIO PERSONAL · OL.
           </p>
-          <h1 className="mt-3 font-serif text-3xl tracking-wide text-stone-900 sm:text-4xl">
+          <h1 className="mt-3 font-serif text-3xl tracking-wide text-ink sm:text-4xl">
             Hola, {profile.firstName} {profile.lastName}
           </h1>
-          <p className="mt-1.5 font-sans text-sm font-light text-stone-500">
+          <p className="mt-1.5 font-sans text-sm font-normal text-stone-500">
             {profile.email}
             {profile.documentNumber ? ` · DNI/CUIT ${profile.documentNumber}` : ""}
           </p>
@@ -105,10 +105,10 @@ async function CustomerAccountContent() {
       {/* SECCIÓN MIS PEDIDOS */}
       <section className="mt-12">
         <div className="mb-8 flex items-baseline justify-between">
-          <h2 className="font-serif text-2xl tracking-wide text-stone-900 uppercase">
+          <h2 className="font-serif text-2xl tracking-wide text-ink uppercase">
             Mis Pedidos
           </h2>
-          <span className="font-sans text-xs font-light tracking-[0.15em] text-stone-500 uppercase">
+          <span className="font-sans text-xs font-normal tracking-[0.15em] text-stone-500 uppercase">
             {profile.orders.length}{" "}
             {profile.orders.length === 1 ? "orden registrada" : "órdenes registradas"}
           </span>
@@ -116,16 +116,16 @@ async function CustomerAccountContent() {
 
         {profile.orders.length === 0 ? (
           <div className="rounded-none border border-stone-200 bg-white px-6 py-16 text-center">
-            <p className="font-serif text-2xl text-stone-900">
+            <p className="font-serif text-2xl text-ink">
               Aún no registrás pedidos en tu cuenta
             </p>
-            <p className="mx-auto mt-2 max-w-md font-sans text-xs font-light leading-relaxed text-stone-500">
+            <p className="mx-auto mt-2 max-w-md font-sans text-xs font-normal leading-relaxed text-stone-500">
               Descubrí las piezas de nuestra colección actual. Todas tus órdenes
               y seguimientos de envío aparecerán en este espacio.
             </p>
             <Link
               href="/productos"
-              className="mt-8 inline-flex h-12 items-center justify-center rounded-none bg-stone-900 px-8 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-stone-800"
+              className="mt-8 inline-flex h-12 items-center justify-center rounded-none bg-ink px-8 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-espresso"
             >
               EXPLORAR COLECCIÓN
             </Link>
@@ -153,28 +153,28 @@ async function CustomerAccountContent() {
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 pb-5">
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                       <div>
-                        <p className="font-sans text-[10px] tracking-[0.2em] text-stone-400 uppercase">
+                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
                           N° DE ORDEN
                         </p>
-                        <p className="mt-0.5 font-serif text-xl text-stone-900">
+                        <p className="mt-0.5 font-serif text-xl text-ink">
                           #{order.orderNumber}
                         </p>
                       </div>
 
                       <div>
-                        <p className="font-sans text-[10px] tracking-[0.2em] text-stone-400 uppercase">
+                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
                           FECHA DE COMPRA
                         </p>
-                        <p className="mt-0.5 font-sans text-xs font-light text-stone-700">
+                        <p className="mt-0.5 font-sans text-xs font-normal text-stone-700">
                           {dateFormatter.format(new Date(order.createdAt))}
                         </p>
                       </div>
 
                       <div>
-                        <p className="font-sans text-[10px] tracking-[0.2em] text-stone-400 uppercase">
+                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
                           MEDIO DE PAGO
                         </p>
-                        <p className="mt-0.5 font-sans text-xs font-light text-stone-700">
+                        <p className="mt-0.5 font-sans text-xs font-normal text-stone-700">
                           {isBankTransfer
                             ? "Transferencia Bancaria"
                             : "Mercado Pago"}
@@ -182,10 +182,10 @@ async function CustomerAccountContent() {
                       </div>
 
                       <div>
-                        <p className="font-sans text-[10px] tracking-[0.2em] text-stone-400 uppercase">
+                        <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
                           TOTAL ABONADO
                         </p>
-                        <p className="mt-0.5 font-sans text-sm font-medium text-stone-900">
+                        <p className="mt-0.5 font-sans text-sm font-medium text-ink">
                           {arsFormatter.format(order.totalAmount)}
                         </p>
                       </div>
@@ -193,7 +193,7 @@ async function CustomerAccountContent() {
 
                     <div className="flex items-center gap-3">
                       <span
-                        className={`inline-block rounded-none border px-3 py-1 font-sans text-[10px] tracking-[0.18em] uppercase ${statusInfo.className}`}
+                        className={`inline-block rounded-none border px-3 py-1 font-sans text-xs tracking-[0.18em] uppercase ${statusInfo.className}`}
                       >
                         {statusInfo.label}
                       </span>
@@ -202,21 +202,21 @@ async function CustomerAccountContent() {
 
                   {/* SEGUIMIENTO LOGÍSTICO (SHIPPED) */}
                   {isShipped && (
-                    <div className="mt-5 flex flex-col justify-between gap-4 rounded-none border border-stone-200 bg-[#FAF9F6] p-5 sm:flex-row sm:items-center">
+                    <div className="mt-5 flex flex-col justify-between gap-4 rounded-none border border-stone-200 bg-paper p-5 sm:flex-row sm:items-center">
                       <div className="flex items-start gap-3.5">
                         <Truck className="mt-0.5 h-4 w-4 shrink-0 text-stone-800" />
                         <div>
-                          <p className="font-sans text-[10px] tracking-[0.2em] text-stone-500 uppercase">
+                          <p className="font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
                             SEGUIMIENTO LOGÍSTICO
                           </p>
-                          <p className="mt-1 font-sans text-xs font-light text-stone-800">
+                          <p className="mt-1 font-sans text-xs font-normal text-stone-800">
                             Transportista:{" "}
-                            <span className="font-normal text-stone-900">
+                            <span className="font-normal text-ink">
                               {order.carrier || "Correo Logístico"}
                             </span>
                             {" · "}
                             Código:{" "}
-                            <span className="font-mono font-medium text-stone-900">
+                            <span className="font-mono font-medium text-ink">
                               {order.trackingCode || "En asignación"}
                             </span>
                           </p>
@@ -227,7 +227,7 @@ async function CustomerAccountContent() {
                         href={trackingUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-none bg-stone-900 px-5 font-sans text-[10px] tracking-[0.2em] text-white uppercase transition-colors hover:bg-stone-800"
+                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-none bg-ink px-5 font-sans text-xs tracking-[0.2em] text-white uppercase transition-colors hover:bg-espresso"
                       >
                         RASTREAR PAQUETE
                         <ExternalLink className="h-3 w-3" />
@@ -237,14 +237,14 @@ async function CustomerAccountContent() {
 
                   {/* ACCIÓN RÁPIDA PARA TRANSFERENCIA PENDIENTE */}
                   {order.status === "PENDING" && isBankTransfer && (
-                    <div className="mt-5 flex flex-col justify-between gap-4 rounded-none border border-stone-200 bg-[#FAF9F6] p-4 sm:flex-row sm:items-center">
-                      <p className="font-sans text-xs font-light text-stone-600">
+                    <div className="mt-5 flex flex-col justify-between gap-4 rounded-none border border-stone-200 bg-paper p-4 sm:flex-row sm:items-center">
+                      <p className="font-sans text-xs font-normal text-stone-600">
                         Orden pendiente de transferencia bancaria. Recordá
                         enviar el comprobante para confirmar tu despacho.
                       </p>
                       <Link
                         href={`/checkout/confirmacion/${order.id}`}
-                        className="inline-flex h-9 shrink-0 items-center justify-center rounded-none border border-stone-900 bg-white px-4 font-sans text-[10px] tracking-[0.18em] text-stone-900 uppercase transition-colors hover:bg-stone-900 hover:text-white"
+                        className="inline-flex h-9 shrink-0 items-center justify-center rounded-none border border-ink bg-white px-4 font-sans text-xs tracking-[0.18em] text-ink uppercase transition-colors hover:bg-ink hover:text-white"
                       >
                         VER DATOS BANCARIOS
                       </Link>
@@ -253,14 +253,14 @@ async function CustomerAccountContent() {
 
                   {/* MINIATURAS DE PRENDAS COMPRADAS */}
                   <div className="mt-5">
-                    <p className="mb-3 font-sans text-[10px] tracking-[0.2em] text-stone-400 uppercase">
+                    <p className="mb-3 font-sans text-xs tracking-[0.2em] text-stone-500 uppercase">
                       PRENDAS DEL PEDIDO ({order.items.length})
                     </p>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {order.items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-4 rounded-none border border-stone-100 bg-[#FAF9F6]/60 p-3"
+                          className="flex items-center gap-4 rounded-none border border-stone-100 bg-paper/60 p-3"
                         >
                           {item.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -270,21 +270,21 @@ async function CustomerAccountContent() {
                               className="aspect-[3/4] w-14 shrink-0 rounded-none object-cover bg-stone-100"
                             />
                           ) : (
-                            <div className="flex aspect-[3/4] w-14 shrink-0 items-center justify-center rounded-none border border-stone-200 bg-stone-100 font-serif text-[10px] text-stone-400">
+                            <div className="flex aspect-[3/4] w-14 shrink-0 items-center justify-center rounded-none border border-stone-200 bg-stone-100 font-serif text-xs text-stone-500">
                               OL.
                             </div>
                           )}
 
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-serif text-base text-stone-900">
+                            <p className="truncate font-serif text-base text-ink">
                               {item.productName}
                             </p>
-                            <p className="mt-0.5 font-sans text-[11px] font-light text-stone-500">
+                            <p className="mt-0.5 font-sans text-xs font-normal text-stone-500">
                               Talle {item.sizeName} · {item.colorName}
                             </p>
-                            <div className="mt-1 flex items-center justify-between font-sans text-xs font-light text-stone-700">
+                            <div className="mt-1 flex items-center justify-between font-sans text-xs font-normal text-stone-700">
                               <span>Cant. {item.quantity}</span>
-                              <span className="font-normal text-stone-900">
+                              <span className="font-normal text-ink">
                                 {arsFormatter.format(item.subtotal)}
                               </span>
                             </div>
@@ -296,14 +296,14 @@ async function CustomerAccountContent() {
 
                   {/* PIE DE TARJETA: ENLACE AL RECIBO DIGITAL */}
                   <div className="mt-5 flex items-center justify-between border-t border-stone-100 pt-4">
-                    <span className="font-sans text-[11px] font-light text-stone-400">
+                    <span className="font-sans text-xs font-normal text-stone-500">
                       {order.discountAmount > 0
                         ? `Incluye descuento por transferencia (-${arsFormatter.format(order.discountAmount)})`
                         : "Comprobante digital disponible"}
                     </span>
                     <Link
                       href={`/checkout/confirmacion/${order.id}`}
-                      className="border-b border-stone-300 pb-0.5 font-sans text-[10px] tracking-[0.18em] text-stone-600 uppercase transition-colors hover:border-stone-900 hover:text-stone-900"
+                      className="border-b border-stone-300 pb-0.5 font-sans text-xs tracking-[0.18em] text-stone-600 uppercase transition-colors hover:border-ink hover:text-ink"
                     >
                       VER RECIBO DIGITAL
                     </Link>
@@ -320,7 +320,7 @@ async function CustomerAccountContent() {
 
 export default function CustomerAccountPage() {
   return (
-    <main className="min-h-[calc(100vh-5rem)] bg-[#FAF9F6]">
+    <main className="min-h-[calc(100vh-5rem)] bg-paper">
       <Suspense
         fallback={
           <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
