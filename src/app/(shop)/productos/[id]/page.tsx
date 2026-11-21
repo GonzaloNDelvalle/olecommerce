@@ -153,7 +153,7 @@ async function ProductDetailContent({ paramsPromise }: { paramsPromise: Promise<
           ]}
         />
       </div>
-      <ProductView product={product} transferDiscount={transferDiscount} installments={0} />
+      <ProductView product={product} transferDiscount={transferDiscount} installments={3} />
       <Suspense fallback={null}>
         <RelatedProducts product={product} />
       </Suspense>

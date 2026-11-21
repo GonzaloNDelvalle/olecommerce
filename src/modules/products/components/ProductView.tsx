@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Ruler } from "lucide-react";
+import { Check, Minus, Plus, Ruler } from "lucide-react";
 import { trackAddToCart } from "@/lib/analytics";
 import type { ProductDetailDTO } from "@/modules/products/types";
 import { useCartStore } from "@/store/cart.store";
 import { ProductGallery, type GalleryImage } from "@/modules/products/components/ProductGallery";
+import { ShippingCalculator } from "@/modules/products/components/ShippingCalculator";
 import { buttonVariants } from "@/components/ui/button";
 import { formatARS } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -54,6 +55,7 @@ export function ProductView({ product, transferDiscount, installments }: Product
   const [sizeId, setSizeId] = useState<string | null>(sizes.length === 1 ? sizes[0].id : null);
   const [error, setError] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const images: GalleryImage[] = useMemo(() => {
     const seen = new Set<string>();
@@ -76,6 +78,9 @@ export function ProductView({ product, transferDiscount, installments }: Product
   const variant = product.variants.find((v) => v.color.id === colorId && v.size.id === sizeId) ?? null;
   const inCart = variant ? (cartItems.find((i) => i.variantId === variant.id)?.quantity ?? 0) : 0;
   const maxedOut = variant !== null && inCart >= variant.availableStock;
+  // Cuántas se pueden sumar todavía (sin pasar el stock, contando lo que ya hay en el carrito)
+  const maxQuantity = variant ? Math.max(0, variant.availableStock - inCart) : 10;
+  const qty = Math.max(1, Math.min(quantity, maxQuantity || 1));
 
   const basePrice = variant?.priceOverride ?? product.basePrice;
   const finalPrice = product.discountPercentage > 0 ? Math.round(basePrice * (1 - product.discountPercentage / 100)) : basePrice;
@@ -129,15 +134,16 @@ export function ProductView({ product, transferDiscount, installments }: Product
       unitPrice: finalPrice,
       maxStock: variant.availableStock,
       imageUrl: variant.imageUrl ?? images[0]?.url ?? null,
-      quantity: 1,
+      quantity: qty,
     });
     trackAddToCart({
       id: variant.sku,
       name: product.name,
       variant: `${variant.color.name} / ${variant.size.name}`,
       price: finalPrice,
-      quantity: 1,
+      quantity: qty,
     });
+    setQuantity(1);
     setJustAdded(true);
   }
 
@@ -187,12 +193,13 @@ export function ProductView({ product, transferDiscount, installments }: Product
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className={cn("tabular text-[26px] font-semibold", strikethrough && "text-brick")}>{formatARS(finalPrice)}</span>
             {strikethrough && <s className="tabular text-base text-stone-600">{formatARS(strikethrough)}</s>}
-            {installments > 1 && (
-              <span className="text-sm text-stone-700">
-                {installments} cuotas sin interés de <span className="tabular">{formatARS(Math.ceil(finalPrice / installments))}</span>
-              </span>
-            )}
           </div>
+          {installments > 1 && (
+            <p className="text-sm text-stone-700">
+              <span className="font-semibold text-ink">{installments} cuotas sin interés</span> de{" "}
+              <span className="tabular font-semibold text-ink">{formatARS(Math.ceil(finalPrice / installments))}</span>
+            </p>
+          )}
           {transferDiscount > 0 && (
             <p className="text-sm text-stone-700">
               <span className="tabular font-semibold text-chocolate">{formatARS(Math.round(finalPrice * (1 - transferDiscount / 100)))}</span>{" "}
@@ -279,6 +286,33 @@ export function ProductView({ product, transferDiscount, installments }: Product
           )}
         </fieldset>
 
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-semibold">Cantidad</p>
+          <div className="glass-light inline-flex w-fit items-center rounded-full p-1" role="group" aria-label="Cantidad">
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.max(1, qty - 1))}
+              disabled={qty <= 1}
+              aria-label="Menos unidades"
+              className="pressable inline-flex size-11 items-center justify-center rounded-full hover:bg-ink/5 disabled:opacity-30"
+            >
+              <Minus className="size-4" strokeWidth={2} />
+            </button>
+            <span className="tabular w-10 text-center text-[15px] font-semibold" aria-live="polite">
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.min(maxQuantity || 1, qty + 1))}
+              disabled={qty >= maxQuantity}
+              aria-label="Más unidades"
+              className="pressable inline-flex size-11 items-center justify-center rounded-full hover:bg-ink/5 disabled:opacity-30"
+            >
+              <Plus className="size-4" strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-2.5">
           <button
             ref={ctaRef}
@@ -301,6 +335,8 @@ export function ProductView({ product, transferDiscount, installments }: Product
               ))}
           </p>
         </div>
+
+        <ShippingCalculator variantId={variant?.id ?? product.variants[0]?.id ?? null} quantity={qty} />
 
         <div className="grid grid-cols-3 gap-2 text-[13px] text-stone-700">
           <div className="flex min-w-0 flex-col gap-1 bg-cream p-3">

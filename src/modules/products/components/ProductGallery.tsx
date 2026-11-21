@@ -2,7 +2,7 @@
 
 import { ViewTransition, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export interface GalleryImage {
@@ -97,9 +97,6 @@ export function ProductGallery({ productId, images, badge }: ProductGalleryProps
                 />
               ))}
             </span>
-            <span className="tabular text-xs font-semibold" aria-live="polite">
-              {index + 1} / {count}
-            </span>
           </div>
         )}
       </div>
@@ -150,34 +147,19 @@ export function ProductGallery({ productId, images, badge }: ProductGalleryProps
 
           {badge && <span className="tabular absolute top-3 left-3 rounded-full bg-brick px-2.5 py-0.5 text-xs font-bold text-paper">{badge}</span>}
 
-          <div
-            className="glass-light absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full p-1.5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {count > 1 && (
-              <>
-                <button type="button" onClick={() => go(index - 1)} aria-label="Foto anterior" className="pressable inline-flex size-11 items-center justify-center rounded-full hover:bg-ink/5">
-                  <ArrowLeft className="size-[18px]" strokeWidth={1.8} />
-                </button>
-                <span className="tabular px-1.5 text-[13px] font-semibold" aria-live="polite">
-                  {index + 1} / {count}
-                </span>
-                <button type="button" onClick={() => go(index + 1)} aria-label="Foto siguiente" className="pressable inline-flex size-11 items-center justify-center rounded-full hover:bg-ink/5">
-                  <ArrowRight className="size-[18px]" strokeWidth={1.8} />
-                </button>
-                <span className="mx-1 h-5 w-px bg-ink/15" aria-hidden="true" />
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setZoom((z) => !z)}
-              aria-pressed={zoom}
-              className="pressable inline-flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold hover:bg-ink/5"
+          {count > 1 && (
+            <div
+              className="glass-light absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full p-1.5"
+              onClick={(e) => e.stopPropagation()}
             >
-              {zoom ? <ZoomOut className="size-4" strokeWidth={1.8} aria-hidden="true" /> : <ZoomIn className="size-4" strokeWidth={1.8} aria-hidden="true" />}
-              {zoom ? "Alejar" : "Ampliar"}
-            </button>
-          </div>
+              <button type="button" onClick={() => go(index - 1)} aria-label="Foto anterior" className="pressable inline-flex size-11 items-center justify-center rounded-full hover:bg-ink/5">
+                <ArrowLeft className="size-[18px]" strokeWidth={1.8} />
+              </button>
+              <button type="button" onClick={() => go(index + 1)} aria-label="Foto siguiente" className="pressable inline-flex size-11 items-center justify-center rounded-full hover:bg-ink/5">
+                <ArrowRight className="size-[18px]" strokeWidth={1.8} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
