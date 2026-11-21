@@ -80,6 +80,7 @@ export function SiteContentForm({
       newsletterText: values.newsletterText ?? "",
       campaignImageUrl: values.campaignImageUrl ?? "",
       campaignVideoUrl: values.campaignVideoUrl ?? "",
+      campaignMobileVideoUrl: values.campaignMobileVideoUrl ?? "",
     };
     startTransition(async () => {
       const result = await updateAdminSiteContent(payload);
@@ -177,7 +178,7 @@ export function SiteContentForm({
 
       <AdminCard
         title="Campaña (video)"
-        description="Un video a pantalla completa que se repite en loop, con la volanta y el título encima. Sin botones."
+        description="Un video a pantalla completa que se repite en loop, con la volanta y el título encima. Podés subir uno horizontal para escritorio y otro vertical para celulares; si falta uno, se usa el otro."
       >
         <label className="mb-5 inline-flex items-center gap-2 text-sm text-stone-700">
           <input
@@ -193,9 +194,14 @@ export function SiteContentForm({
         </div>
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
           <HeroVideoUpload
-            label="Video de la campaña"
+            label="Video de escritorio (horizontal, 16:9)"
             value={values.campaignVideoUrl}
             onChange={(url) => update("campaignVideoUrl", url)}
+          />
+          <HeroVideoUpload
+            label="Video de celular (vertical, 9:16)"
+            value={values.campaignMobileVideoUrl}
+            onChange={(url) => update("campaignMobileVideoUrl", url)}
           />
           <SingleImageDropzone
             label="Imagen de portada (opcional)"

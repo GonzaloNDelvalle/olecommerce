@@ -49,6 +49,7 @@ const siteContentSchema = z.object({
   campaignTitle: z.string().trim().min(2, "Ingresá el título de la campaña").max(80),
   campaignImageUrl: optionalText(1000),
   campaignVideoUrl: optionalText(1000),
+  campaignMobileVideoUrl: optionalText(1000),
   newsletterEnabled: z.boolean(),
   newsletterEyebrow: z.string().trim().max(120),
   newsletterTitle: z.string().trim().min(2, "Ingresá el título del newsletter").max(160),
@@ -83,6 +84,7 @@ export async function updateAdminSiteContent(
     data.heroImageUrls = data.heroImageUrls.map((url) => assertAllowedMediaUrl(url));
     if (data.campaignImageUrl) data.campaignImageUrl = assertAllowedMediaUrl(data.campaignImageUrl);
     if (data.campaignVideoUrl) data.campaignVideoUrl = assertAllowedMediaUrl(data.campaignVideoUrl);
+    if (data.campaignMobileVideoUrl) data.campaignMobileVideoUrl = assertAllowedMediaUrl(data.campaignMobileVideoUrl);
   } catch (error) {
     return {
       success: false,
@@ -96,10 +98,10 @@ export async function updateAdminSiteContent(
     };
   }
 
-  if (data.campaignEnabled && !data.campaignVideoUrl) {
+  if (data.campaignEnabled && !data.campaignVideoUrl && !data.campaignMobileVideoUrl) {
     return {
       success: false,
-      error: "La campaña necesita un video (o desactivala).",
+      error: "La campaña necesita al menos un video (o desactivala).",
     };
   }
 

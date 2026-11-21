@@ -12,7 +12,6 @@ import {
 interface ShopFooterProps {
   collectionName: string;
   seasonLabel: string;
-  categoryLinks: NavLink[];
   instagramUrl: string | null;
   tiktokUrl: string | null;
   facebookUrl: string | null;
@@ -40,7 +39,6 @@ interface Social {
 export function ShopFooter({
   collectionName,
   seasonLabel,
-  categoryLinks,
   instagramUrl,
   tiktokUrl,
   facebookUrl,
@@ -57,7 +55,7 @@ export function ShopFooter({
   ].filter((social): social is Social => social !== null);
 
   return (
-    <footer className="bg-espresso pb-28 text-cream lg:pb-0">
+    <footer className="bg-espresso text-cream">
       <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-x-6 gap-y-12 px-4 pt-16 pb-12 sm:px-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] lg:pt-20">
         <div className="col-span-2 flex flex-col gap-4 lg:col-span-1">
           <Link href="/" className="display text-5xl font-semibold tracking-normal text-cream">
@@ -75,18 +73,6 @@ export function ShopFooter({
           </a>
         </div>
 
-        <nav aria-label="Tienda" className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <h2 className={`${headingClass} mb-2`}>Tienda</h2>
-          <Link href="/productos" className={linkClass}>
-            Ver todo
-          </Link>
-          {categoryLinks.map((link) => (
-            <Link key={link.href} href={link.href} className={linkClass}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
         <nav aria-label="Ayuda" className="flex min-w-0 flex-col gap-1.5 text-sm">
           <h2 className={`${headingClass} mb-2`}>Ayuda</h2>
           {HELP_LINKS.map((link) => (
@@ -99,17 +85,17 @@ export function ShopFooter({
         {socials.length > 0 && (
           <nav aria-label="Redes sociales" className="col-span-2 flex min-w-0 flex-col gap-1.5 text-sm lg:col-span-1">
             <h2 className={`${headingClass} mb-2`}>Seguinos</h2>
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-wrap gap-2.5">
               {socials.map(({ label, href, Icon }) => (
                 <li key={label}>
                   <a
                     href={href}
                     target="_blank"
                     rel="noreferrer"
-                    className="group inline-flex items-center gap-3 py-1 text-cream transition-colors duration-150 hover:text-sand"
+                    aria-label={label}
+                    className="inline-flex size-11 items-center justify-center rounded-full border border-sand/30 text-cream transition-colors duration-150 hover:border-sand hover:text-sand"
                   >
                     <Icon className="size-5 shrink-0" />
-                    {label}
                   </a>
                 </li>
               ))}

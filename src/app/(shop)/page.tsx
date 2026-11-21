@@ -109,7 +109,7 @@ export default async function HomePage() {
             </p>
           )}
           <div className={`pointer-events-auto flex w-full flex-col justify-center sm:w-auto ${heroIn} [animation-delay:300ms]`}>
-            <Link href="/productos" className={buttonVariants({ variant: "light", size: "lg" })}>
+            <Link href="/productos" className={buttonVariants({ variant: "glass", size: "lg" })}>
               Ver todo
               <ArrowRight className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
             </Link>
@@ -140,9 +140,13 @@ export default async function HomePage() {
       </section>
 
       {/* 3. CAMPAÑA — solo video en loop, con volanta y título (sin botones) */}
-      {content.campaignEnabled && content.campaignVideoUrl && (
+      {content.campaignEnabled && (content.campaignVideoUrl || content.campaignMobileVideoUrl) && (
         <section aria-labelledby="campaign-title" className="relative h-[85svh] min-h-[560px] overflow-hidden bg-espresso">
-          <CampaignMedia imageUrl={content.campaignImageUrl} videoUrl={content.campaignVideoUrl} />
+          <CampaignMedia
+            imageUrl={content.campaignImageUrl}
+            desktopVideoUrl={content.campaignVideoUrl}
+            mobileVideoUrl={content.campaignMobileVideoUrl}
+          />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink/0 from-40% to-ink/60" />
           <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[1440px] flex-col gap-4 px-4 pb-8 text-paper sm:px-10 sm:pb-14">
             {content.campaignEyebrow && <Reveal as="p" className="eyebrow text-sand">{content.campaignEyebrow}</Reveal>}

@@ -588,11 +588,13 @@ model SiteContent {
   featuredImageIds String[] @default([]) @map("featured_image_ids")
 
   // Campaña a pantalla completa (imagen o video) debajo del hero
-  campaignEnabled  Boolean @default(true) @map("campaign_enabled")
-  campaignEyebrow  String  @default("Campaña") @map("campaign_eyebrow") @db.VarChar(120)
-  campaignTitle    String  @default("Hecho para durar") @map("campaign_title") @db.VarChar(80)
-  campaignImageUrl String? @map("campaign_image_url")
-  campaignVideoUrl String? @map("campaign_video_url")
+  campaignEnabled        Boolean @default(true) @map("campaign_enabled")
+  campaignEyebrow        String  @default("Campaña") @map("campaign_eyebrow") @db.VarChar(120)
+  campaignTitle          String  @default("Hecho para durar") @map("campaign_title") @db.VarChar(80)
+  campaignImageUrl       String? @map("campaign_image_url")
+  campaignVideoUrl       String? @map("campaign_video_url")
+  // Versión vertical para celulares (si no hay, se usa el video de escritorio)
+  campaignMobileVideoUrl String? @map("campaign_mobile_video_url")
 
   // Banner de newsletter (sección oscura al final de la portada)
   newsletterEnabled     Boolean @default(true) @map("newsletter_enabled")

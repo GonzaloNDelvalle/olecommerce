@@ -1,7 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { ShopHeader, type NavLink } from "@/components/layout/ShopHeader";
 import { ShopFooter } from "@/components/layout/ShopFooter";
-import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SmoothScrollProvider } from "@/components/layout/SmoothScrollProvider";
 import { RevealObserver } from "@/components/motion/RevealObserver";
@@ -55,7 +54,6 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
         <ShopFooter
           collectionName={content.collectionName}
           seasonLabel={content.seasonLabel}
-          categoryLinks={categoryLinks}
           instagramUrl={settings.instagramUrl}
           tiktokUrl={settings.tiktokUrl}
           facebookUrl={settings.facebookUrl}
@@ -63,9 +61,6 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           supportEmail={settings.supportEmail}
         />
 
-        <Suspense fallback={null}>
-          <MobileTabBar />
-        </Suspense>
         <CartDrawer
           freeShippingThreshold={freeShippingThreshold}
           transferDiscount={transferDiscount}

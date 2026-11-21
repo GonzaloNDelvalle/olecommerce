@@ -26,6 +26,8 @@ export interface SiteContentDTO {
   campaignTitle: string;
   campaignImageUrl: string | null;
   campaignVideoUrl: string | null;
+  /** Video vertical para celulares (opcional). */
+  campaignMobileVideoUrl: string | null;
   newsletterEnabled: boolean;
   newsletterEyebrow: string;
   newsletterTitle: string;
@@ -50,6 +52,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentDTO = {
   campaignTitle: "Hecho para durar",
   campaignImageUrl: null,
   campaignVideoUrl: null,
+  campaignMobileVideoUrl: null,
   newsletterEnabled: true,
   newsletterEyebrow: "Manifiesto OL.",
   newsletterTitle: "“Prendas versátiles. Estado de calma y equilibrio.”",
@@ -60,7 +63,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentDTO = {
 };
 
 /** Lectura directa (sin caché), para el panel de administración. */
-const OPTIONAL_COLUMNS = ["heroImageUrls", "featuredImageIds"] as const;
+const OPTIONAL_COLUMNS = ["heroImageUrls", "featuredImageIds", "campaignMobileVideoUrl"] as const;
 
 const CAMPAIGN_FIELDS = [
   "campaignEnabled",
@@ -90,6 +93,7 @@ async function findSiteContentRow() {
           ...row,
           heroImageUrls: row.heroImageUrl ? [row.heroImageUrl] : [],
           featuredImageIds: [],
+          campaignMobileVideoUrl: null,
           campaignEnabled: false,
           campaignEyebrow: DEFAULT_SITE_CONTENT.campaignEyebrow,
           campaignTitle: DEFAULT_SITE_CONTENT.campaignTitle,
@@ -122,6 +126,7 @@ export async function readSiteContent(): Promise<SiteContentDTO> {
     campaignTitle: row.campaignTitle,
     campaignImageUrl: row.campaignImageUrl,
     campaignVideoUrl: row.campaignVideoUrl,
+    campaignMobileVideoUrl: row.campaignMobileVideoUrl,
     newsletterEnabled: row.newsletterEnabled,
     newsletterEyebrow: row.newsletterEyebrow,
     newsletterTitle: row.newsletterTitle,

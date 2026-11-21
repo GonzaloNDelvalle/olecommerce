@@ -161,7 +161,7 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
                 aria-expanded={panel === "search"}
                 aria-controls="header-panel"
                 aria-label="Buscar"
-                className={iconButton}
+                className={cn(iconButton, "hidden lg:inline-flex")}
               >
                 <Search className="size-5" strokeWidth={1.6} />
               </button>
@@ -172,7 +172,7 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
                 type="button"
                 onClick={openCart}
                 aria-label={`Abrir carrito, ${count} ${count === 1 ? "producto" : "productos"}`}
-                className={cn(iconButton, "hidden lg:inline-flex")}
+                className={iconButton}
               >
                 <ShoppingBag className="size-5" strokeWidth={1.6} />
                 {count > 0 && (
@@ -202,11 +202,14 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
                   </div>
                 ) : (
                   <nav aria-label="Menú" className="flex flex-col">
+                    <div className="mb-2">
+                      <SearchBar onAfterSubmit={() => setPanel(null)} />
+                    </div>
                     {navLinks.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
-                        className="display border-b border-stone-200 py-3 text-[32px] text-ink last:border-0 hover:text-chocolate"
+                        className="border-b border-stone-200 py-3.5 text-[17px] font-semibold text-ink hover:text-chocolate"
                       >
                         {link.label}
                       </Link>
