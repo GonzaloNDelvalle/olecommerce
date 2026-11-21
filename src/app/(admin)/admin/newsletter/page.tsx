@@ -84,10 +84,16 @@ async function NewsletterContent() {
                         className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                           subscriber.status === "SUBSCRIBED"
                             ? "bg-emerald-50 text-emerald-700"
-                            : "bg-stone-100 text-stone-500"
+                            : subscriber.status === "PENDING"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-stone-100 text-stone-500"
                         }`}
                       >
-                        {subscriber.status === "SUBSCRIBED" ? "Activa" : "Baja"}
+                        {subscriber.status === "SUBSCRIBED"
+                          ? "Activa"
+                          : subscriber.status === "PENDING"
+                            ? "Sin confirmar"
+                            : "Baja"}
                       </span>
                     </td>
                   </tr>

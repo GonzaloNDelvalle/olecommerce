@@ -14,6 +14,8 @@ export interface StoreSettingsDTO {
   supportEmail: string;
   whatsappNumber: string | null;
   instagramUrl: string | null;
+  tiktokUrl: string | null;
+  facebookUrl: string | null;
   showroomAddress: string | null;
   bankTransferEnabled: boolean;
   bankTransferDiscountPercentage: number;
@@ -29,6 +31,8 @@ const DEFAULT_SETTINGS: StoreSettingsDTO = {
   supportEmail: "hola@olecommerce.com.ar",
   whatsappNumber: null,
   instagramUrl: null,
+  tiktokUrl: null,
+  facebookUrl: null,
   showroomAddress: null,
   bankTransferEnabled: false,
   bankTransferDiscountPercentage: 0,
@@ -43,13 +47,26 @@ const DEFAULT_SETTINGS: StoreSettingsDTO = {
  * Lectura directa (sin caché). Para emails y contextos fuera del render.
  */
 export async function readStoreSettings(): Promise<StoreSettingsDTO> {
-  const row = await db.storeSettings.findUnique({ where: { id: 1 } });
+  let row;
+  try {
+    row = await db.storeSettings.findUnique({ where: { id: 1 } });
+  } catch (error) {
+    // P2022: columna inexistente (la migración de redes sociales no se aplicó todavía)
+    if ((error as { code?: string } | null)?.code !== "P2022") throw error;
+    const legacy = await db.storeSettings.findUnique({
+      where: { id: 1 },
+      omit: { tiktokUrl: true, facebookUrl: true },
+    });
+    row = legacy ? { ...legacy, tiktokUrl: null, facebookUrl: null } : null;
+  }
   if (!row) return DEFAULT_SETTINGS;
   return {
     storeName: row.storeName,
     supportEmail: row.supportEmail,
     whatsappNumber: row.whatsappNumber,
     instagramUrl: row.instagramUrl,
+    tiktokUrl: row.tiktokUrl,
+    facebookUrl: row.facebookUrl,
     showroomAddress: row.showroomAddress,
     bankTransferEnabled: row.bankTransferEnabled,
     bankTransferDiscountPercentage: row.bankTransferDiscountPercentage,

@@ -15,6 +15,7 @@ import {
   Settings,
   Megaphone,
   Mail,
+  Layers,
 } from "lucide-react";
 
 const ADMIN_NAV_ITEMS = [
@@ -52,6 +53,12 @@ const ADMIN_NAV_ITEMS = [
     label: "Contenido",
     href: "/admin/contenido",
     icon: Megaphone,
+    exact: false,
+  },
+  {
+    label: "Outfits",
+    href: "/admin/outfits",
+    icon: Layers,
     exact: false,
   },
   {

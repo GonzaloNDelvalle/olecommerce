@@ -47,9 +47,11 @@ async function uploadVideoToCloudinary(file: File): Promise<string> {
 export function HeroVideoUpload({
   value,
   onChange,
+  label = "Video de fondo (opcional)",
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
+  label?: string;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -70,7 +72,7 @@ export function HeroVideoUpload({
 
   return (
     <div className="space-y-2">
-      <span className={adminLabelClass}>Video de fondo (opcional)</span>
+      <span className={adminLabelClass}>{label}</span>
       <input
         ref={inputRef}
         type="file"

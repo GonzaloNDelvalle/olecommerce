@@ -151,7 +151,7 @@ export function FeaturedCarousel({ products }: { products: ProductListItemDTO[] 
       >
         {products.map((product, i) => (
           <CarouselCard
-            key={product.id}
+            key={`${product.id}-${i}`}
             product={product}
             index={i}
             position={position}

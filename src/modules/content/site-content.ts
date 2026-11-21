@@ -17,8 +17,10 @@ export interface SiteContentDTO {
   heroSubtitle: string | null;
   heroCtaLabel: string;
   heroCtaHref: string;
-  heroImageUrl: string | null;
-  heroVideoUrl: string | null;
+  /** Imágenes del carrusel del banner, en orden (máx. 3). */
+  heroImageUrls: string[];
+  /** Ids de ProductImage elegidas para la sección de temporada, en orden. */
+  featuredImageIds: string[];
   campaignEnabled: boolean;
   campaignEyebrow: string;
   campaignTitle: string;
@@ -39,10 +41,10 @@ export const DEFAULT_SITE_CONTENT: SiteContentDTO = {
   heroEyebrow: "OL Indumenti • Autumn / Winter Collection",
   heroTitle: "Neutral State - FW'26",
   heroSubtitle: null,
-  heroCtaLabel: "Explorar",
+  heroCtaLabel: "Ver todo",
   heroCtaHref: "/productos",
-  heroImageUrl: null,
-  heroVideoUrl: null,
+  heroImageUrls: [],
+  featuredImageIds: [],
   campaignEnabled: true,
   campaignEyebrow: "Campaña",
   campaignTitle: "Hecho para durar",
@@ -58,6 +60,8 @@ export const DEFAULT_SITE_CONTENT: SiteContentDTO = {
 };
 
 /** Lectura directa (sin caché), para el panel de administración. */
+const OPTIONAL_COLUMNS = ["heroImageUrls", "featuredImageIds"] as const;
+
 const CAMPAIGN_FIELDS = [
   "campaignEnabled",
   "campaignEyebrow",
@@ -77,14 +81,15 @@ async function findSiteContentRow() {
   } catch (error) {
     // P2022: columna inexistente (la migración de la campaña no se aplicó)
     if ((error as { code?: string } | null)?.code !== "P2022") throw error;
-    const omit = Object.fromEntries(CAMPAIGN_FIELDS.map((key) => [key, true])) as Record<
-      (typeof CAMPAIGN_FIELDS)[number],
-      true
-    >;
+    const omit = Object.fromEntries(
+      [...CAMPAIGN_FIELDS, ...OPTIONAL_COLUMNS].map((key) => [key, true])
+    ) as Record<(typeof CAMPAIGN_FIELDS)[number] | (typeof OPTIONAL_COLUMNS)[number], true>;
     const row = await db.siteContent.findUnique({ where: { id: 1 }, omit });
     return row
       ? {
           ...row,
+          heroImageUrls: row.heroImageUrl ? [row.heroImageUrl] : [],
+          featuredImageIds: [],
           campaignEnabled: false,
           campaignEyebrow: DEFAULT_SITE_CONTENT.campaignEyebrow,
           campaignTitle: DEFAULT_SITE_CONTENT.campaignTitle,
@@ -106,8 +111,12 @@ export async function readSiteContent(): Promise<SiteContentDTO> {
     heroSubtitle: row.heroSubtitle,
     heroCtaLabel: row.heroCtaLabel,
     heroCtaHref: row.heroCtaHref,
-    heroImageUrl: row.heroImageUrl,
-    heroVideoUrl: row.heroVideoUrl,
+    heroImageUrls: row.heroImageUrls?.length
+      ? row.heroImageUrls
+      : row.heroImageUrl
+        ? [row.heroImageUrl]
+        : [],
+    featuredImageIds: row.featuredImageIds ?? [],
     campaignEnabled: row.campaignEnabled,
     campaignEyebrow: row.campaignEyebrow,
     campaignTitle: row.campaignTitle,

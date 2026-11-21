@@ -8,6 +8,7 @@ import PasswordResetEmail from "./PasswordResetEmail";
 import AdminAlertEmail from "./AdminAlertEmail";
 import RevocationReceivedEmail from "./RevocationReceivedEmail";
 import NewsletterWelcomeEmail from "./NewsletterWelcomeEmail";
+import NewsletterConfirmEmail from "./NewsletterConfirmEmail";
 import { PREVIEW_ORDER } from "./types";
 
 describe("emails transaccionales", () => {
@@ -79,6 +80,14 @@ describe("emails transaccionales", () => {
     );
     expect(html).toContain("https://tienda.test/newsletter/baja?token=abc");
     expect(html).toContain("darte de baja");
+  });
+
+  it("la confirmación del newsletter incluye el link de confirmación", async () => {
+    const html = await render(
+      <NewsletterConfirmEmail confirmUrl="https://tienda.test/newsletter/confirmar?token=abc" />
+    );
+    expect(html).toContain("https://tienda.test/newsletter/confirmar?token=abc");
+    expect(html).toContain("Confirmar suscripción");
   });
 
   it("genera versión de texto plano", async () => {

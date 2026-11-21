@@ -20,6 +20,8 @@ import AccountExistsEmail from "@/emails/AccountExistsEmail";
 import AdminAlertEmail from "@/emails/AdminAlertEmail";
 import RevocationReceivedEmail from "@/emails/RevocationReceivedEmail";
 import NewsletterWelcomeEmail from "@/emails/NewsletterWelcomeEmail";
+import NewsletterConfirmEmail from "@/emails/NewsletterConfirmEmail";
+import ContactMessageEmail from "@/emails/ContactMessageEmail";
 
 /**
  * Envío de emails transaccionales con Resend.
@@ -48,6 +50,7 @@ async function sendEmail(params: {
   to: string;
   subject: string;
   template: ReactElement;
+  replyTo?: string;
 }): Promise<SendEmailResult> {
   try {
     const [html, text] = await Promise.all([
@@ -68,6 +71,7 @@ async function sendEmail(params: {
       subject: params.subject,
       html,
       text,
+      ...(params.replyTo ? { replyTo: params.replyTo } : {}),
     });
 
     if (error) {
@@ -291,6 +295,18 @@ export async function sendRevocationReceivedEmail(params: {
   });
 }
 
+/** Pedido de confirmación de la suscripción (doble opt-in). */
+export function sendNewsletterConfirmEmail(params: {
+  to: string;
+  confirmUrl: string;
+}) {
+  return sendEmail({
+    to: params.to,
+    subject: "Confirmá tu suscripción | OL. Indumenti",
+    template: <NewsletterConfirmEmail confirmUrl={params.confirmUrl} />,
+  });
+}
+
 /** Bienvenida al newsletter con el link de baja. */
 export function sendNewsletterWelcomeEmail(params: {
   to: string;
@@ -300,5 +316,22 @@ export function sendNewsletterWelcomeEmail(params: {
     to: params.to,
     subject: "Bienvenida al archivo privado | OL. Indumenti",
     template: <NewsletterWelcomeEmail unsubscribeUrl={params.unsubscribeUrl} />,
+  });
+}
+
+/** Consulta del formulario de contacto: llega al email de atención con "responder" a la clienta. */
+export async function sendContactMessageEmail(params: {
+  name: string;
+  email: string;
+  phone: string | null;
+  orderNumber: string | null;
+  message: string;
+}): Promise<SendEmailResult> {
+  const store = await readStoreSettings();
+  return sendEmail({
+    to: store.supportEmail,
+    replyTo: params.email,
+    subject: `Consulta de ${params.name} | Contacto web`,
+    template: <ContactMessageEmail {...params} />,
   });
 }

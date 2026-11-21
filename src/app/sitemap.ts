@@ -29,5 +29,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     })),
     { url: `${appUrl}/arrepentimiento`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${appUrl}/contacto`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${appUrl}/preguntas-frecuentes`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${appUrl}/cambios-y-devoluciones`, changeFrequency: "monthly", priority: 0.4 },
   ];
 }

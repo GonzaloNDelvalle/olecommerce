@@ -20,6 +20,12 @@ export const RATE_LIMITS = {
   checkout: { scope: "checkout", max: 10, windowSeconds: 10 * 60 },
   revocation: { scope: "revocation", max: 5, windowSeconds: 60 * 60 },
   newsletter: { scope: "newsletter", max: 5, windowSeconds: 60 * 60 },
+  contact: { scope: "contact", max: 5, windowSeconds: 60 * 60 },
+  // Un mismo email no puede disparar más de 3 solicitudes de arrepentimiento por día
+  revocationPerEmail: { scope: "revocation-email", max: 3, windowSeconds: 24 * 60 * 60 },
+  // Cotización de envío: la pantalla consulta al cambiar el CP o el carrito (con debounce)
+  shippingQuote: { scope: "shipping-quote", max: 60, windowSeconds: 10 * 60 },
+  paymentRetry: { scope: "payment-retry", max: 10, windowSeconds: 10 * 60 },
 } satisfies Record<string, RateLimitRule>;
 
 export async function getClientIp(): Promise<string> {
@@ -32,14 +38,18 @@ export async function getClientIp(): Promise<string> {
  * Registra un intento y devuelve `true` si todavía está dentro del límite.
  * Si la base falla, deja pasar (el límite nunca debe bloquear una venta).
  */
-export async function consumeRateLimit(rule: RateLimitRule): Promise<boolean> {
+export async function consumeRateLimit(
+  rule: RateLimitRule,
+  /** Si se indica (ej. un email), el límite es por este valor en vez de por IP */
+  subject?: string
+): Promise<boolean> {
   if (process.env.NODE_ENV !== "production" && !process.env.RATE_LIMIT_IN_DEV) {
     return true;
   }
 
   try {
-    const ip = await getClientIp();
-    const key = `app:${rule.scope}:${ip}`;
+    const who = subject ? `s:${subject.toLowerCase()}` : await getClientIp();
+    const key = `app:${rule.scope}:${who}`;
     const now = Date.now();
     const windowStart = now - rule.windowSeconds * 1000;
 

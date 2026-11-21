@@ -57,6 +57,8 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
           seasonLabel={content.seasonLabel}
           categoryLinks={categoryLinks}
           instagramUrl={settings.instagramUrl}
+          tiktokUrl={settings.tiktokUrl}
+          facebookUrl={settings.facebookUrl}
           whatsappNumber={settings.whatsappNumber}
           supportEmail={settings.supportEmail}
         />

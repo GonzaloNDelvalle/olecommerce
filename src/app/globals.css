@@ -355,3 +355,23 @@ html.lenis body {
     transform: translateY(0);
   }
 }
+
+/* Cinta de la barra de anuncios: dos mitades idénticas, el bucle no tiene saltos */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Carrusel del banner: fundido entre imágenes */
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}

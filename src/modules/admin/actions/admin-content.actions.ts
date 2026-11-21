@@ -42,8 +42,8 @@ const siteContentSchema = z.object({
   heroSubtitle: optionalText(300),
   heroCtaLabel: z.string().trim().min(2, "Ingresá el texto del botón").max(40),
   heroCtaHref: linkSchema,
-  heroImageUrl: optionalText(1000),
-  heroVideoUrl: optionalText(1000),
+  heroImageUrls: z.array(z.string().trim().min(1).max(1000)).max(3, "El carrusel admite hasta 3 imágenes"),
+  featuredImageIds: z.array(z.string().uuid()).max(12, "Elegí hasta 12 imágenes"),
   campaignEnabled: z.boolean(),
   campaignEyebrow: z.string().trim().max(120),
   campaignTitle: z.string().trim().min(2, "Ingresá el título de la campaña").max(80),
@@ -80,8 +80,7 @@ export async function updateAdminSiteContent(
 
   const data = parsed.data;
   try {
-    if (data.heroImageUrl) data.heroImageUrl = assertAllowedMediaUrl(data.heroImageUrl);
-    if (data.heroVideoUrl) data.heroVideoUrl = assertAllowedMediaUrl(data.heroVideoUrl);
+    data.heroImageUrls = data.heroImageUrls.map((url) => assertAllowedMediaUrl(url));
     if (data.campaignImageUrl) data.campaignImageUrl = assertAllowedMediaUrl(data.campaignImageUrl);
     if (data.campaignVideoUrl) data.campaignVideoUrl = assertAllowedMediaUrl(data.campaignVideoUrl);
   } catch (error) {
@@ -90,29 +89,152 @@ export async function updateAdminSiteContent(
       error: error instanceof Error ? error.message : "Archivo inválido.",
     };
   }
-  if (!data.heroImageUrl && !data.heroVideoUrl) {
+  if (data.heroImageUrls.length === 0) {
     return {
       success: false,
-      error: "El banner necesita al menos una imagen o un video de fondo.",
+      error: "El banner necesita al menos una imagen.",
     };
   }
 
-  if (data.campaignEnabled && !data.campaignImageUrl && !data.campaignVideoUrl) {
+  if (data.campaignEnabled && !data.campaignVideoUrl) {
     return {
       success: false,
-      error: "La campaña necesita una imagen o un video (o desactivala).",
+      error: "La campaña necesita un video (o desactivala).",
     };
   }
 
+  // El primer slide también queda en el campo histórico (compatibilidad)
+  const record = { ...data, heroImageUrl: data.heroImageUrls[0] };
   await db.siteContent.upsert({
     where: { id: 1 },
-    update: data,
-    create: { id: 1, ...data },
+    update: record,
+    create: { id: 1, ...record },
   });
 
   expireTagsNow(CACHE_TAGS.siteContent);
   revalidatePath("/admin/contenido");
   return { success: true, message: "Contenido publicado en la tienda." };
+}
+
+// ==========================================
+// IMÁGENES DE PRODUCTOS (selector de la portada)
+// ==========================================
+
+export interface AdminProductImagesDTO {
+  id: string;
+  name: string;
+  images: { id: string; url: string }[];
+}
+
+/** Productos activos con sus fotos, para elegir qué imágenes muestra la portada. */
+export async function getAdminProductImages(): Promise<AdminProductImagesDTO[]> {
+  await requireAdmin();
+
+  const products = await db.product.findMany({
+    where: { status: "ACTIVE", images: { some: {} } },
+    orderBy: { updatedAt: "desc" },
+    take: 200,
+    select: {
+      id: true,
+      name: true,
+      images: { orderBy: { position: "asc" }, take: 8, select: { id: true, url: true } },
+    },
+  });
+  return products;
+}
+
+// ==========================================
+// OUTFITS ("SHOP THE LOOK")
+// ==========================================
+
+export interface AdminOutfitDTO {
+  id: string;
+  title: string;
+  imageUrl: string;
+  isActive: boolean;
+  sortOrder: number;
+  productIds: string[];
+}
+
+const outfitSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().trim().min(2, "Escribí el nombre del outfit").max(120),
+  imageUrl: z.string().trim().min(1, "Subí la foto del outfit").max(1000),
+  isActive: z.boolean(),
+  sortOrder: z.number().int().min(0).max(999),
+  productIds: z
+    .array(z.string().uuid())
+    .min(1, "Elegí al menos un producto")
+    .max(8, "Máximo 8 productos por outfit"),
+});
+
+export type OutfitInput = z.input<typeof outfitSchema>;
+
+export async function getAdminOutfits(): Promise<AdminOutfitDTO[]> {
+  await requireAdmin();
+
+  const outfits = await db.outfit.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    include: { items: { orderBy: { position: "asc" }, select: { productId: true } } },
+  });
+  return outfits.map((outfit) => ({
+    id: outfit.id,
+    title: outfit.title,
+    imageUrl: outfit.imageUrl,
+    isActive: outfit.isActive,
+    sortOrder: outfit.sortOrder,
+    productIds: outfit.items.map((item) => item.productId),
+  }));
+}
+
+export async function saveAdminOutfit(input: OutfitInput): Promise<ContentMutationResult> {
+  await requireAdmin();
+
+  const parsed = outfitSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Revisá el outfit." };
+  }
+  const { id, productIds, ...rest } = parsed.data;
+
+  let imageUrl: string;
+  try {
+    imageUrl = assertAllowedMediaUrl(rest.imageUrl);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Imagen inválida." };
+  }
+
+  const uniqueIds = [...new Set(productIds)];
+  const items = uniqueIds.map((productId, position) => ({ productId, position }));
+  const data = { ...rest, imageUrl };
+
+  if (id) {
+    await db.$transaction([
+      db.outfitItem.deleteMany({ where: { outfitId: id } }),
+      db.outfit.update({ where: { id }, data: { ...data, items: { create: items } } }),
+    ]);
+  } else {
+    const count = await db.outfit.count();
+    if (count >= 12) {
+      return { success: false, error: "Máximo 12 outfits. Borrá alguno viejo." };
+    }
+    await db.outfit.create({ data: { ...data, items: { create: items } } });
+  }
+
+  expireTagsNow(CACHE_TAGS.siteContent, CACHE_TAGS.catalog);
+  revalidatePath("/admin/outfits");
+  return { success: true, message: id ? "Outfit actualizado." : "Outfit creado." };
+}
+
+export async function deleteAdminOutfit(id: string): Promise<ContentMutationResult> {
+  await requireAdmin();
+  if (!z.string().uuid().safeParse(id).success) {
+    return { success: false, error: "Outfit inválido." };
+  }
+  await db.outfit.deleteMany({ where: { id } });
+
+  expireTagsNow(CACHE_TAGS.siteContent, CACHE_TAGS.catalog);
+  revalidatePath("/admin/outfits");
+  return { success: true, message: "Outfit eliminado." };
 }
 
 // ==========================================

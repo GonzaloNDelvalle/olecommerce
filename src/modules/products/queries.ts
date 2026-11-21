@@ -79,6 +79,12 @@ export async function getActiveCategories(): Promise<PublicCategoryDTO[]> {
       _count: {
         select: { products: { where: { status: ProductStatus.ACTIVE } } },
       },
+      products: {
+        where: { status: ProductStatus.ACTIVE, images: { some: {} } },
+        orderBy: { updatedAt: "desc" },
+        take: 1,
+        select: { images: { orderBy: { position: "asc" }, take: 1, select: { url: true } } },
+      },
     },
     orderBy: { name: "asc" },
   });
@@ -89,6 +95,7 @@ export async function getActiveCategories(): Promise<PublicCategoryDTO[]> {
     slug: cat.slug,
     description: cat.description,
     imageUrl: cat.imageUrl,
+    coverImageUrl: cat.imageUrl ?? cat.products[0]?.images[0]?.url ?? null,
     productsCount: cat._count.products,
   }));
 }
@@ -343,4 +350,73 @@ export async function getSitemapProducts(): Promise<
     select: { slug: true, updatedAt: true },
     orderBy: { updatedAt: "desc" },
   });
+}
+
+/**
+ * Tarjetas de la sección de temporada con las fotos elegidas en el admin
+ * (ids de ProductImage, en orden). Cada tarjeta usa la foto elegida como
+ * imagen principal. Ignora fotos de productos no activos o ya borradas.
+ */
+export async function getFeaturedPickItems(
+  imageIds: string[]
+): Promise<ProductListItemDTO[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(CACHE_TAGS.catalog, CACHE_TAGS.siteContent);
+
+  if (imageIds.length === 0) return [];
+
+  const images = await db.productImage.findMany({
+    where: { id: { in: imageIds }, product: { status: ProductStatus.ACTIVE } },
+    include: { product: { include: LIST_INCLUDE } },
+  });
+  const byId = new Map(images.map((image) => [image.id, image]));
+
+  return imageIds.flatMap((id) => {
+    const image = byId.get(id);
+    if (!image) return [];
+    const item = toListItem(image.product);
+    return [{ ...item, primaryImage: { url: image.url, altText: image.altText ?? item.name } }];
+  });
+}
+
+export interface OutfitDTO {
+  id: string;
+  title: string;
+  imageUrl: string;
+  products: ProductListItemDTO[];
+}
+
+/** Outfits activos de la portada con los productos que los componen. */
+export async function getActiveOutfits(): Promise<OutfitDTO[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(CACHE_TAGS.catalog, CACHE_TAGS.siteContent);
+
+  try {
+    const outfits = await db.outfit.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      take: 12,
+      include: {
+        items: {
+          orderBy: { position: "asc" },
+          where: { product: { status: ProductStatus.ACTIVE } },
+          include: { product: { include: LIST_INCLUDE } },
+        },
+      },
+    });
+    return outfits
+      .filter((outfit) => outfit.items.length > 0)
+      .map((outfit) => ({
+        id: outfit.id,
+        title: outfit.title,
+        imageUrl: outfit.imageUrl,
+        products: outfit.items.map((item) => toListItem(item.product)),
+      }));
+  } catch (error) {
+    // P2021: la tabla todavía no existe (migración sin aplicar): la portada sigue sin outfits
+    if ((error as { code?: string } | null)?.code !== "P2021") throw error;
+    return [];
+  }
 }

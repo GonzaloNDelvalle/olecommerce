@@ -30,6 +30,8 @@ const TEXT_FIELDS: {
   { section: "contact", name: "supportEmail", label: "Email de atención", placeholder: "hola@tutienda.com" },
   { section: "contact", name: "whatsappNumber", label: "WhatsApp", placeholder: "+54 9 11 1234-5678" },
   { section: "contact", name: "instagramUrl", label: "Instagram", placeholder: "https://instagram.com/..." },
+  { section: "contact", name: "tiktokUrl", label: "TikTok", placeholder: "https://tiktok.com/@..." },
+  { section: "contact", name: "facebookUrl", label: "Facebook", placeholder: "https://facebook.com/..." },
   { section: "contact", name: "showroomAddress", label: "Dirección del showroom (retiros)", placeholder: "Calle 123, Palermo, CABA" },
   { section: "bank", name: "bankName", label: "Banco", placeholder: "Banco Galicia — Cuenta Corriente en Pesos" },
   { section: "bank", name: "bankAccountHolder", label: "Titular" },

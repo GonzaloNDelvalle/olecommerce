@@ -213,8 +213,9 @@ model Product {
   collectionId String?     @map("collection_id") @db.Uuid
   collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
 
-  variants ProductVariant[]
-  images   ProductImage[]
+  variants    ProductVariant[]
+  images      ProductImage[]
+  outfitItems OutfitItem[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -511,6 +512,8 @@ model StoreSettings {
   supportEmail    String  @map("support_email") @db.VarChar(255)
   whatsappNumber  String? @map("whatsapp_number") @db.VarChar(40)
   instagramUrl    String? @map("instagram_url") @db.VarChar(255)
+  tiktokUrl       String? @map("tiktok_url") @db.VarChar(255)
+  facebookUrl     String? @map("facebook_url") @db.VarChar(255)
   showroomAddress String? @map("showroom_address") @db.VarChar(255)
 
   // Transferencia bancaria
@@ -571,13 +574,18 @@ model SiteContent {
   seasonLabel    String @default("FW'26") @map("season_label") @db.VarChar(40)
 
   // Banner principal de la portada
-  heroEyebrow  String  @default("OL Indumenti • Autumn / Winter Collection") @map("hero_eyebrow") @db.VarChar(120)
-  heroTitle    String  @default("Neutral State - FW'26") @map("hero_title") @db.VarChar(80)
-  heroSubtitle String? @map("hero_subtitle") @db.VarChar(300)
-  heroCtaLabel String  @default("Explorar") @map("hero_cta_label") @db.VarChar(40)
-  heroCtaHref  String  @default("/productos") @map("hero_cta_href") @db.VarChar(255)
-  heroImageUrl String? @map("hero_image_url")
-  heroVideoUrl String? @map("hero_video_url")
+  heroEyebrow   String   @default("OL Indumenti • Autumn / Winter Collection") @map("hero_eyebrow") @db.VarChar(120)
+  heroTitle     String   @default("Neutral State - FW'26") @map("hero_title") @db.VarChar(80)
+  heroSubtitle  String?  @map("hero_subtitle") @db.VarChar(300)
+  heroCtaLabel  String   @default("Explorar") @map("hero_cta_label") @db.VarChar(40)
+  heroCtaHref   String   @default("/productos") @map("hero_cta_href") @db.VarChar(255)
+  heroImageUrl  String?  @map("hero_image_url")
+  heroVideoUrl  String?  @map("hero_video_url")
+  // Carrusel del banner principal (hasta 3 imágenes, en orden)
+  heroImageUrls String[] @default([]) @map("hero_image_urls")
+
+  // Imágenes elegidas para la sección de temporada (ids de ProductImage, en orden)
+  featuredImageIds String[] @default([]) @map("featured_image_ids")
 
   // Campaña a pantalla completa (imagen o video) debajo del hero
   campaignEnabled  Boolean @default(true) @map("campaign_enabled")
@@ -620,11 +628,43 @@ model AnnouncementMessage {
   @@map("announcement_messages")
 }
 
+// Outfits de la portada ("Shop the look"): una foto y los productos que la componen
+model Outfit {
+  id        String  @id @default(uuid()) @db.Uuid
+  title     String  @db.VarChar(120)
+  imageUrl  String  @map("image_url")
+  isActive  Boolean @default(true) @map("is_active")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  items OutfitItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("outfits")
+}
+
+model OutfitItem {
+  outfitId  String @map("outfit_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+  position  Int    @default(0)
+
+  outfit  Outfit  @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([outfitId, productId])
+  @@index([productId])
+  @@map("outfit_items")
+}
+
 // ==========================================
 // NEWSLETTER
 // ==========================================
 
 enum NewsletterStatus {
+  // Pidió suscribirse pero todavía no confirmó por email (doble opt-in)
+  PENDING
   SUBSCRIBED
   UNSUBSCRIBED
 }
@@ -637,6 +677,8 @@ model NewsletterSubscriber {
   source           String           @default("home") @db.VarChar(40)
   // Token para el link de baja incluido en cada envío
   unsubscribeToken String           @unique @map("unsubscribe_token") @db.VarChar(64)
+  // Token del link de confirmación del email (doble opt-in); se borra al confirmar
+  confirmToken     String?          @unique @map("confirm_token") @db.VarChar(64)
   consentAt        DateTime         @default(now()) @map("consent_at")
   unsubscribedAt   DateTime?        @map("unsubscribed_at")
 

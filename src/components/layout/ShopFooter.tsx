@@ -1,34 +1,65 @@
+import type { JSX, SVGProps } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { CurrentYear } from "@/components/layout/CurrentYear";
 import type { NavLink } from "@/components/layout/ShopHeader";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  TikTokIcon,
+  WhatsAppIcon,
+} from "@/components/layout/SocialIcons";
 
 interface ShopFooterProps {
   collectionName: string;
   seasonLabel: string;
   categoryLinks: NavLink[];
   instagramUrl: string | null;
+  tiktokUrl: string | null;
+  facebookUrl: string | null;
   whatsappNumber: string | null;
   supportEmail: string;
 }
 
-const linkClass = "text-cream transition-colors duration-150 hover:text-sand";
+const linkClass = "inline-block py-1 text-cream transition-colors duration-150 hover:text-sand";
 const headingClass = "eyebrow text-sand";
+
+const HELP_LINKS: NavLink[] = [
+  { href: "/contacto", label: "Contacto" },
+  { href: "/preguntas-frecuentes", label: "Preguntas frecuentes" },
+  { href: "/cambios-y-devoluciones", label: "Cambios y devoluciones" },
+  { href: "/arrepentimiento", label: "Botón de arrepentimiento" },
+  { href: "/mi-cuenta", label: "Mis pedidos" },
+];
+
+interface Social {
+  label: string;
+  href: string;
+  Icon: (props: SVGProps<SVGSVGElement>) => JSX.Element;
+}
 
 export function ShopFooter({
   collectionName,
   seasonLabel,
   categoryLinks,
   instagramUrl,
+  tiktokUrl,
+  facebookUrl,
   whatsappNumber,
   supportEmail,
 }: ShopFooterProps) {
   const whatsappHref = whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}` : null;
 
+  const socials: Social[] = [
+    instagramUrl ? { label: "Instagram", href: instagramUrl, Icon: InstagramIcon } : null,
+    whatsappHref ? { label: "WhatsApp", href: whatsappHref, Icon: WhatsAppIcon } : null,
+    tiktokUrl ? { label: "TikTok", href: tiktokUrl, Icon: TikTokIcon } : null,
+    facebookUrl ? { label: "Facebook", href: facebookUrl, Icon: FacebookIcon } : null,
+  ].filter((social): social is Social => social !== null);
+
   return (
     <footer className="bg-espresso pb-28 text-cream lg:pb-0">
-      <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-10 px-4 pt-16 pb-12 sm:px-10 md:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] lg:pt-20">
-        <div className="col-span-2 flex flex-col gap-4 md:col-span-1">
+      <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-x-6 gap-y-12 px-4 pt-16 pb-12 sm:px-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] lg:pt-20">
+        <div className="col-span-2 flex flex-col gap-4 lg:col-span-1">
           <Link href="/" className="display text-5xl font-semibold tracking-normal text-cream">
             OL.
           </Link>
@@ -36,10 +67,16 @@ export function ShopFooter({
             Indumentaria atemporal: sastrería, tejidos y básicos en tonos tierra, diseñados en Buenos Aires.
           </p>
           <p className="eyebrow text-stone-400">{[collectionName, seasonLabel].filter(Boolean).join(" · ")}</p>
+          <a
+            href={`mailto:${supportEmail}`}
+            className="mt-1 text-sm text-cream underline-offset-4 transition-colors hover:text-sand hover:underline [overflow-wrap:anywhere]"
+          >
+            {supportEmail}
+          </a>
         </div>
 
-        <nav aria-label="Tienda" className="flex min-w-0 flex-col gap-3 text-sm">
-          <h2 className={headingClass}>Tienda</h2>
+        <nav aria-label="Tienda" className="flex min-w-0 flex-col gap-1.5 text-sm">
+          <h2 className={`${headingClass} mb-2`}>Tienda</h2>
           <Link href="/productos" className={linkClass}>
             Ver todo
           </Link>
@@ -50,30 +87,33 @@ export function ShopFooter({
           ))}
         </nav>
 
-        <nav aria-label="Ayuda" className="flex min-w-0 flex-col gap-3 text-sm">
-          <h2 className={headingClass}>Ayuda</h2>
-          <Link href="/mi-cuenta" className={linkClass}>
-            Mis pedidos
-          </Link>
-          <Link href="/arrepentimiento" className={linkClass}>
-            Botón de arrepentimiento
-          </Link>
-          <a href={`mailto:${supportEmail}`} className={`${linkClass} [overflow-wrap:anywhere]`}>
-            {supportEmail}
-          </a>
-          {whatsappHref && (
-            <a href={whatsappHref} target="_blank" rel="noreferrer" className={linkClass}>
-              WhatsApp
-            </a>
-          )}
+        <nav aria-label="Ayuda" className="flex min-w-0 flex-col gap-1.5 text-sm">
+          <h2 className={`${headingClass} mb-2`}>Ayuda</h2>
+          {HELP_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className={linkClass}>
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        {instagramUrl && (
-          <nav aria-label="Redes" className="flex min-w-0 flex-col gap-3 text-sm">
-            <h2 className={headingClass}>Seguinos</h2>
-            <a href={instagramUrl} target="_blank" rel="noreferrer" className={`${linkClass} inline-flex items-center gap-1`}>
-              Instagram <ArrowUpRight className="size-3.5" aria-hidden="true" />
-            </a>
+        {socials.length > 0 && (
+          <nav aria-label="Redes sociales" className="col-span-2 flex min-w-0 flex-col gap-1.5 text-sm lg:col-span-1">
+            <h2 className={`${headingClass} mb-2`}>Seguinos</h2>
+            <ul className="flex flex-col gap-1.5">
+              {socials.map(({ label, href, Icon }) => (
+                <li key={label}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex items-center gap-3 py-1 text-cream transition-colors duration-150 hover:text-sand"
+                  >
+                    <Icon className="size-5 shrink-0" />
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </nav>
         )}
       </div>

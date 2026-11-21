@@ -38,6 +38,14 @@ const storeSettingsSchema = z
       (value) => value === null || value.startsWith("https://"),
       "La URL de Instagram debe empezar con https://"
     ),
+    tiktokUrl: optionalText(255).refine(
+      (value) => value === null || value.startsWith("https://"),
+      "La URL de TikTok debe empezar con https://"
+    ),
+    facebookUrl: optionalText(255).refine(
+      (value) => value === null || value.startsWith("https://"),
+      "La URL de Facebook debe empezar con https://"
+    ),
     showroomAddress: optionalText(255),
     bankTransferEnabled: z.boolean(),
     bankTransferDiscountPercentage: z.number().int().min(0).max(50),

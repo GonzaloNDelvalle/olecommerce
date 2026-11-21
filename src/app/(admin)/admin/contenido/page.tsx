@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import {
   getAdminAnnouncements,
+  getAdminProductImages,
   getAdminSiteContent,
 } from "@/modules/admin/actions/admin-content.actions";
 import { SiteContentForm } from "@/modules/admin/components/SiteContentForm";
@@ -11,13 +12,14 @@ import {
 } from "@/modules/admin/components/AdminUi";
 
 async function ContentEditor() {
-  const [content, announcements] = await Promise.all([
+  const [content, announcements, productImages] = await Promise.all([
     getAdminSiteContent(),
     getAdminAnnouncements(),
+    getAdminProductImages(),
   ]);
   return (
     <div className="space-y-10">
-      <SiteContentForm initial={content} />
+      <SiteContentForm initial={content} productImages={productImages} />
       <AnnouncementsManager messages={announcements} />
     </div>
   );

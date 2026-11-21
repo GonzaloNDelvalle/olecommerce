@@ -8,6 +8,8 @@ export interface PublicCategoryDTO {
   slug: string;
   description: string | null;
   imageUrl: string | null;
+  /** Foto propia de la categoría o, si no tiene, la de su producto más reciente. */
+  coverImageUrl: string | null;
   productsCount: number;
 }
 

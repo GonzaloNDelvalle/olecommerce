@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { ExternalLink, Loader2 } from "lucide-react";
 import {
   updateAdminSiteContent,
+  type AdminProductImagesDTO,
   type SiteContentInput,
 } from "@/modules/admin/actions/admin-content.actions";
 import type { SiteContentDTO } from "@/modules/content/site-content";
 import { SingleImageDropzone } from "@/modules/admin/components/ImageDropzone";
 import { HeroVideoUpload } from "@/modules/admin/components/HeroVideoUpload";
+import { FeaturedPicksField } from "@/modules/admin/components/FeaturedPicksField";
 import {
   AdminCard,
   AdminNotice,
@@ -36,8 +38,6 @@ const HERO_FIELDS: TextField[] = [
   { name: "heroEyebrow", label: "Volanta (texto chico arriba)", placeholder: "OL Indumenti • Spring / Summer Collection", maxLength: 120, wide: true },
   { name: "heroTitle", label: "Título", placeholder: "Neutral State - SS'27", maxLength: 80, wide: true },
   { name: "heroSubtitle", label: "Bajada (opcional)", maxLength: 300, wide: true },
-  { name: "heroCtaLabel", label: "Texto del botón", placeholder: "Explorar", maxLength: 40 },
-  { name: "heroCtaHref", label: "Link del botón", placeholder: "/productos", maxLength: 255, hint: "Una página de la tienda, ej: /categoria/denim" },
 ];
 
 const CAMPAIGN_FIELDS: TextField[] = [
@@ -52,7 +52,15 @@ const NEWSLETTER_FIELDS: TextField[] = [
   { name: "newsletterButtonLabel", label: "Texto del botón", placeholder: "Suscribirme", maxLength: 40 },
 ];
 
-export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
+const HERO_SLOTS = 3;
+
+export function SiteContentForm({
+  initial,
+  productImages,
+}: {
+  initial: SiteContentDTO;
+  productImages: AdminProductImagesDTO[];
+}) {
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [message, setMessage] = useState<
@@ -70,8 +78,6 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
       ...values,
       heroSubtitle: values.heroSubtitle ?? "",
       newsletterText: values.newsletterText ?? "",
-      heroImageUrl: values.heroImageUrl ?? "",
-      heroVideoUrl: values.heroVideoUrl ?? "",
       campaignImageUrl: values.campaignImageUrl ?? "",
       campaignVideoUrl: values.campaignVideoUrl ?? "",
     };
@@ -132,29 +138,46 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
         </div>
       </AdminCard>
 
-      <AdminCard title="Banner principal de la portada">
+      <AdminCard
+        title="Banner principal de la portada"
+        description="Carrusel de hasta 3 imágenes que pasan solas. Debajo del título queda un único botón «Ver todo»."
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {HERO_FIELDS.map(renderField)}
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <SingleImageDropzone
-            label="Imagen de fondo"
-            helperText="Se usa si no hay video, y como portada mientras el video carga"
-            subfolder="hero"
-            value={values.heroImageUrl ?? ""}
-            onChange={(url) => update("heroImageUrl", url || null)}
-          />
-          <HeroVideoUpload
-            value={values.heroVideoUrl}
-            onChange={(url) => update("heroVideoUrl", url)}
-          />
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {Array.from({ length: HERO_SLOTS }).map((_, slot) => (
+            <SingleImageDropzone
+              key={slot}
+              label={`Imagen ${slot + 1}${slot === 0 ? " (obligatoria)" : ""}`}
+              helperText="Horizontal, de 1920 px de ancho o más"
+              subfolder="hero"
+              value={values.heroImageUrls[slot] ?? ""}
+              onChange={(url) => {
+                const next = Array.from({ length: HERO_SLOTS }, (_, i) => values.heroImageUrls[i] ?? "");
+                next[slot] = url;
+                update("heroImageUrls", next.filter(Boolean));
+              }}
+            />
+          ))}
         </div>
       </AdminCard>
 
       <AdminCard
-        title="Campaña a pantalla completa"
-        description="La sección con foto o video que ocupa todo el ancho, debajo del banner principal. Sobre ella se muestran las categorías."
+        title="Imágenes de la sección de temporada"
+        description="Las tarjetas con el nombre de la colección. Elegí qué fotos aparecen y en qué orden."
+      >
+        <FeaturedPicksField
+          products={productImages}
+          value={values.featuredImageIds}
+          onChange={(ids) => update("featuredImageIds", ids)}
+        />
+      </AdminCard>
+
+      <AdminCard
+        title="Campaña (video)"
+        description="Un video a pantalla completa que se repite en loop, con la volanta y el título encima. Sin botones."
       >
         <label className="mb-5 inline-flex items-center gap-2 text-sm text-stone-700">
           <input
@@ -169,16 +192,17 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
           {CAMPAIGN_FIELDS.map(renderField)}
         </div>
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <HeroVideoUpload
+            label="Video de la campaña"
+            value={values.campaignVideoUrl}
+            onChange={(url) => update("campaignVideoUrl", url)}
+          />
           <SingleImageDropzone
-            label="Imagen"
-            helperText="Se usa si no hay video, y como portada mientras el video carga"
+            label="Imagen de portada (opcional)"
+            helperText="Se ve mientras el video carga o si el dispositivo no lo reproduce"
             subfolder="hero"
             value={values.campaignImageUrl ?? ""}
             onChange={(url) => update("campaignImageUrl", url || null)}
-          />
-          <HeroVideoUpload
-            value={values.campaignVideoUrl}
-            onChange={(url) => update("campaignVideoUrl", url)}
           />
         </div>
       </AdminCard>
@@ -203,7 +227,7 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
 
       <AdminCard
         title="Barra de anuncios"
-        description="La franja negra arriba del menú. Los mensajes se editan más abajo."
+        description="La franja arriba del menú: los mensajes pasan en carrusel continuo. Se editan más abajo."
       >
         <div className="flex flex-wrap items-center gap-6">
           <label className="inline-flex items-center gap-2 text-sm text-stone-700">
@@ -217,7 +241,7 @@ export function SiteContentForm({ initial }: { initial: SiteContentDTO }) {
           </label>
           <div className="flex items-center gap-2">
             <label htmlFor="rotate" className={adminLabelClass}>
-              Cambiar mensaje cada
+              Tiempo por mensaje
             </label>
             <input
               id="rotate"
