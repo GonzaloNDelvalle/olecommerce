@@ -12,7 +12,7 @@ export async function generateMetadata({
   const { pagina, q } = await searchParams;
   const page = Number(pagina) > 1 ? Number(pagina) : 1;
   return {
-    title: page > 1 ? `Tienda · página ${page}` : "Tienda: toda la colección",
+    title: page > 1 ? `Tienda · página ${page}` : "Shop: toda la colección",
     description:
       "Toda la colección de OL. Indumenti: sastrería, tejidos y básicos en tonos tierra. Filtrá por talle y precio. Envíos a todo el país.",
     // Cada página de la paginación es su propia URL canónica; las búsquedas no se indexan
@@ -42,7 +42,7 @@ async function Catalog({ searchParams }: { searchParams: Promise<CatalogSearchPa
 export default function CatalogPage({ searchParams }: { searchParams: Promise<CatalogSearchParams> }) {
   return (
     <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 sm:px-10">
-      <Breadcrumbs crumbs={[{ name: "Inicio", path: "/" }, { name: "Tienda" }]} />
+      <Breadcrumbs crumbs={[{ name: "Inicio", path: "/" }, { name: "Shop" }]} />
 
       <header className="grid gap-6 pt-10 pb-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
         <div className="flex flex-col gap-3">
@@ -51,7 +51,7 @@ export default function CatalogPage({ searchParams }: { searchParams: Promise<Ca
               <CatalogEyebrow />
             </Suspense>
           </p>
-          <h1 className="display text-[clamp(56px,7vw,96px)] text-ink">Tienda</h1>
+          <h1 className="display text-[clamp(56px,7vw,96px)] text-ink">Shop</h1>
           <Suspense fallback={null}>
             <SearchHeading searchParams={searchParams} />
           </Suspense>

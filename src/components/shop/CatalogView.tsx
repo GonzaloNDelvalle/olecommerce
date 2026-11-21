@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getActiveCategories, getAvailableSizes, getCatalogPage } from "@/modules/products/queries";
+import { getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
 import { ProductCard } from "@/modules/products/components/ProductCard";
 import { CatalogFilterBar, type CatalogFilterState } from "@/components/shop/CatalogFilterBar";
 import { CatalogPagination } from "@/components/shop/CatalogPagination";
@@ -34,7 +35,7 @@ export async function CatalogView({
   const { q, talle, orden, precio_min, precio_max, pagina } = searchParams;
   const page = positiveNumber(pagina) ?? 1;
 
-  const [catalog, categories, sizes] = await Promise.all([
+  const [catalog, categories, sizes, settings] = await Promise.all([
     getCatalogPage({
       categorySlug,
       collectionSlug,
@@ -47,7 +48,9 @@ export async function CatalogView({
     }),
     getActiveCategories(),
     getAvailableSizes(),
+    getStoreSettings(),
   ]);
+  const transferDiscount = isBankTransferAvailable(settings) ? settings.bankTransferDiscountPercentage : 0;
 
   const filters: CatalogFilterState = { q, talle, orden, precio_min, precio_max };
   const hasFilters = Boolean(q || talle || precio_min || precio_max);
@@ -83,7 +86,7 @@ export async function CatalogView({
         <Reveal variant="stagger" className="grid grid-cols-2 gap-x-2.5 gap-y-8 pt-8 sm:gap-x-4 sm:gap-y-12 lg:grid-cols-4">
           {catalog.items.map((product, i) => (
             <div key={product.id} data-reveal-item>
-              <ProductCard product={product} priority={i < 4} />
+              <ProductCard product={product} priority={i < 4} transferDiscount={transferDiscount} />
             </div>
           ))}
         </Reveal>

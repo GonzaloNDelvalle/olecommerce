@@ -5,6 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { ProductListItemDTO } from "@/modules/products/types";
 import { productHref } from "@/modules/products/urls";
 import { formatARS } from "@/lib/format";
+import { applyDiscount } from "@/modules/orders/pricing";
 import { cn } from "@/lib/cn";
 
 interface ProductCardProps {
@@ -12,6 +13,8 @@ interface ProductCardProps {
   /** Solo la primera fila visible: carga la imagen con prioridad. */
   priority?: boolean;
   sizes?: string;
+  /** % de descuento por pagar con transferencia (0 si no está habilitada). */
+  transferDiscount?: number;
 }
 
 /** Precio tachado y % de descuento a partir del precio final. */
@@ -33,10 +36,11 @@ export function getPriceDisplay(product: ProductListItemDTO) {
  * La imagen comparte nombre de View Transition con la galería de la ficha,
  * así al entrar al producto la foto "viaja" a su lugar.
  */
-export function ProductCard({ product, priority = false, sizes }: ProductCardProps) {
+export function ProductCard({ product, priority = false, sizes, transferDiscount = 0 }: ProductCardProps) {
   const { strikethrough, percent } = getPriceDisplay(product);
   const href = productHref(product.slug);
   const hasSecondary = Boolean(product.secondaryImage?.url);
+  const transferPrice = transferDiscount > 0 ? applyDiscount(product.finalPrice, transferDiscount) : null;
   const imageSizes = sizes ?? "(max-width: 1024px) 50vw, 25vw";
 
   return (
@@ -92,19 +96,22 @@ export function ProductCard({ product, priority = false, sizes }: ProductCardPro
       </Link>
 
       <div className="flex flex-col gap-1">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-[15px] leading-snug font-semibold text-ink">
-            <Link href={href} className="hover:text-chocolate">
-              {product.name}
-            </Link>
-          </h3>
-          <p className="tabular flex shrink-0 flex-col items-end text-[15px] font-semibold">
-            <span className={cn(strikethrough !== null && "text-brick")}>{formatARS(product.finalPrice)}</span>
-            {strikethrough !== null && (
-              <s className="text-[13px] font-normal text-stone-600">{formatARS(strikethrough)}</s>
-            )}
+        <h3 className="text-[15px] leading-snug font-semibold text-ink">
+          <Link href={href} className="hover:text-chocolate">
+            {product.name}
+          </Link>
+        </h3>
+        <p className="tabular flex flex-wrap items-baseline gap-x-2 text-[15px] font-semibold">
+          <span className={cn(strikethrough !== null && "text-brick")}>{formatARS(product.finalPrice)}</span>
+          {strikethrough !== null && (
+            <s className="text-[13px] font-normal text-stone-600">{formatARS(strikethrough)}</s>
+          )}
+        </p>
+        {transferPrice !== null && (
+          <p className="tabular text-[13px] font-semibold text-olive-deep">
+            {formatARS(transferPrice)} <span className="font-normal">con transferencia</span>
           </p>
-        </div>
+        )}
         <p className="text-[13px] text-stone-600">
           {product.category.name}
           {product.collection && <span className="text-caramel"> · {product.collection.name}</span>}

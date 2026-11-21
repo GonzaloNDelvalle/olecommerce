@@ -110,6 +110,8 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
 }
 
 async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
+  const settings = await getStoreSettings();
+  const transferDiscount = isBankTransferAvailable(settings) ? settings.bankTransferDiscountPercentage : 0;
   const { items } = await getCatalogPage({ categorySlug: product.category.slug });
   const related = items.filter((item) => item.id !== product.id).slice(0, 4);
   if (related.length === 0) return null;
@@ -124,7 +126,7 @@ async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
       <Reveal variant="stagger" className="grid grid-cols-2 gap-x-2.5 gap-y-8 sm:gap-x-4 lg:grid-cols-4">
         {related.map((item) => (
           <div key={item.id} data-reveal-item>
-            <ProductCard product={item} />
+            <ProductCard product={item} transferDiscount={transferDiscount} />
           </div>
         ))}
       </Reveal>
