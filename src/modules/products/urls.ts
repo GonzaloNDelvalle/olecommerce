@@ -7,3 +7,7 @@ export function categoryHref(slug: string): string {
 export function productHref(slugOrId: string): string {
   return `/productos/${encodeURIComponent(slugOrId)}`;
 }
+
+export function collectionHref(slug: string): string {
+  return `/coleccion/${encodeURIComponent(slug)}`;
+}

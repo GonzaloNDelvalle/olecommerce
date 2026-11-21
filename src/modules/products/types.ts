@@ -13,6 +13,14 @@ export interface PublicCategoryDTO {
   productsCount: number;
 }
 
+export interface PublicCollectionDTO {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  productsCount: number;
+}
+
 export interface PublicSizeDTO {
   id: string;
   name: string;
@@ -23,6 +31,7 @@ export type CatalogSortOption = "recientes" | "precio_asc" | "precio_desc";
 
 export interface ProductCatalogFilters {
   categorySlug?: string;
+  collectionSlug?: string;
   searchQuery?: string;
   sizeName?: string;
   sortBy?: string;

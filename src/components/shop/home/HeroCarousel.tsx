@@ -21,7 +21,7 @@ function canUseWebGL(): boolean {
 
 /** URL same-origin optimizada por Next: evita problemas de CORS en la textura. */
 function textureUrl(src: string): string {
-  return `/_next/image?url=${encodeURIComponent(src)}&w=1200&q=80`;
+  return `/_next/image?url=${encodeURIComponent(src)}&w=1200&q=75`;
 }
 
 /** Si WebGL o una textura fallan, la escena se descarta y queda el carrusel normal. */

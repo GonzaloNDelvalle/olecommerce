@@ -9,6 +9,7 @@ import type {
   ProductDetailDTO,
   ProductListItemDTO,
   PublicCategoryDTO,
+  PublicCollectionDTO,
   PublicSizeDTO,
 } from "@/modules/products/types";
 
@@ -100,6 +101,30 @@ export async function getActiveCategories(): Promise<PublicCategoryDTO[]> {
   }));
 }
 
+/** Colecciones activas con al menos un producto a la venta. */
+export async function getActiveCollections(): Promise<PublicCollectionDTO[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(CACHE_TAGS.catalog, CACHE_TAGS.siteContent);
+
+  const collections = await db.collection.findMany({
+    where: { isActive: true },
+    include: {
+      _count: { select: { products: { where: { status: ProductStatus.ACTIVE } } } },
+    },
+    orderBy: { name: "asc" },
+  });
+  return collections
+    .filter((collection) => collection._count.products > 0)
+    .map((collection) => ({
+      id: collection.id,
+      name: collection.name,
+      slug: collection.slug,
+      description: collection.description,
+      productsCount: collection._count.products,
+    }));
+}
+
 export async function getAvailableSizes(): Promise<PublicSizeDTO[]> {
   "use cache";
   cacheLife("days");
@@ -123,6 +148,7 @@ function normalizeFilters(filters: ProductCatalogFilters) {
       : undefined;
   return {
     categorySlug: filters.categorySlug?.trim() || undefined,
+    collectionSlug: filters.collectionSlug?.trim() || undefined,
     q: filters.searchQuery?.trim().slice(0, 80) || undefined,
     sizeName: filters.sizeName?.trim() || undefined,
     sortBy: filters.sortBy?.trim() || "recientes",
@@ -149,6 +175,12 @@ export async function getCatalogPage(
   const conditions: Prisma.Sql[] = [Prisma.sql`p."status" = 'ACTIVE'`];
   if (f.categorySlug) {
     conditions.push(Prisma.sql`c."slug" = ${f.categorySlug}`);
+  }
+  if (f.collectionSlug) {
+    conditions.push(Prisma.sql`p."collection_id" IN (
+      SELECT col."id" FROM "collections" col
+      WHERE col."slug" = ${f.collectionSlug} AND col."is_active" = true
+    )`);
   }
   if (f.q) {
     const pattern = `%${escapeLike(f.q.toLowerCase())}%`;

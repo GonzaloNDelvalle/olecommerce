@@ -112,8 +112,16 @@ function ClothPlane({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planeAspect, textures, invalidate]);
 
+  // Avisa recién cuando ya se dibujaron un par de cuadros: evita un destello oscuro al aparecer
   useEffect(() => {
-    onReady();
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(onReady);
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
   }, [onReady]);
 
   useFrame((state, delta) => {

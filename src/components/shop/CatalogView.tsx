@@ -21,11 +21,13 @@ function positiveNumber(value?: string): number | undefined {
 export async function CatalogView({
   basePath,
   categorySlug,
+  collectionSlug,
   searchParams,
   emptyAction,
 }: {
   basePath: string;
   categorySlug?: string;
+  collectionSlug?: string;
   searchParams: CatalogSearchParams;
   emptyAction?: ReactNode;
 }) {
@@ -35,6 +37,7 @@ export async function CatalogView({
   const [catalog, categories, sizes] = await Promise.all([
     getCatalogPage({
       categorySlug,
+      collectionSlug,
       searchQuery: q,
       sizeName: talle,
       sortBy: orden,
@@ -53,7 +56,7 @@ export async function CatalogView({
     <div>
       <CatalogFilterBar
         basePath={basePath}
-        categories={categories}
+        categories={collectionSlug ? [] : categories}
         activeCategorySlug={categorySlug}
         sizes={sizes}
         total={catalog.total}

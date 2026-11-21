@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Lock, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Lock, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { useCartStore } from "@/store/cart.store";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
@@ -16,6 +16,8 @@ import { cn } from "@/lib/cn";
 export interface NavLink {
   href: string;
   label: string;
+  /** Submenú (ej: categorías bajo «Productos»). */
+  children?: NavLink[];
 }
 
 export interface ShopHeaderProps {
@@ -64,6 +66,7 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
     () => false,
   );
   const [panel, setPanel] = useState<"menu" | "search" | null>(null);
+  const [openSub, setOpenSub] = useState<string | null>(null);
 
   const openCart = useCartStore((state) => state.openCart);
   const totalItems = useCartStore((state) => state.items.reduce((acc, item) => acc + item.quantity, 0));
@@ -73,6 +76,7 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
   if (pathname !== lastPath) {
     setLastPath(pathname);
     setPanel(null);
+    setOpenSub(null);
   }
 
   useEffect(() => {
@@ -125,24 +129,46 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
               >
                 {panel === "menu" ? <X className="size-5" strokeWidth={1.6} /> : <Menu className="size-5" strokeWidth={1.6} />}
               </button>
-              <nav aria-label="Principal" className="hidden items-center gap-6 lg:flex xl:gap-7">
-                {navLinks.map((link, i) => {
-                  const active = pathname === link.href.split("?")[0] && link.href !== "/productos";
-                  // En desktop chico solo entran los dos primeros links
-                  const compact = i >= 2 ? "hidden xl:inline-block" : "";
+              <nav aria-label="Principal" className="hidden items-center gap-7 lg:flex">
+                {navLinks.map((link) => {
+                  const active = pathname === link.href && !link.children;
+                  const linkClass = cn(
+                    "py-2 text-sm font-medium whitespace-nowrap text-ink transition-colors duration-150 hover:text-chocolate",
+                    active && "text-chocolate underline decoration-1 underline-offset-[6px]",
+                  );
+                  if (!link.children?.length) {
+                    return (
+                      <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined} className={linkClass}>
+                        {link.label}
+                      </Link>
+                    );
+                  }
                   return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "py-2 text-sm font-medium whitespace-nowrap text-ink transition-colors duration-150 hover:text-chocolate",
-                        compact,
-                        active && "text-chocolate underline decoration-1 underline-offset-[6px]",
-                      )}
-                    >
-                      {link.label}
-                    </Link>
+                    <div key={link.href} className="group relative">
+                      <Link href={link.href} className={cn(linkClass, "inline-flex items-center gap-1")}>
+                        {link.label}
+                        <ChevronDown
+                          className="size-3.5 transition-transform duration-200 group-focus-within:rotate-180 group-hover:rotate-180"
+                          strokeWidth={1.8}
+                          aria-hidden="true"
+                        />
+                      </Link>
+                      {/* Submenú: aparece al apuntar o al enfocar con teclado */}
+                      <div className="invisible absolute top-full left-1/2 z-10 -translate-x-1/2 pt-3 opacity-0 transition-[opacity,visibility] duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                        <ul className="min-w-[220px] rounded-2xl border border-stone-200 bg-paper p-2 shadow-[0_24px_60px_rgba(44,33,25,0.16)]">
+                          {link.children.map((child) => (
+                            <li key={child.href}>
+                              <Link
+                                href={child.href}
+                                className="block rounded-xl px-4 py-2.5 text-sm font-medium whitespace-nowrap text-ink transition-colors hover:bg-cream hover:text-chocolate"
+                              >
+                                {child.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   );
                 })}
               </nav>
@@ -205,15 +231,49 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
                     <div className="mb-2">
                       <SearchBar onAfterSubmit={() => setPanel(null)} />
                     </div>
-                    {navLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className="border-b border-stone-200 py-3.5 text-[17px] font-semibold text-ink hover:text-chocolate"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
+                    {navLinks.map((link) => {
+                      const rowClass = "text-[17px] font-semibold text-ink hover:text-chocolate";
+                      if (!link.children?.length) {
+                        return (
+                          <Link key={link.href} href={link.href} className={cn(rowClass, "border-b border-stone-200 py-3.5")}>
+                            {link.label}
+                          </Link>
+                        );
+                      }
+                      const open = openSub === link.href;
+                      return (
+                        <div key={link.href} className="border-b border-stone-200">
+                          <div className="flex items-center justify-between">
+                            <Link href={link.href} className={cn(rowClass, "flex-1 py-3.5")}>
+                              {link.label}
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => setOpenSub(open ? null : link.href)}
+                              aria-expanded={open}
+                              aria-label={open ? "Ocultar categorías" : "Mostrar categorías"}
+                              className="pressable inline-flex size-11 items-center justify-center rounded-full text-ink hover:bg-ink/5"
+                            >
+                              <ChevronDown
+                                className={cn("size-5 transition-transform duration-200", open && "rotate-180")}
+                                strokeWidth={1.8}
+                              />
+                            </button>
+                          </div>
+                          {open && (
+                            <ul className="flex flex-col pb-3 pl-3">
+                              {link.children.map((child) => (
+                                <li key={child.href}>
+                                  <Link href={child.href} className="block py-2.5 text-[15px] font-medium text-stone-700 hover:text-chocolate">
+                                    {child.label}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })}
                     <Link href="/mi-cuenta" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink">
                       <User className="size-4" strokeWidth={1.8} aria-hidden="true" /> Mi cuenta
                     </Link>

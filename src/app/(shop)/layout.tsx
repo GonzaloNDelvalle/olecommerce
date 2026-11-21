@@ -5,18 +5,19 @@ import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SmoothScrollProvider } from "@/components/layout/SmoothScrollProvider";
 import { RevealObserver } from "@/components/motion/RevealObserver";
 import { getAnnouncementMessages, getSiteContent } from "@/modules/content/site-content";
-import { getActiveCategories, getFeaturedProducts } from "@/modules/products/queries";
+import { getActiveCategories, getActiveCollections, getFeaturedProducts } from "@/modules/products/queries";
 import { getActiveShippingMethods, getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
-import { categoryHref } from "@/modules/products/urls";
+import { categoryHref, collectionHref } from "@/modules/products/urls";
 import { JsonLd } from "@/modules/seo/json-ld";
 import { getAppUrl } from "@/lib/app-url";
 
 export default async function ShopLayout({ children }: { children: ReactNode }) {
   // Contenido editable desde /admin (cacheado; se invalida al guardar)
-  const [content, announcements, categories, settings, shippingMethods, suggestions] = await Promise.all([
+  const [content, announcements, categories, collections, settings, shippingMethods, suggestions] = await Promise.all([
     getSiteContent(),
     getAnnouncementMessages(),
     getActiveCategories(),
+    getActiveCollections(),
     getStoreSettings(),
     getActiveShippingMethods(),
     getFeaturedProducts(8),
@@ -31,13 +32,18 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
 
   const categoryLinks: NavLink[] = categories
     .filter((c) => c.productsCount > 0)
-    .slice(0, 6)
     .map((c) => ({ href: categoryHref(c.slug), label: c.name }));
 
+  // La colección/campaña vigente: la que lleva el nombre cargado en Contenido
+  const currentName = content.collectionName.trim().toLowerCase();
+  const currentCollection = currentName
+    ? collections.find((c) => c.name.trim().toLowerCase() === currentName)
+    : undefined;
+
   const navLinks: NavLink[] = [
-    { href: "/productos", label: "Tienda" },
-    { href: "/productos?orden=recientes", label: content.seasonLabel || "Novedades" },
-    ...categoryLinks.slice(0, 3),
+    { href: "/productos?orden=recientes", label: "New In" },
+    ...(currentCollection ? [{ href: collectionHref(currentCollection.slug), label: currentCollection.name }] : []),
+    { href: "/productos", label: "Productos", children: categoryLinks },
   ];
 
   return (
