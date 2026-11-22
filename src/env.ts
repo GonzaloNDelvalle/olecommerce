@@ -54,6 +54,13 @@ export function validateServerEnv(): void {
   }
 
   if (isProduction) {
+    // Pagos de prueba por error: no se cobra de verdad
+    if (process.env.MP_USE_SANDBOX === "true") {
+      console.warn("⚠️  MP_USE_SANDBOX=true en producción: los pagos se hacen en el entorno de prueba de Mercado Pago.");
+    }
+    if (process.env.MP_ACCESS_TOKEN?.trim().startsWith("TEST-")) {
+      console.warn("⚠️  MP_ACCESS_TOKEN es una credencial de prueba (TEST-) en producción: no se van a cobrar pagos reales.");
+    }
     for (const [name, consequence] of RECOMMENDED) {
       if (!process.env[name]?.trim()) {
         console.warn(`⚠️  ${name} no está definida: ${consequence}.`);

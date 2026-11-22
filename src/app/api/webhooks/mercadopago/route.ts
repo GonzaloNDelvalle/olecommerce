@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import {
   Payment,
   WebhookSignatureValidator,
@@ -90,6 +90,13 @@ export async function POST(request: NextRequest) {
 
   // Ignorar notificaciones que no tengan ID o que sean de otro tópico (ej: merchant_order)
   if (!dataId || (eventType && !String(eventType).includes("payment"))) {
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  // El ID de un pago de Mercado Pago es numérico: cualquier otra cosa se descarta
+  // sin consultar la API ni la base (evita que se use el endpoint para generar consultas).
+  if (!/^\d{1,20}$/.test(String(dataId))) {
+    console.warn("[MP Webhook] data.id con formato inválido, se ignora.");
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
@@ -269,13 +276,16 @@ export async function POST(request: NextRequest) {
         where: { orderId },
         data: { ...paymentData, statusDetail: "approved_without_stock" },
       });
-      await sendAdminAlertEmail(
-        `Pago aprobado sin stock — Orden #${error.orderNumber}`,
-        [
-          `Mercado Pago aprobó el pago ${mpPaymentId} de una orden que ya estaba vencida o cancelada.`,
-          `No hay stock suficiente de ${error.sku} para reactivarla.`,
-          "Acción: contactar a la clienta y reintegrar el pago desde Mercado Pago, o reponer stock y acreditar manualmente desde el panel.",
-        ]
+      // Los emails se envían después de responder: Mercado Pago espera un 200 rápido
+      after(() =>
+        sendAdminAlertEmail(
+          `Pago aprobado sin stock — Orden #${error.orderNumber}`,
+          [
+            `Mercado Pago aprobó el pago ${mpPaymentId} de una orden que ya estaba vencida o cancelada.`,
+            `No hay stock suficiente de ${error.sku} para reactivarla.`,
+            "Acción: contactar a la clienta y reintegrar el pago desde Mercado Pago, o reponer stock y acreditar manualmente desde el panel.",
+          ]
+        )
       );
       return NextResponse.json({ received: true }, { status: 200 });
     }
@@ -286,39 +296,43 @@ export async function POST(request: NextRequest) {
           outcome.order.items.map((item) => item.variantId)
         );
         // Email "Pago Acreditado": solo la notificación que efectivamente pasó la orden a PAID.
-        const emailResult = await sendPaymentApprovedEmail(orderId);
-        console.log(
-          `✅ [MP Webhook] Orden #${outcome.order.orderNumber} acreditada (PAID). Email:`,
-          emailResult.success ? "enviado" : `falló (${emailResult.error})`
-        );
+        // Se envía después de responder: Mercado Pago espera un 200 rápido.
+        const paidOrderNumber = outcome.order.orderNumber;
+        after(async () => {
+          const emailResult = await sendPaymentApprovedEmail(orderId);
+          console.log(
+            `✅ [MP Webhook] Orden #${paidOrderNumber} acreditada (PAID). Email:`,
+            emailResult.success ? "enviado" : `falló (${emailResult.error})`
+          );
+        });
         break;
       }
       case "amount-mismatch":
-        await sendAdminAlertEmail(
+        after(() => sendAdminAlertEmail(
           `Monto de pago no coincide — Orden #${outcome.order.orderNumber}`,
           [
             `Pago MP ${mpPaymentId}: cobrado ${outcome.paidAmount} ${mpPayment.currency_id ?? ""}, esperado ${outcome.expectedAmount} ARS.`,
             "La orden NO se marcó como pagada. Revisar en Mercado Pago antes de despachar.",
           ]
-        );
+        ));
         break;
       case "reversal":
-        await sendAdminAlertEmail(
+        after(() => sendAdminAlertEmail(
           `${mappedPaymentStatus === PaymentStatus.REFUNDED ? "Reintegro" : "Contracargo"} — Orden #${outcome.order.orderNumber}`,
           [
             `El pago MP ${mpPaymentId} pasó a ${mpPayment.status} (${mpPayment.status_detail ?? "sin detalle"}).`,
             `Estado actual de la orden: ${outcome.order.status}. Si todavía no se despachó, frená el envío.`,
           ]
-        );
+        ));
         break;
       case "duplicate-payment":
-        await sendAdminAlertEmail(
+        after(() => sendAdminAlertEmail(
           `Pago duplicado — Orden #${outcome.order.orderNumber}`,
           [
             `Llegó un segundo pago aprobado (MP ${mpPaymentId}) para una orden ya pagada con el pago ${outcome.order.payment?.paymentId ?? "desconocido"}.`,
             "Acción: reintegrar el pago duplicado desde Mercado Pago.",
           ]
-        );
+        ));
         break;
       case "unknown-order":
         console.warn(
