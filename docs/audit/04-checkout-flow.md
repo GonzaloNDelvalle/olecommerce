@@ -42,3 +42,41 @@ Estructura clara en tres pasos (datos, entrega, pago), resumen con total y un ú
 - Cuentas de clienta (registro, verificación de email, `mi-cuenta`) y panel de administración con sesión.
 
 **Recomendación:** crear una **rama de base en Neon** solo para pruebas (es gratis y se descarta) y apuntar el E2E ahí. Con eso se pueden automatizar la creación de órdenes, la reserva de stock y el cron de vencimiento sin riesgo.
+
+
+---
+
+# Adenda: rama de pruebas y tests con escritura (2026-11-21)
+
+Se creó la rama **`e2e-testing`** del proyecto Neon (creada desde `production` **solo con el esquema, sin datos de clientas**). Con ella los tests ya pueden crear órdenes, reservar stock y ejecutar el cron sin riesgo.
+
+## Cómo funciona
+- `.env.e2e` (ignorado por git) contiene las cadenas de conexión de la rama y **credenciales falsas** de Mercado Pago y Resend: las pruebas nunca cobran y nunca envían un email real (Resend rechaza la clave falsa y queda en el log).
+- `playwright.config.ts` compara el host de `.env.e2e` con el de `.env`. **Solo si son distintos** compila un build propio (`.next-e2e`, contra la rama) y habilita los tests que escriben. Si no, esos tests se saltean.
+- `pnpm db:seed:e2e` carga configuración, envíos y portada (con datos bancarios falsos) y `pnpm db:seed` los productos y un admin de pruebas. Ambos se niegan a correr contra la base de `.env`.
+- La rama tiene el historial de migraciones registrado (`prisma migrate status`: al día).
+
+## Resultado: 50 de 50 tests pasan (dos corridas consecutivas), 8 saltados a propósito (los de escritura corren solo en escritorio)
+
+| Test nuevo (`e2e/orders.spec.ts`) | Qué verifica |
+|---|---|
+| Orden por transferencia | Totales calculados en el servidor (subtotal, 15 % de descuento, envío), stock reservado, recibo sin DNI ni email completo |
+| Cron de vencimiento | 401 sin secreto o con uno incorrecto; con secreto vence la orden vieja y libera el stock |
+| Acreditación manual en el admin | Sin sesión redirige a login; con el admin la orden pasa a pagada y se descuenta el stock (stock −1, reserva liberada) |
+| Falla de Mercado Pago | Mensaje genérico, orden cancelada, stock liberado, reintentar no acumula reservas |
+| Webhook | Ignora IDs inválidos y otros temas, responde al ping, y con un pago no verificable devuelve 500 sin filtrar detalles |
+| Última unidad | Dos compras simultáneas: exactamente una prospera, y nunca se reserva más de lo que hay |
+| Newsletter | Queda pendiente hasta confirmar; reintentar no genera otro link; un token falso o reutilizado no sirve |
+| Arrepentimiento | Se registra aunque el pedido no exista, la respuesta es la misma, y el 4.º intento del día con el mismo email se rechaza |
+
+## Hallazgos de esta tanda
+
+| ID | Severidad | Hallazgo | Estado |
+|---|---|---|---|
+| F4-08 | **Media** | **Si Mercado Pago no podía generar el link de pago, la orden quedaba PENDING con el stock reservado**; cada reintento de la clienta creaba otra orden y reservaba más prendas hasta que el cron las vencía a las 24 h. Además se enviaba el email "Orden confirmada" de una compra que no se completó. | **Corregido** en `checkout.actions.ts`: la orden se cancela y libera el stock al instante, y el email de confirmación sale solo cuando el link de pago se generó. |
+| F4-09 | Info | La base de producción **ya tiene aplicadas todas las migraciones** (incluida la del newsletter): comparando la rama con el esquema actual no hay diferencias. La advertencia de la Fase 2 sobre aplicarla antes de desplegar ya no corresponde. | Sin acción. |
+| F4-10 | Info | La base de la rama protege la integridad del stock con una restricción (`reservado ≤ stock`), que el propio test activó al restaurar valores inconsistentes. | Sin acción. |
+
+## Qué sigue sin cubrir
+- El flujo real de aprobación de un pago (webhook con un pago aprobado) necesita la API de Mercado Pago; está cubierto por el pago real que hiciste y por revisión de código.
+- Registro, verificación de email y `mi-cuenta` de clientas.

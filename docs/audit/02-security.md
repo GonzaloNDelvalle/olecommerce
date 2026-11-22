@@ -38,7 +38,7 @@ Se agregó `frame-ancestors`, HSTS, `nosniff`, `Referrer-Policy`, `Permissions-P
 **Arreglo aplicado:** la constancia por email se envía solo si el pedido existe y es de ese email, el mensaje en pantalla es idéntico en ambos casos y hay un límite de 3 solicitudes por día por email.
 
 ### OWASP-A06-002: Alta de newsletter sin doble confirmación (CWE-799) — Baja, confianza Alta. CORREGIDO
-`newsletter.actions.ts` suscribe cualquier email con un solo envío. Un tercero puede inscribir a otra persona. **Arreglo aplicado:** doble opt-in. El email queda `PENDING` hasta que la persona confirma desde `/newsletter/confirmar`; recién ahí se registra el consentimiento y se envía la bienvenida. **Requiere aplicar la migración `20261120120000_newsletter_double_opt_in` (`pnpm db:migrate`) ANTES de desplegar este código.**
+`newsletter.actions.ts` suscribe cualquier email con un solo envío. Un tercero puede inscribir a otra persona. **Arreglo aplicado:** doble opt-in. El email queda `PENDING` hasta que la persona confirma desde `/newsletter/confirmar`; recién ahí se registra el consentimiento y se envía la bienvenida. La migración `20261120120000_newsletter_double_opt_in` ya está aplicada en producción (verificado el 2026-11-21 comparando la base con el esquema actual).
 
 ### OWASP-A07-001: Límite de intentos basado en `x-forwarded-for` (CWE-348) — Baja, confianza Media. [MANUAL VERIFICATION REQUIRED]
 `lib/rate-limit.ts` toma la primera IP de `x-forwarded-for`. En Vercel la plataforma lo sobrescribe y es seguro; en otro hosting o detrás de otro proxy sería falsificable. Además falla abierto si la base no responde (decisión de negocio declarada). El límite de login de Better Auth usa su propio mecanismo en base de datos.
