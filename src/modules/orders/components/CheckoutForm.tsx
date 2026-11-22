@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -59,7 +59,12 @@ export function CheckoutForm({
   showroomAddress,
 }: CheckoutFormProps) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  // false en el servidor y durante la hidratación; true ya en el cliente (el carrito vive en localStorage)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const [serverError, setServerError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const initialMethod =
@@ -73,7 +78,7 @@ export function CheckoutForm({
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFormValues>({
@@ -97,10 +102,10 @@ export function CheckoutForm({
     },
   });
 
-  const selectedPaymentMethod = watch("paymentMethod");
-  const selectedProvince = watch("state");
-  const selectedShippingMethodId = watch("shippingMethodId");
-  const postalCode = watch("postalCode");
+  const selectedPaymentMethod = useWatch({ control, name: "paymentMethod" });
+  const selectedProvince = useWatch({ control, name: "state" });
+  const selectedShippingMethodId = useWatch({ control, name: "shippingMethodId" });
+  const postalCode = useWatch({ control, name: "postalCode" });
 
   // Cotización por CP y peso (solo para métodos con tabla de tarifas)
   const hasRateTables = shippingMethods.some((m) => m.rateTable);
@@ -166,10 +171,6 @@ export function CheckoutForm({
     setValue("deliveryType", next?.type ?? "HOME_DELIVERY");
   }
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   async function onSubmit(values: CheckoutFormValues) {
     setServerError(null);
 
@@ -200,7 +201,7 @@ export function CheckoutForm({
     }
 
     // Redirección externa hacia Checkout Pro de Mercado Pago
-    window.location.href = response.redirectUrl;
+    window.location.assign(response.redirectUrl);
   }
 
   if (!mounted) {
