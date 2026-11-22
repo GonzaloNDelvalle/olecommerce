@@ -65,6 +65,16 @@ export async function submitRevocationRequestAction(
   const { email, orderNumber, reason } = parsed.data;
   const normalizedEmail = email.toLowerCase();
 
+  // Además del límite por IP, un mismo email no puede llenar la bandeja del
+  // equipo ni recibir constancias en cadena
+  if (!(await consumeRateLimit(RATE_LIMITS.revocationPerEmail, normalizedEmail))) {
+    return {
+      success: false,
+      error:
+        "Ya registramos varias solicitudes con este email hoy. Escribinos por email si necesitás ayuda.",
+    };
+  }
+
   try {
     const order = await db.order.findFirst({
       where: {
@@ -103,12 +113,16 @@ export async function submitRevocationRequestAction(
     }
     if (!request) throw new Error("No se pudo generar el código de solicitud.");
 
+    // La constancia por email se envía solo si el pedido existe y es de ese email:
+    // así no se puede usar el formulario para mandar correo a terceros.
     await Promise.all([
-      sendRevocationReceivedEmail({
-        to: normalizedEmail,
-        code: request.code,
-        orderNumber,
-      }),
+      order
+        ? sendRevocationReceivedEmail({
+            to: normalizedEmail,
+            code: request.code,
+            orderNumber,
+          })
+        : Promise.resolve(),
       sendAdminAlertEmail(`Arrepentimiento ${request.code} — Orden #${orderNumber}`, [
         `Código: ${request.code}`,
         `Email: ${normalizedEmail}`,
@@ -123,7 +137,8 @@ export async function submitRevocationRequestAction(
     return {
       success: true,
       code: request.code,
-      message: `Registramos tu solicitud con el código ${request.code}. Te enviamos una constancia a ${normalizedEmail} y nos vamos a contactar a la brevedad.`,
+      // Mismo mensaje exista o no el pedido: no revela qué pedidos pertenecen a qué email
+      message: `Registramos tu solicitud con el código ${request.code}. Guardalo como constancia. Si los datos coinciden con un pedido, también te lo enviamos por email, y nos vamos a contactar a la brevedad.`,
     };
   } catch (error) {
     console.error("[submitRevocationRequestAction] Error:", error);

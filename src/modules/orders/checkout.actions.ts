@@ -13,7 +13,7 @@ import {
   type CheckoutPaymentMethod,
   type CreateOrderPayload,
 } from "@/modules/orders/schemas/checkout.schema";
-import { createMercadoPagoPreference } from "@/modules/orders/payment.actions";
+import { createMercadoPagoPreference } from "@/modules/orders/mercadopago-preference";
 import { sendOrderConfirmedEmail } from "@/lib/email";
 import { mergeStockLines, reserveVariantStock } from "@/modules/orders/inventory";
 import { revalidateStockForVariants } from "@/lib/cache-tags";
@@ -50,20 +50,12 @@ export type ProcessCheckoutOrderResult =
       error: string;
     };
 
-export interface TransferOrderSummaryDTO {
-  id: string;
-  orderNumber: number;
-  status: OrderStatus;
-  subtotal: number;
-  discountAmount: number;
-  shippingCost: number;
-  totalAmount: number;
-  customerName: string;
-  customerEmail: string;
-  customerDocument: string;
-  createdAt: string;
-  itemsCount: number;
-}
+/**
+ * Error de negocio con un mensaje pensado para mostrarse a la compradora.
+ * Cualquier otro error (Prisma, red, bug) se registra en el servidor y se
+ * responde con un mensaje genérico, para no filtrar detalles internos.
+ */
+class CheckoutError extends Error {}
 
 /**
  * Procesador Transaccional de Órdenes (`checkout.actions.ts`):
@@ -181,7 +173,7 @@ export async function processCheckoutOrder(
           !variant.isActive ||
           variant.product.status !== ProductStatus.ACTIVE
         ) {
-          throw new Error(
+          throw new CheckoutError(
             "Uno de los productos seleccionados ya no se encuentra disponible en el catálogo."
           );
         }
@@ -200,7 +192,7 @@ export async function processCheckoutOrder(
             0,
             variant.stock - variant.reservedStock
           );
-          throw new Error(
+          throw new CheckoutError(
             `Stock insuficiente para "${variant.product.name}" (Talle ${variant.size.name} - ${variant.color.name}). Disponible: ${availableStock} u.`
           );
         }
@@ -283,7 +275,7 @@ export async function processCheckoutOrder(
         subtotal: calculatedSubtotal,
       });
       if (!quote.available) {
-        throw new Error(QUOTE_UNAVAILABLE_MESSAGES[quote.reason]);
+        throw new CheckoutError(QUOTE_UNAVAILABLE_MESSAGES[quote.reason]);
       }
 
       const isBankTransfer = customer.paymentMethod === "BANK_TRANSFER";
@@ -400,157 +392,14 @@ export async function processCheckoutOrder(
       redirectUrl: mpPreference.initPoint,
     };
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Ocurrió un error inesperado al procesar la orden.";
+    if (error instanceof CheckoutError) {
+      return { success: false, error: error.message };
+    }
+    console.error("[processCheckoutOrder] Error inesperado:", error);
     return {
       success: false,
-      error: message,
+      error:
+        "Ocurrió un error inesperado al procesar la orden. Intentá nuevamente en unos minutos.",
     };
   }
-}
-
-export interface OrderItemSummaryDTO {
-  id: string;
-  productName: string;
-  variantSku: string;
-  sizeName: string;
-  colorName: string;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-  imageUrl?: string | null;
-}
-
-export interface ConfirmationOrderDTO {
-  id: string;
-  orderNumber: number;
-  status: OrderStatus;
-  subtotal: number;
-  discountAmount: number;
-  shippingCost: number;
-  totalAmount: number;
-  customerName: string;
-  customerEmail: string;
-  customerDocument: string;
-  createdAt: string;
-  paymentProvider: PaymentProvider;
-  paymentStatus: PaymentStatus;
-  items: OrderItemSummaryDTO[];
-}
-
-/**
- * Obtiene los datos detallados de una orden para la vista de Confirmación de Pedido / Recibo Digital.
- */
-export async function getConfirmationOrderDetails(
-  orderId: string
-): Promise<ConfirmationOrderDTO | null> {
-  const order = await db.order.findUnique({
-    where: { id: orderId },
-    include: {
-      user: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true,
-        },
-      },
-      payment: {
-        select: {
-          provider: true,
-          status: true,
-        },
-      },
-      items: {
-        include: {
-          variant: {
-            select: {
-              imageUrl: true,
-              product: {
-                select: {
-                  images: {
-                    orderBy: { position: "asc" },
-                    take: 1,
-                    select: { url: true },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!order) return null;
-
-  return {
-    id: order.id,
-    orderNumber: order.orderNumber,
-    status: order.status,
-    subtotal: Number(order.subtotal),
-    discountAmount: Number(order.discountAmount),
-    shippingCost: Number(order.shippingCost),
-    totalAmount: Number(order.totalAmount),
-    customerName: `${order.user.firstName} ${order.user.lastName}`,
-    customerEmail: order.user.email,
-    customerDocument: order.customerDocument,
-    createdAt: order.createdAt.toISOString(),
-    paymentProvider: order.payment?.provider ?? PaymentProvider.BANK_TRANSFER,
-    paymentStatus: order.payment?.status ?? PaymentStatus.PENDING,
-    items: order.items.map((item) => ({
-      id: item.id,
-      productName: item.productName,
-      variantSku: item.variantSku,
-      sizeName: item.sizeName,
-      colorName: item.colorName,
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-      subtotal: Number(item.subtotal),
-      imageUrl: item.variant?.imageUrl || item.variant?.product?.images[0]?.url || null,
-    })),
-  };
-}
-
-/**
- * Obtiene los datos resumidos de una orden para la pantalla `/checkout/transferencia/[id]`.
- */
-export async function getTransferOrderDetails(
-  orderId: string
-): Promise<TransferOrderSummaryDTO | null> {
-  const order = await db.order.findUnique({
-    where: { id: orderId },
-    include: {
-      user: {
-        select: {
-          firstName: true,
-          lastName: true,
-          email: true,
-        },
-      },
-      items: {
-        select: { quantity: true },
-      },
-    },
-  });
-
-  if (!order) return null;
-
-  const itemsCount = order.items.reduce((acc, item) => acc + item.quantity, 0);
-
-  return {
-    id: order.id,
-    orderNumber: order.orderNumber,
-    status: order.status,
-    subtotal: Number(order.subtotal),
-    discountAmount: Number(order.discountAmount),
-    shippingCost: Number(order.shippingCost),
-    totalAmount: Number(order.totalAmount),
-    customerName: `${order.user.firstName} ${order.user.lastName}`,
-    customerEmail: order.user.email,
-    customerDocument: order.customerDocument,
-    createdAt: order.createdAt.toISOString(),
-    itemsCount,
-  };
 }

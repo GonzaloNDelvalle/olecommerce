@@ -10,7 +10,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
-import { getConfirmationOrderDetails } from "@/modules/orders/checkout.actions";
+import { getConfirmationOrderDetails } from "@/modules/orders/order-details";
 import { PurchaseTracker } from "@/components/analytics/PurchaseTracker";
 import { getStoreSettings } from "@/modules/settings/store-settings";
 import { CopyButton } from "@/components/shop/CopyButton";

@@ -7,6 +7,7 @@ import { applyDiscount } from "@/modules/orders/pricing";
 import { mergeStockLines } from "@/modules/orders/inventory";
 import { packageWeight, quoteShipping, type ShippingQuote } from "@/modules/orders/shipping-rates";
 import { getActiveShippingMethods } from "@/modules/settings/store-settings";
+import { consumeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const quoteInputSchema = z.object({
   postalCode: z.string().trim().max(10),
@@ -25,6 +26,7 @@ export type ShippingQuotesResult = Record<string, ShippingQuote>;
 export async function quoteShippingForCart(input: z.input<typeof quoteInputSchema>): Promise<ShippingQuotesResult> {
   const parsed = quoteInputSchema.safeParse(input);
   if (!parsed.success) return {};
+  if (!(await consumeRateLimit(RATE_LIMITS.shippingQuote))) return {};
 
   const items = mergeStockLines(parsed.data.items);
   const [methods, variants] = await Promise.all([
