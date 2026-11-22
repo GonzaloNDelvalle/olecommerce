@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Script from "next/script";
+import { GaPageViews } from "@/components/analytics/GaPageViews";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
 const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
@@ -18,8 +20,12 @@ export function MarketingPixels() {
             strategy="afterInteractive"
           />
           <Script id="ga4-init" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}');`}
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});`}
           </Script>
+          {/* page_view manual: la URL de la confirmación de compra lleva el ID de la orden */}
+          <Suspense fallback={null}>
+            <GaPageViews />
+          </Suspense>
         </>
       )}
       {META_PIXEL_ID && (

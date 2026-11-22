@@ -4,8 +4,7 @@ import {
   Plus_Jakarta_Sans,
   Geist_Mono,
 } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { VercelMetrics } from "@/components/analytics/VercelMetrics";
 import { MarketingPixels } from "@/components/analytics/MarketingPixels";
 import { getAppUrl } from "@/lib/app-url";
 import "./globals.css";
@@ -62,8 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-paper font-sans text-ink selection:bg-chocolate selection:text-paper">
         {children}
-        <Analytics />
-        <SpeedInsights />
+        <VercelMetrics />
         <MarketingPixels />
       </body>
     </html>
