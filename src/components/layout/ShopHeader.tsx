@@ -164,6 +164,15 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
                               >
                                 {child.label}
                               </Link>
+                              {child.children?.map((sub) => (
+                                <Link
+                                  key={sub.href}
+                                  href={sub.href}
+                                  className="block rounded-xl py-1.5 pr-4 pl-8 text-[13px] font-medium whitespace-nowrap text-stone-600 transition-colors hover:bg-cream hover:text-chocolate"
+                                >
+                                  {sub.label}
+                                </Link>
+                              ))}
                             </li>
                           ))}
                         </ul>
@@ -267,6 +276,15 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
                                   <Link href={child.href} className="block py-2.5 text-[15px] font-medium text-stone-700 hover:text-chocolate">
                                     {child.label}
                                   </Link>
+                                  {child.children?.map((sub) => (
+                                    <Link
+                                      key={sub.href}
+                                      href={sub.href}
+                                      className="block py-2 pl-4 text-[14px] font-medium text-stone-500 hover:text-chocolate"
+                                    >
+                                      {sub.label}
+                                    </Link>
+                                  ))}
                                 </li>
                               ))}
                             </ul>

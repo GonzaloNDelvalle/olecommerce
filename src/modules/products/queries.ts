@@ -90,14 +90,32 @@ export async function getActiveCategories(): Promise<PublicCategoryDTO[]> {
     orderBy: { name: "asc" },
   });
 
-  return categories.map((cat) => ({
+  // Una subcategoría solo se muestra si su categoría principal también está activa
+  const activeIds = new Set(categories.map((cat) => cat.id));
+  const visible = categories.filter((cat) => !cat.parentId || activeIds.has(cat.parentId));
+
+  // Cada categoría principal suma los productos de sus subcategorías
+  const childrenTotal = new Map<string, number>();
+  for (const cat of visible) {
+    if (cat.parentId) {
+      childrenTotal.set(cat.parentId, (childrenTotal.get(cat.parentId) ?? 0) + cat._count.products);
+    }
+  }
+  const parentFallbackImage = new Map<string, string>();
+  for (const cat of visible) {
+    const url = cat.products[0]?.images[0]?.url;
+    if (cat.parentId && url && !parentFallbackImage.has(cat.parentId)) parentFallbackImage.set(cat.parentId, url);
+  }
+
+  return visible.map((cat) => ({
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
     description: cat.description,
     imageUrl: cat.imageUrl,
-    coverImageUrl: cat.imageUrl ?? cat.products[0]?.images[0]?.url ?? null,
-    productsCount: cat._count.products,
+    coverImageUrl: cat.imageUrl ?? cat.products[0]?.images[0]?.url ?? parentFallbackImage.get(cat.id) ?? null,
+    parentId: cat.parentId,
+    productsCount: cat._count.products + (childrenTotal.get(cat.id) ?? 0),
   }));
 }
 
@@ -174,7 +192,10 @@ export async function getCatalogPage(
 
   const conditions: Prisma.Sql[] = [Prisma.sql`p."status" = 'ACTIVE'`];
   if (f.categorySlug) {
-    conditions.push(Prisma.sql`c."slug" = ${f.categorySlug}`);
+    // Una categoría principal incluye los productos de sus subcategorías
+    conditions.push(Prisma.sql`(c."slug" = ${f.categorySlug} OR c."parent_id" IN (
+      SELECT pc."id" FROM "categories" pc WHERE pc."slug" = ${f.categorySlug}
+    ))`);
   }
   if (f.collectionSlug) {
     conditions.push(Prisma.sql`p."collection_id" IN (

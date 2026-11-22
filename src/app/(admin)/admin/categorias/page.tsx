@@ -21,6 +21,7 @@ function AdminCategoriesManager() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [parentId, setParentId] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -55,6 +56,7 @@ function AdminCategoriesManager() {
       const result = await createAdminCategory({
         name,
         description,
+        parentId: parentId || null,
       });
 
       if (!result.success) {
@@ -64,6 +66,7 @@ function AdminCategoriesManager() {
 
       setName("");
       setDescription("");
+      setParentId("");
       setSuccessMessage(result.message);
       await loadCategories();
     });
@@ -121,6 +124,33 @@ function AdminCategoriesManager() {
               placeholder="Ej: Vestidos de Fiesta"
               className="mt-1.5 w-full rounded-lg border border-stone-300 px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="category-parent"
+              className="block text-xs font-medium text-stone-700"
+            >
+              Categoría principal (Opcional)
+            </label>
+            <select
+              id="category-parent"
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+              className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-stone-900 focus:border-stone-900 focus:outline-none"
+            >
+              <option value="">Ninguna (es una categoría principal)</option>
+              {categories
+                .filter((cat) => !cat.parentId)
+                .map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+            </select>
+            <p className="mt-1 text-[11px] text-stone-400">
+              Elegí una para crear una subcategoría (ej: «Shorts denim» dentro de «Shorts»).
+            </p>
           </div>
 
           <div>
@@ -210,8 +240,14 @@ function AdminCategoriesManager() {
                   {categories.map((cat) => (
                     <tr key={cat.id} className="hover:bg-stone-50/70">
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-stone-900">
+                        <p className={cat.parentId ? "pl-5 font-medium text-stone-800" : "font-semibold text-stone-900"}>
+                          {cat.parentId && <span className="mr-1.5 text-stone-400">↳</span>}
                           {cat.name}
+                          {!cat.parentId && cat.childrenCount > 0 && (
+                            <span className="ml-2 text-xs font-normal text-stone-500">
+                              {cat.childrenCount} {cat.childrenCount === 1 ? "subcategoría" : "subcategorías"}
+                            </span>
+                          )}
                         </p>
                         {cat.description && (
                           <p className="mt-0.5 text-xs text-stone-500">

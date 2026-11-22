@@ -13,7 +13,13 @@ type Params = { slug: string };
 
 async function findCategory(slug: string) {
   const categories = await getActiveCategories();
-  return categories.find((c) => c.slug === decodeURIComponent(slug)) ?? null;
+  const category = categories.find((c) => c.slug === decodeURIComponent(slug)) ?? null;
+  if (!category) return null;
+  return {
+    category,
+    parent: category.parentId ? (categories.find((c) => c.id === category.parentId) ?? null) : null,
+    children: categories.filter((c) => c.parentId === category.id && c.productsCount > 0),
+  };
 }
 
 export async function generateStaticParams(): Promise<Params[]> {
@@ -30,8 +36,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const [{ slug }, { pagina }] = await Promise.all([params, searchParams]);
   const page = Number(pagina) > 1 ? Number(pagina) : 1;
-  const category = await findCategory(slug);
-  if (!category) return { title: "Categoría no encontrada", robots: { index: false } };
+  const found = await findCategory(slug);
+  if (!found) return { title: "Categoría no encontrada", robots: { index: false } };
+  const { category } = found;
 
   const description =
     category.description?.slice(0, 155) ??
@@ -93,15 +100,17 @@ async function CategoryContent({
   searchParams: Promise<CatalogSearchParams>;
 }) {
   const { slug } = await params;
-  const category = await findCategory(slug);
-  if (!category) notFound();
+  const found = await findCategory(slug);
+  if (!found) notFound();
+  const { category, parent, children } = found;
 
   return (
     <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 sm:px-10">
       <Breadcrumbs
         crumbs={[
           { name: "Inicio", path: "/" },
-          { name: "Tienda", path: "/productos" },
+          { name: "Shop", path: "/productos" },
+          ...(parent ? [{ name: parent.name, path: categoryHref(parent.slug) }] : []),
           { name: category.name },
         ]}
       />
@@ -118,6 +127,20 @@ async function CategoryContent({
           <p className="max-w-[520px] text-base leading-relaxed text-stone-700">{category.description}</p>
         )}
       </header>
+
+      {children.length > 0 && (
+        <nav aria-label="Subcategorías" className="flex flex-wrap gap-2 pb-6">
+          {children.map((child) => (
+            <Link
+              key={child.id}
+              href={categoryHref(child.slug)}
+              className="glass-light pressable inline-flex h-10 items-center rounded-full px-4 text-sm font-medium text-ink hover:bg-paper"
+            >
+              {child.name}
+            </Link>
+          ))}
+        </nav>
+      )}
 
       <Suspense fallback={<CatalogSkeleton />}>
         <Catalog slug={category.slug} searchParams={searchParams} />

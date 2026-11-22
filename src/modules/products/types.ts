@@ -10,6 +10,9 @@ export interface PublicCategoryDTO {
   imageUrl: string | null;
   /** Foto propia de la categoría o, si no tiene, la de su producto más reciente. */
   coverImageUrl: string | null;
+  /** Subcategoría: id de la categoría principal (null si es principal). */
+  parentId: string | null;
+  /** Productos a la venta; en una categoría principal incluye los de sus subcategorías. */
   productsCount: number;
 }
 

@@ -13,6 +13,10 @@ export interface AdminCategoryDTO {
   description: string | null;
   isActive: boolean;
   productsCount: number;
+  /** Categoría principal (null si es una categoría principal). */
+  parentId: string | null;
+  parentName: string | null;
+  childrenCount: number;
   createdAt: string;
 }
 
@@ -38,6 +42,7 @@ const createCategorySchema = z.object({
     .max(300, "La descripción no puede superar los 300 caracteres")
     .optional()
     .or(z.literal("")),
+  parentId: z.string().uuid().nullable().optional(),
 });
 
 function slugifyCategoryName(name: string): string {
@@ -59,21 +64,31 @@ export async function getAdminCategories(): Promise<AdminCategoryDTO[]> {
   const categories = await db.category.findMany({
     include: {
       _count: {
-        select: { products: true },
+        select: { products: true, children: true },
       },
+      parent: { select: { name: true } },
     },
     orderBy: { name: "asc" },
   });
 
-  return categories.map((cat) => ({
+  const rows = categories.map((cat) => ({
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
     description: cat.description,
     isActive: cat.isActive,
     productsCount: cat._count.products,
+    parentId: cat.parentId,
+    parentName: cat.parent?.name ?? null,
+    childrenCount: cat._count.children,
     createdAt: cat.createdAt.toISOString(),
   }));
+
+  // Cada categoría principal seguida de sus subcategorías
+  const parents = rows.filter((row) => !row.parentId);
+  const ordered = parents.flatMap((parent) => [parent, ...rows.filter((row) => row.parentId === parent.id)]);
+  const orphans = rows.filter((row) => row.parentId && !parents.some((p) => p.id === row.parentId));
+  return [...ordered, ...orphans];
 }
 
 /**
@@ -82,6 +97,8 @@ export async function getAdminCategories(): Promise<AdminCategoryDTO[]> {
 export async function createAdminCategory(input: {
   name: string;
   description?: string;
+  /** Si se indica, se crea como subcategoría de esa categoría principal. */
+  parentId?: string | null;
 }): Promise<AdminCategoryMutationResult> {
   await requireAdmin();
 
@@ -96,7 +113,7 @@ export async function createAdminCategory(input: {
     };
   }
 
-  const { name, description } = parsed.data;
+  const { name, description, parentId } = parsed.data;
   const slug = slugifyCategoryName(name);
 
   if (!slug) {
@@ -107,6 +124,23 @@ export async function createAdminCategory(input: {
   }
 
   try {
+    if (parentId) {
+      // Un solo nivel: la categoría padre tiene que ser principal
+      const parent = await db.category.findUnique({
+        where: { id: parentId },
+        select: { parentId: true },
+      });
+      if (!parent) {
+        return { success: false, error: "La categoría principal elegida no existe." };
+      }
+      if (parent.parentId) {
+        return {
+          success: false,
+          error: "Solo se permite un nivel de subcategorías: elegí una categoría principal.",
+        };
+      }
+    }
+
     const existing = await db.category.findUnique({
       where: { slug },
       select: { id: true },
@@ -125,6 +159,7 @@ export async function createAdminCategory(input: {
         slug,
         description: description || null,
         isActive: true,
+        parentId: parentId || null,
       },
     });
 
@@ -159,7 +194,7 @@ export async function deleteAdminCategory(
       where: { id: categoryId },
       include: {
         _count: {
-          select: { products: true },
+          select: { products: true, children: true },
         },
       },
     });
@@ -168,6 +203,13 @@ export async function deleteAdminCategory(
       return {
         success: false,
         error: "La categoría que intentás eliminar no existe.",
+      };
+    }
+
+    if (category._count.children > 0) {
+      return {
+        success: false,
+        error: `No se puede eliminar "${category.name}" porque tiene ${category._count.children} subcategoría(s). Eliminá o movelas primero.`,
       };
     }
 

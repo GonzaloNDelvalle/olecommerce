@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import type { PublicCategoryDTO, PublicSizeDTO } from "@/modules/products/types";
 import { categoryHref } from "@/modules/products/urls";
+import { buildCategoryTree } from "@/modules/products/category-tree";
 import { Sheet } from "@/components/ui/Sheet";
 import { buttonVariants } from "@/components/ui/button";
 import { formatARS, plural } from "@/lib/format";
@@ -98,6 +99,7 @@ export function CatalogFilterBar({
   );
 
   const visibleCategories = categories.filter((c) => c.productsCount > 0);
+  const tree = buildCategoryTree(categories);
   const activeCategory = visibleCategories.find((c) => c.slug === activeCategorySlug);
 
   const chips: { key: string; label: string; clear: Partial<CatalogFilterState>; href?: string }[] = [];
@@ -219,7 +221,7 @@ export function CatalogFilterBar({
               </button>
               {categoriesOpen && (
                 <ul id="filter-categories" className={cn(glass, "flex flex-col rounded-xl p-1.5")}>
-                  {[{ id: "todo", name: "Todo", slug: undefined as string | undefined }, ...visibleCategories].map((category) => {
+                  {[{ id: "todo", name: "Todo", slug: undefined as string | undefined, children: [] as { id: string; name: string; slug: string }[] }, ...tree].map((category) => {
                     const active = category.slug === activeCategorySlug;
                     return (
                       <li key={category.id}>
@@ -234,6 +236,23 @@ export function CatalogFilterBar({
                         >
                           {category.name}
                         </Link>
+                        {category.children.map((sub) => {
+                          const subActive = sub.slug === activeCategorySlug;
+                          return (
+                            <Link
+                              key={sub.id}
+                              href={categoryUrl(sub.slug)}
+                              onClick={() => setSheetOpen(false)}
+                              aria-current={subActive ? "page" : undefined}
+                              className={cn(
+                                "flex h-10 items-center rounded-lg pr-3 pl-8 text-[14px] text-stone-700 transition-colors hover:bg-paper",
+                                subActive && "bg-ink font-semibold text-paper hover:bg-ink",
+                              )}
+                            >
+                              {sub.name}
+                            </Link>
+                          );
+                        })}
                       </li>
                     );
                   })}

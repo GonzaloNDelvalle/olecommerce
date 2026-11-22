@@ -195,7 +195,7 @@ export async function getAdminProductFormCatalogs(): Promise<AdminProductFormCat
   const [categories, collections, sizes, colors] = await Promise.all([
     db.category.findMany({
       where: { isActive: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, parentId: true },
       orderBy: { name: "asc" },
     }),
     db.collection.findMany({
@@ -213,8 +213,17 @@ export async function getAdminProductFormCatalogs(): Promise<AdminProductFormCat
     }),
   ]);
 
+  // "Shorts › Shorts denim": las subcategorías se muestran con su categoría principal
+  const nameById = new Map(categories.map((c) => [c.id, c.name]));
+  const labeled = categories
+    .map((c) => ({
+      id: c.id,
+      name: c.parentId && nameById.has(c.parentId) ? `${nameById.get(c.parentId)} › ${c.name}` : c.name,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+
   return {
-    categories,
+    categories: labeled,
     collections,
     sizes,
     colors,

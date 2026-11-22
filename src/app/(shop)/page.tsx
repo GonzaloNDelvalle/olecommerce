@@ -46,7 +46,7 @@ async function FeaturedSection({ imageIds }: { imageIds: string[] }) {
 }
 
 async function CategoriesSection() {
-  const categories = (await getActiveCategories()).filter((c) => c.productsCount > 0);
+  const categories = (await getActiveCategories()).filter((c) => c.productsCount > 0 && !c.parentId);
   if (categories.length === 0) return null;
   return (
     <section aria-labelledby="categories-title" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-10 lg:py-28">
