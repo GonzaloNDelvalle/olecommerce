@@ -35,6 +35,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Las pruebas E2E aisladas compilan en su propia carpeta (con los datos de la rama de pruebas)
+  distDir: process.env.E2E_DIST_DIR ?? ".next",
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
