@@ -1,5 +1,13 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+// La URL lleva el ID de la orden: no se indexa ni se envía como Referer a otros sitios
+export const metadata: Metadata = {
+  title: "Tu pedido",
+  robots: { index: false, follow: false },
+  referrer: "no-referrer",
+};
+
 
 async function TransferRedirectInner({
   paramsPromise,

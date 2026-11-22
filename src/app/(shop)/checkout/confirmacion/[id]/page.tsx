@@ -15,6 +15,14 @@ import { PurchaseTracker } from "@/components/analytics/PurchaseTracker";
 import { getStoreSettings } from "@/modules/settings/store-settings";
 import { CopyButton } from "@/components/shop/CopyButton";
 import { OrderStatus, PaymentProvider, PaymentStatus } from "@prisma/client";
+import type { Metadata } from "next";
+// La URL lleva el ID de la orden: no se indexa ni se envía como Referer a otros sitios
+export const metadata: Metadata = {
+  title: "Confirmación de compra",
+  robots: { index: false, follow: false },
+  referrer: "no-referrer",
+};
+
 
 interface OrderConfirmationPageProps {
   params: Promise<{

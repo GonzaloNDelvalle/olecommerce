@@ -25,7 +25,8 @@ test("las URLs viejas de categoría redirigen con 301 a /categoria/[slug]", asyn
 
 test("la página de categoría tiene H1, canonical y migas estructuradas", async ({ page }) => {
   await page.goto("/productos");
-  const firstCategory = page.locator('nav[aria-label="Categorías"] a[href^="/categoria/"]').first();
+  // Las categorías viven en el menú principal (desplegable "Productos")
+  const firstCategory = page.locator('nav[aria-label="Principal"] a[href^="/categoria/"]').first();
   const href = await firstCategory.getAttribute("href");
   await page.goto(href!);
   await expect(page.locator("h1")).toBeVisible();
