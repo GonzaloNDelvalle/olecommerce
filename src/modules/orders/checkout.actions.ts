@@ -15,7 +15,11 @@ import {
 } from "@/modules/orders/schemas/checkout.schema";
 import { createMercadoPagoPreference } from "@/modules/orders/mercadopago-preference";
 import { sendOrderConfirmedEmail } from "@/lib/email";
-import { mergeStockLines, reserveVariantStock } from "@/modules/orders/inventory";
+import {
+  mergeStockLines,
+  releaseReservedStock,
+  reserveVariantStock,
+} from "@/modules/orders/inventory";
 import { revalidateStockForVariants } from "@/lib/cache-tags";
 import { consumeRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import {
@@ -56,6 +60,36 @@ export type ProcessCheckoutOrderResult =
  * responde con un mensaje genérico, para no filtrar detalles internos.
  */
 class CheckoutError extends Error {}
+
+/**
+ * Cancela una orden PENDING recién creada cuya preferencia de Mercado Pago no se pudo
+ * generar y devuelve su stock reservado. Si esto también falla, el cron de vencimiento
+ * la libera más tarde, así que el error solo se registra.
+ */
+async function cancelOrderWithoutPaymentLink(orderId: string, variantIds: string[]) {
+  try {
+    await db.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: { id: orderId, status: OrderStatus.PENDING },
+        data: { status: OrderStatus.CANCELLED },
+      });
+      if (claimed.count === 0) return;
+
+      const items = await tx.orderItem.findMany({
+        where: { orderId },
+        select: { variantId: true, quantity: true },
+      });
+      await releaseReservedStock(tx, items);
+      await tx.payment.updateMany({
+        where: { orderId },
+        data: { status: PaymentStatus.CANCELLED },
+      });
+    });
+    await revalidateStockForVariants(variantIds);
+  } catch (error) {
+    console.error("[processCheckoutOrder] No se pudo cancelar la orden sin link de pago:", error);
+  }
+}
 
 /**
  * Procesador Transaccional de Órdenes (`checkout.actions.ts`):
@@ -353,12 +387,11 @@ export async function processCheckoutOrder(
     // La ficha de los productos muestra stock disponible: refrescarla
     await revalidateStockForVariants(items.map((item) => item.variantId));
 
-    // 6. Email transaccional "Orden Confirmada" (incluye CBU si es por transferencia).
-    //    Se ejecuta fuera de la transacción y nunca interrumpe el checkout si falla.
-    await sendOrderConfirmedEmail(txResult.orderId);
-
-    // 7. Resolver URL de redirección según el medio de pago seleccionado
+    // 6. Resolver URL de redirección según el medio de pago seleccionado.
+    //    Email transaccional "Orden Confirmada" (incluye CBU si es por transferencia):
+    //    se envía fuera de la transacción y nunca interrumpe el checkout si falla.
     if (customer.paymentMethod === "BANK_TRANSFER") {
+      await sendOrderConfirmedEmail(txResult.orderId);
       return {
         success: true,
         orderId: txResult.orderId,
@@ -375,11 +408,20 @@ export async function processCheckoutOrder(
     const mpPreference = await createMercadoPagoPreference(txResult.orderId);
 
     if (!mpPreference.success) {
+      // Sin link de pago la orden no se puede cobrar: se cancela y se libera el stock
+      // ya mismo (si no, cada reintento reservaría más prendas hasta que venza el cron)
+      await cancelOrderWithoutPaymentLink(
+        txResult.orderId,
+        items.map((item) => item.variantId)
+      );
       return {
         success: false,
         error: mpPreference.error,
       };
     }
+
+    // El email de confirmación sale recién cuando el pago quedó listo para hacerse
+    await sendOrderConfirmedEmail(txResult.orderId);
 
     return {
       success: true,
