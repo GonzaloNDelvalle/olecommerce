@@ -21,6 +21,8 @@ export interface PublicCollectionDTO {
   name: string;
   slug: string;
   description: string | null;
+  /** Foto de uno de sus productos, para mostrarla en la portada. */
+  coverImageUrl: string | null;
   productsCount: number;
 }
 

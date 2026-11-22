@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import type { PublicCategoryDTO } from "@/modules/products/types";
-import { categoryHref } from "@/modules/products/urls";
 import { cn } from "@/lib/cn";
 
 /**
@@ -33,7 +31,16 @@ function mobileSpan(index: number, total: number) {
   return "col-span-1";
 }
 
-export function CategoryTiles({ categories }: { categories: PublicCategoryDTO[] }) {
+export interface TileItem {
+  id: string;
+  name: string;
+  slug: string;
+  coverImageUrl: string | null;
+  productsCount: number;
+}
+
+/** Mosaico de tarjetas (categorías o colecciones): `hrefFor` arma el link de cada una. */
+export function CategoryTiles({ categories, hrefFor }: { categories: TileItem[]; hrefFor: (slug: string) => string }) {
   const tiles = categories.slice(0, 6);
   if (tiles.length === 0) return null;
 
@@ -48,7 +55,7 @@ export function CategoryTiles({ categories }: { categories: PublicCategoryDTO[] 
           return (
             <Link
               key={category.id}
-              href={categoryHref(category.slug)}
+              href={hrefFor(category.slug)}
               data-reveal-item
               className={cn(
                 "group relative isolate flex h-[260px] items-end overflow-hidden bg-cream sm:h-[320px]",

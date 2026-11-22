@@ -129,6 +129,12 @@ export async function getActiveCollections(): Promise<PublicCollectionDTO[]> {
     where: { isActive: true },
     include: {
       _count: { select: { products: { where: { status: ProductStatus.ACTIVE } } } },
+      products: {
+        where: { status: ProductStatus.ACTIVE, images: { some: {} } },
+        orderBy: { updatedAt: "desc" },
+        take: 1,
+        select: { images: { orderBy: { position: "asc" }, take: 1, select: { url: true } } },
+      },
     },
     orderBy: { name: "asc" },
   });
@@ -139,6 +145,7 @@ export async function getActiveCollections(): Promise<PublicCollectionDTO[]> {
       name: collection.name,
       slug: collection.slug,
       description: collection.description,
+      coverImageUrl: collection.products[0]?.images[0]?.url ?? null,
       productsCount: collection._count.products,
     }));
 }

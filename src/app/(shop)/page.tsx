@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
-  getActiveCategories,
+  getActiveCollections,
   getActiveOutfits,
   getFeaturedPickItems,
   getFeaturedProducts,
@@ -15,6 +15,7 @@ import { CategoryTiles } from "@/components/shop/home/CategoryTiles";
 import { OutfitsSection } from "@/components/shop/home/OutfitsSection";
 import { CampaignMedia } from "@/components/shop/home/CampaignMedia";
 import { FeaturedCarousel } from "@/components/shop/home/FeaturedCarousel";
+import { collectionHref } from "@/modules/products/urls";
 import { RevealLines } from "@/components/motion/RevealLines";
 import { buttonVariants } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/Reveal";
@@ -45,19 +46,19 @@ async function FeaturedSection({ imageIds }: { imageIds: string[] }) {
   return <FeaturedCarousel products={products} />;
 }
 
-async function CategoriesSection() {
-  const categories = (await getActiveCategories()).filter((c) => c.productsCount > 0 && !c.parentId);
-  if (categories.length === 0) return null;
+async function CollectionsSection() {
+  const collections = await getActiveCollections();
+  if (collections.length === 0) return null;
   return (
-    <section aria-labelledby="categories-title" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-10 lg:py-28">
+    <section aria-labelledby="collections-title" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-10 lg:py-28">
       <div className="mb-8 flex flex-col gap-2.5 sm:mb-10">
         <Reveal as="p" className="eyebrow text-chocolate">
-          Explorá por categoría
+          Explorá por colección
         </Reveal>
-        <RevealLines id="categories-title" lines={["Categorías"]} className="display text-[clamp(40px,4.5vw,56px)] text-ink" />
+        <RevealLines id="collections-title" lines={["Colecciones"]} className="display text-[clamp(40px,4.5vw,56px)] text-ink" />
       </div>
       <Reveal variant="stagger">
-        <CategoryTiles categories={categories} />
+        <CategoryTiles categories={collections} hrefFor={collectionHref} />
       </Reveal>
     </section>
   );
@@ -159,9 +160,9 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 4. CATEGORÍAS — mosaico 2×3 */}
+      {/* 4. COLECCIONES — mosaico 2×3 */}
       <Suspense fallback={<div className="h-[600px]" />}>
-        <CategoriesSection />
+        <CollectionsSection />
       </Suspense>
 
       {/* 5. SHOP THE LOOK — outfits con sus productos */}
