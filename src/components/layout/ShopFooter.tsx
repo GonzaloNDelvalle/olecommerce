@@ -12,6 +12,10 @@ import {
 interface ShopFooterProps {
   collectionName: string;
   seasonLabel: string;
+  about: string;
+  helpTitle: string;
+  socialTitle: string;
+  bottomLine: string;
   instagramUrl: string | null;
   tiktokUrl: string | null;
   facebookUrl: string | null;
@@ -39,6 +43,10 @@ interface Social {
 export function ShopFooter({
   collectionName,
   seasonLabel,
+  about,
+  helpTitle,
+  socialTitle,
+  bottomLine,
   instagramUrl,
   tiktokUrl,
   facebookUrl,
@@ -56,13 +64,13 @@ export function ShopFooter({
 
   return (
     <footer className="bg-espresso text-cream">
-      <div className="mx-auto grid max-w-[1440px] grid-cols-2 gap-x-6 gap-y-12 px-4 pt-16 pb-12 sm:px-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] lg:pt-20">
+      <div className="mx-auto grid max-w-none grid-cols-2 gap-x-6 gap-y-12 px-4 pt-16 pb-12 sm:px-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] lg:pt-20">
         <div className="col-span-2 flex flex-col gap-4 lg:col-span-1">
           <Link href="/" className="display text-5xl font-semibold tracking-normal text-cream">
             OL.
           </Link>
           <p className="max-w-xs text-sm leading-relaxed text-stone-300">
-            Indumentaria atemporal: sastrería, tejidos y básicos en tonos tierra, diseñados en Buenos Aires.
+            {about}
           </p>
           <p className="eyebrow text-stone-400">{[collectionName, seasonLabel].filter(Boolean).join(" · ")}</p>
           <a
@@ -74,7 +82,7 @@ export function ShopFooter({
         </div>
 
         <nav aria-label="Ayuda" className="flex min-w-0 flex-col gap-1.5 text-sm">
-          <h2 className={`${headingClass} mb-2`}>Ayuda</h2>
+          <h2 className={`${headingClass} mb-2`}>{helpTitle}</h2>
           {HELP_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className={linkClass}>
               {link.label}
@@ -84,7 +92,7 @@ export function ShopFooter({
 
         {socials.length > 0 && (
           <nav aria-label="Redes sociales" className="col-span-2 flex min-w-0 flex-col gap-1.5 text-sm lg:col-span-1">
-            <h2 className={`${headingClass} mb-2`}>Seguinos</h2>
+            <h2 className={`${headingClass} mb-2`}>{socialTitle}</h2>
             <ul className="flex flex-wrap gap-2.5">
               {socials.map(({ label, href, Icon }) => (
                 <li key={label}>
@@ -104,11 +112,11 @@ export function ShopFooter({
         )}
       </div>
 
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 border-t border-sand/20 px-4 py-6 text-[13px] text-stone-300 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+      <div className="mx-auto flex max-w-none flex-col gap-3 border-t border-sand/20 px-4 py-6 text-[13px] text-stone-300 sm:flex-row sm:items-center sm:justify-between sm:px-10">
         <p>
           © <CurrentYear /> OL. Indumenti · Argentina
         </p>
-        <p>Envíos a todo el país · Mercado Pago y transferencia</p>
+        <p>{bottomLine}</p>
       </div>
     </footer>
   );

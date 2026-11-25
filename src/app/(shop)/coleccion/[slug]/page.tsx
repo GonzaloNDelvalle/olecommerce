@@ -60,11 +60,11 @@ async function CollectionContent({
   if (!collection) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 sm:px-10">
+    <main className="mx-auto w-full max-w-none px-4 pt-6 sm:px-10">
       <Breadcrumbs
         crumbs={[
           { name: "Inicio", path: "/" },
-          { name: "Tienda", path: "/productos" },
+          { name: "Shop", path: "/productos" },
           { name: collection.name },
         ]}
       />
@@ -75,7 +75,7 @@ async function CollectionContent({
             Colección · <span className="tabular">{collection.productsCount}</span>{" "}
             {plural(collection.productsCount, "producto", "productos")}
           </p>
-          <h1 className="display text-[clamp(56px,7vw,96px)] text-ink">{collection.name}</h1>
+          <h1 className="display break-words text-[clamp(48px,9vw,160px)] text-ink">{collection.name}</h1>
         </div>
         {collection.description && (
           <p className="max-w-[520px] text-base leading-relaxed text-stone-700">{collection.description}</p>
@@ -99,7 +99,7 @@ export default function CollectionPage({
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-[1440px] px-4 pt-24 sm:px-10">
+        <main className="mx-auto w-full max-w-none px-4 pt-24 sm:px-10">
           <CatalogSkeleton />
         </main>
       }

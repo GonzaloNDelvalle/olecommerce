@@ -60,11 +60,8 @@ export function AnnouncementBar({
       className="flex shrink-0 items-center motion-reduce:hidden"
     >
       {half.map((message, index) => (
-        <li key={`${message.id}-${index}`} className="flex items-center whitespace-nowrap">
+        <li key={`${message.id}-${index}`} className="flex items-center px-10 whitespace-nowrap">
           <Message message={message} />
-          <span aria-hidden="true" className="mx-8 text-sand/60">
-            ✦
-          </span>
         </li>
       ))}
     </ul>

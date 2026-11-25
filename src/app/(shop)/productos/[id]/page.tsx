@@ -6,6 +6,7 @@ import { getCatalogPage, getProductByIdOrSlug } from "@/modules/products/queries
 import { ProductView } from "@/modules/products/components/ProductView";
 import { ProductCard } from "@/modules/products/components/ProductCard";
 import { Breadcrumbs } from "@/components/shop/Breadcrumbs";
+import { getSiteTexts } from "@/modules/content/site-texts";
 import { RevealLines } from "@/components/motion/RevealLines";
 import { categoryHref, productHref } from "@/modules/products/urls";
 import { getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
@@ -110,7 +111,7 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
 }
 
 async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
-  const settings = await getStoreSettings();
+  const [settings, texts] = await Promise.all([getStoreSettings(), getSiteTexts()]);
   const transferDiscount = isBankTransferAvailable(settings) ? settings.bankTransferDiscountPercentage : 0;
   const { items } = await getCatalogPage({ categorySlug: product.category.slug });
   const related = items.filter((item) => item.id !== product.id).slice(0, 4);
@@ -118,7 +119,7 @@ async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
   return (
     <section aria-labelledby="related-title" className="pt-24 pb-8 lg:pt-28">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <RevealLines id="related-title" lines={["Completá el look"]} className="display text-[clamp(36px,4vw,48px)] text-ink" />
+        <RevealLines id="related-title" lines={[texts["product.related.title"]]} className="display text-[clamp(36px,4vw,48px)] text-ink" />
         <Link href={categoryHref(product.category.slug)} className={buttonVariants({ variant: "secondary", size: "md" })}>
           Más {product.category.name.toLowerCase()}
         </Link>
@@ -136,7 +137,11 @@ async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
 
 async function ProductDetailContent({ paramsPromise }: { paramsPromise: Promise<{ id: string }> }) {
   const { id } = await paramsPromise;
-  const [product, settings] = await Promise.all([getProductByIdOrSlug(id), getStoreSettings()]);
+  const [product, settings, texts] = await Promise.all([
+    getProductByIdOrSlug(id),
+    getStoreSettings(),
+    getSiteTexts(),
+  ]);
   if (!product) notFound();
 
   const transferDiscount = isBankTransferAvailable(settings) ? settings.bankTransferDiscountPercentage : 0;
@@ -153,7 +158,7 @@ async function ProductDetailContent({ paramsPromise }: { paramsPromise: Promise<
           ]}
         />
       </div>
-      <ProductView product={product} transferDiscount={transferDiscount} installments={3} />
+      <ProductView product={product} transferDiscount={transferDiscount} installments={3} texts={texts} />
       <Suspense fallback={null}>
         <RelatedProducts product={product} />
       </Suspense>
@@ -178,7 +183,7 @@ function ProductDetailSkeleton() {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   return (
-    <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 sm:px-10">
+    <main className="mx-auto w-full max-w-none px-4 pt-6 sm:px-10">
       <Suspense fallback={<ProductDetailSkeleton />}>
         <ProductDetailContent paramsPromise={params} />
       </Suspense>

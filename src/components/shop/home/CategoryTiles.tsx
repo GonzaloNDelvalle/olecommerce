@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -22,7 +21,7 @@ const ROW_SPANS: Record<number, string[][]> = {
   ],
 };
 
-const ROW_HEIGHTS = ["lg:h-[540px]", "lg:h-[400px]"];
+const ROW_HEIGHTS = ["lg:h-[82svh] lg:min-h-[560px]", "lg:h-[66svh] lg:min-h-[460px]"];
 
 function mobileSpan(index: number, total: number) {
   // En celular: la primera tarjeta, y la última si quedaría sola, van a lo ancho
@@ -36,10 +35,11 @@ export interface TileItem {
   name: string;
   slug: string;
   coverImageUrl: string | null;
-  productsCount: number;
+  /** Bajada: aparece al pasar el mouse (en pantallas táctiles, siempre). */
+  description: string | null;
 }
 
-/** Mosaico de tarjetas (categorías o colecciones): `hrefFor` arma el link de cada una. */
+/** Mosaico de tarjetas a todo el ancho: `hrefFor` arma el link de cada una. */
 export function CategoryTiles({ categories, hrefFor }: { categories: TileItem[]; hrefFor: (slug: string) => string }) {
   const tiles = categories.slice(0, 6);
   if (tiles.length === 0) return null;
@@ -47,7 +47,7 @@ export function CategoryTiles({ categories, hrefFor }: { categories: TileItem[];
   const rows = [tiles.slice(0, 3), tiles.slice(3, 6)].filter((row) => row.length > 0);
 
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-12">
+    <div className="grid grid-cols-2 gap-0.5 lg:grid-cols-12">
       {rows.flatMap((row, rowIndex) =>
         row.map((category, colIndex) => {
           const index = rowIndex * 3 + colIndex;
@@ -58,7 +58,7 @@ export function CategoryTiles({ categories, hrefFor }: { categories: TileItem[];
               href={hrefFor(category.slug)}
               data-reveal-item
               className={cn(
-                "group relative isolate flex h-[260px] items-end overflow-hidden bg-cream sm:h-[320px]",
+                "group relative isolate flex h-[320px] items-end overflow-hidden bg-cream sm:h-[440px]",
                 mobileSpan(index, tiles.length),
                 lgSpan,
                 ROW_HEIGHTS[rowIndex]
@@ -82,21 +82,20 @@ export function CategoryTiles({ categories, hrefFor }: { categories: TileItem[];
               />
               <span
                 className={cn(
-                  "flex w-full items-end justify-between gap-3 p-4 sm:p-6",
+                  "flex w-full flex-col p-4 sm:p-8",
                   category.coverImageUrl ? "text-paper" : "text-ink"
                 )}
               >
-                <span className="flex flex-col gap-1">
-                  <span className="display text-[clamp(24px,2.6vw,36px)] leading-none">{category.name}</span>
-                  <span className="text-[13px] opacity-80">
-                    {category.productsCount} {category.productsCount === 1 ? "producto" : "productos"}
+                <span className="display text-[clamp(26px,4vw,64px)] break-words">{category.name}</span>
+                {category.description && (
+                  <span className="grid transition-[grid-template-rows,opacity] duration-500 ease-[var(--ease-out)] [@media(hover:hover)]:grid-rows-[0fr] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:grid-rows-[1fr] [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-visible:grid-rows-[1fr] [@media(hover:hover)]:group-focus-visible:opacity-100">
+                    <span className="overflow-hidden">
+                      <span className="line-clamp-2 block max-w-[44ch] pt-2 text-[13px] leading-snug sm:text-[15px]">
+                        {category.description}
+                      </span>
+                    </span>
                   </span>
-                </span>
-                <ArrowUpRight
-                  className="size-6 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  strokeWidth={1.6}
-                  aria-hidden="true"
-                />
+                )}
               </span>
             </Link>
           );

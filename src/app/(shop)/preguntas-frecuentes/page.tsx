@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { InfoPage } from "@/components/shop/InfoPage";
 import { JsonLd } from "@/modules/seo/json-ld";
 import { getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
+import { getSiteTexts } from "@/modules/content/site-texts";
+import { fillText, TEXT_DEFINITIONS } from "@/modules/content/texts";
 
 export const metadata: Metadata = {
   title: "Preguntas frecuentes",
@@ -18,61 +20,37 @@ interface Faq {
   link?: { href: string; label: string };
 }
 
-export default async function FaqPage() {
-  const settings = await getStoreSettings();
-  const transfer = isBankTransferAvailable(settings);
+/** Enlace que acompaña a algunas respuestas. */
+const LINKS: Record<number, Faq["link"]> = {
+  4: { href: "/mi-cuenta", label: "Ir a mis pedidos" },
+  5: { href: "/contacto", label: "Consultar por un talle" },
+  6: { href: "/cambios-y-devoluciones", label: "Ver política de cambios" },
+};
 
-  const faqs: Faq[] = [
-    {
-      question: "¿Cómo compro?",
-      answer:
-        "Elegí tus prendas, seleccioná talle y color, sumalas al carrito y finalizá la compra. Para comprar necesitás crear una cuenta, así podés seguir tu pedido desde «Mis pedidos».",
-    },
-    {
-      question: "¿Qué medios de pago aceptan?",
-      answer: transfer
-        ? `Mercado Pago (tarjetas de crédito y débito, dinero en cuenta y otros medios disponibles) y transferencia bancaria${
-            settings.bankTransferDiscountPercentage > 0
-              ? `, con ${settings.bankTransferDiscountPercentage}% de descuento`
-              : ""
-          }. Con transferencia, reservamos tu pedido por un tiempo limitado hasta que se acredite el pago.`
-        : "Pagás con Mercado Pago: tarjetas de crédito y débito, dinero en cuenta y otros medios disponibles.",
-    },
-    {
-      question: "¿Hacen envíos a todo el país?",
-      answer:
-        "Sí, enviamos a todo el país. El costo y el plazo se calculan en el checkout según tu código postal y el peso del pedido. También podés elegir retiro en el showroom si está disponible.",
-    },
-    {
-      question: "¿Cómo sigo mi pedido?",
-      answer:
-        "Cuando despachamos tu pedido te enviamos un email con el transportista y el código de seguimiento. También podés ver el estado en «Mis pedidos».",
-      link: { href: "/mi-cuenta", label: "Ir a mis pedidos" },
-    },
-    {
-      question: "¿Cómo elijo mi talle?",
-      answer:
-        "Cada producto tiene su guía de talles en la ficha. Si seguís con dudas, escribinos con tu altura y talle habitual y te recomendamos.",
-      link: { href: "/contacto", label: "Consultar por un talle" },
-    },
-    {
-      question: "¿Puedo cambiar o devolver una prenda?",
-      answer:
-        "Sí. Tenés derecho a arrepentirte de tu compra dentro de los 10 días corridos de recibida, y aceptamos cambios por talle o color según las condiciones de nuestra política.",
-      link: { href: "/cambios-y-devoluciones", label: "Ver política de cambios" },
-    },
-    {
-      question: "¿Cómo cuido mis prendas?",
-      answer:
-        "En cada ficha de producto encontrás la composición y la guía de cuidado. Seguirla ayuda a que los tejidos y la sastrería duren mucho más.",
-    },
-  ];
+export default async function FaqPage() {
+  const [settings, texts] = await Promise.all([getStoreSettings(), getSiteTexts()]);
+  const discount = isBankTransferAvailable(settings) ? settings.bankTransferDiscountPercentage : 0;
+
+  const faqs: Faq[] = ([1, 2, 3, 4, 5, 6, 7] as const)
+    .map((n) => {
+      let answer = texts[`faq.${n}.a`];
+      // Sin descuento por transferencia, el texto original de pagos no aplica
+      if (n === 2 && discount === 0 && answer === TEXT_DEFINITIONS["faq.2.a"].default) {
+        answer = "Pagás con Mercado Pago: tarjetas de crédito y débito, dinero en cuenta y otros medios disponibles.";
+      }
+      return {
+        question: texts[`faq.${n}.q`],
+        answer: fillText(answer, { descuento: discount }),
+        link: LINKS[n],
+      };
+    })
+    .filter((faq) => faq.question && faq.answer);
 
   return (
     <InfoPage
-      eyebrow="Ayuda"
-      title="Preguntas frecuentes"
-      intro="Lo que más nos consultan. Si no encontrás tu respuesta, escribinos."
+      eyebrow={texts["faq.eyebrow"]}
+      title={texts["faq.title"]}
+      intro={texts["faq.intro"]}
     >
       <div className="divide-y divide-stone-200 border-y border-stone-200">
         {faqs.map((faq) => (
@@ -86,7 +64,7 @@ export default async function FaqPage() {
               />
             </summary>
             <div className="pb-5 text-[15px] leading-relaxed text-stone-700">
-              <p className="max-w-[60ch]">{faq.answer}</p>
+              <p className="max-w-[80ch] whitespace-pre-line">{faq.answer}</p>
               {faq.link && (
                 <Link href={faq.link.href} className="mt-3 inline-block font-semibold text-ink underline underline-offset-4">
                   {faq.link.label}

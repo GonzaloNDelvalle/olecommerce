@@ -165,12 +165,12 @@ export function CollectionsManager({
             </div>
             <div>
               <label htmlFor="collection-description" className={adminLabelClass}>
-                Descripción (opcional)
+                Bajada (opcional, hasta 90 caracteres)
               </label>
               <input
                 id="collection-description"
                 type="text"
-                maxLength={300}
+                maxLength={90}
                 value={draft.description}
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 className={`mt-1.5 ${adminInputClass}`}

@@ -5,6 +5,7 @@ import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SmoothScrollProvider } from "@/components/layout/SmoothScrollProvider";
 import { RevealObserver } from "@/components/motion/RevealObserver";
 import { getAnnouncementMessages, getSiteContent } from "@/modules/content/site-content";
+import { getSiteTexts } from "@/modules/content/site-texts";
 import { getActiveCategories, getActiveCollections, getFeaturedProducts } from "@/modules/products/queries";
 import { getActiveShippingMethods, getStoreSettings, isBankTransferAvailable } from "@/modules/settings/store-settings";
 import { categoryHref, collectionHref } from "@/modules/products/urls";
@@ -43,10 +44,12 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
     ? collections.find((c) => c.name.trim().toLowerCase() === currentName)
     : undefined;
 
+  const texts = await getSiteTexts();
+
   const navLinks: NavLink[] = [
-    { href: "/productos?orden=recientes", label: "New In" },
+    { href: "/productos?orden=recientes", label: texts["nav.newIn"] || "New In" },
     ...(currentCollection ? [{ href: collectionHref(currentCollection.slug), label: currentCollection.name }] : []),
-    { href: "/productos", label: "Productos", children: categoryLinks },
+    { href: "/productos", label: texts["nav.products"] || "Productos", children: categoryLinks },
   ];
 
   return (
@@ -63,6 +66,10 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
         <ShopFooter
           collectionName={content.collectionName}
           seasonLabel={content.seasonLabel}
+          about={texts["footer.about"]}
+          helpTitle={texts["footer.helpTitle"]}
+          socialTitle={texts["footer.socialTitle"]}
+          bottomLine={texts["footer.bottom"]}
           instagramUrl={settings.instagramUrl}
           tiktokUrl={settings.tiktokUrl}
           facebookUrl={settings.facebookUrl}

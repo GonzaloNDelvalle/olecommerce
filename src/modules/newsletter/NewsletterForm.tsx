@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { subscribeToNewsletter } from "@/modules/newsletter/newsletter.actions";
 
-/** Formulario de suscripción del bloque chocolate de la portada. */
-export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
+/** Formulario de suscripción del bloque claro de la portada. */
+export function NewsletterForm({ buttonLabel, legalText }: { buttonLabel: string; legalText: string }) {
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [result, setResult] = useState<
@@ -31,9 +31,9 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
     return (
       <p
         role="status"
-        className="flex max-w-md items-start gap-2 text-[15px] leading-relaxed text-cream"
+        className="flex max-w-md items-start gap-2 text-[15px] leading-relaxed text-chocolate"
       >
-        <Check className="mt-0.5 size-5 shrink-0 text-sand" aria-hidden="true" />
+        <Check className="mt-0.5 size-5 shrink-0 text-chocolate" aria-hidden="true" />
         {result.text}
       </p>
     );
@@ -43,9 +43,9 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="w-full max-w-lg"
+      className="w-full max-w-xl"
     >
-      <label htmlFor="newsletter-email" className="mb-2.5 block text-[13px] font-semibold text-cream">
+      <label htmlFor="newsletter-email" className="mb-2.5 block text-[13px] font-semibold text-chocolate">
         Tu email
       </label>
       <div className="flex flex-col gap-2.5 sm:flex-row">
@@ -61,7 +61,7 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
             placeholder="nombre@email.com"
             aria-invalid={result?.tone === "error"}
             aria-describedby="newsletter-feedback newsletter-legal"
-            className="h-[52px] w-full rounded-full border border-sand bg-transparent px-5 text-base text-paper placeholder:text-stone-300 focus:border-paper focus:outline-none"
+            className="h-[52px] w-full rounded-full border border-chocolate/40 bg-white px-5 text-base text-ink placeholder:text-stone-500 focus:border-chocolate focus:outline-none"
           />
           {/* Campo trampa para bots: oculto para personas y lectores de pantalla */}
           <input
@@ -79,7 +79,7 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
         <button
           type="submit"
           disabled={isPending}
-          className="pressable inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-full bg-paper px-7 text-[15px] font-semibold text-ink transition-colors hover:bg-cream disabled:opacity-60"
+          className="pressable inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-full bg-chocolate px-7 text-[15px] font-semibold text-paper transition-colors hover:bg-ink disabled:opacity-60"
         >
           <span>{isPending ? "Enviando…" : buttonLabel}</span>
           {isPending ? (
@@ -90,12 +90,11 @@ export function NewsletterForm({ buttonLabel }: { buttonLabel: string }) {
         </button>
       </div>
 
-      <p id="newsletter-feedback" role="alert" className="mt-3 min-h-5 text-[13px] font-medium text-[#F3C9BF]">
+      <p id="newsletter-feedback" role="alert" className="mt-3 min-h-5 text-[13px] font-medium text-brick">
         {result?.tone === "error" ? result.text : ""}
       </p>
-      <p id="newsletter-legal" className="mt-1 text-xs leading-relaxed text-cream/80">
-        Al suscribirte aceptás recibir novedades por email. Podés darte de baja
-        cuando quieras desde el link de cada envío.
+      <p id="newsletter-legal" className="mt-1 text-xs leading-relaxed text-stone-600">
+        {legalText}
       </p>
     </form>
   );

@@ -25,18 +25,20 @@
   /* Paleta OL. — ver DESIGN.md §1 */
   --color-ink: #15110e;
   --color-espresso: #2c2119;
-  --color-chocolate: #5c4033;
+  --color-chocolate: #3d2105;
   --color-caramel: #8e5a35;
   --color-sand: #d2b48c;
   --color-cream: #efe6d8;
   --color-cream-deep: #e4d7c3;
   --color-paper: #faf7f2;
+  --color-bone: #f6f4f1;
   --color-olive: #5f6342;
   --color-olive-deep: #3f4229;
   --color-brick: #9e3b2e;
 
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-cormorant), Georgia, Cambria, "Times New Roman", serif;
+  /* Una sola familia de palo seco en toda la tienda (títulos y texto) */
+  --font-sans: var(--font-inter), Arimo, Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-inter), Arimo, Arial, ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -55,7 +57,6 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -86,12 +87,13 @@ textarea {
 
 /* ---------- Utilidades de marca ---------- */
 
-/* Titular editorial: serif, tracking negativo, interlineado apretado */
+/* Titular: palo seco en mayúsculas, grueso, letras juntas e interlineado apretado */
 @utility display {
   font-family: var(--font-serif);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 /* Eyebrow / label en mayúsculas. Nunca menos de 12px. */

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import {
-  Cormorant_Garamond,
-  Plus_Jakarta_Sans,
+  Inter,
   Geist_Mono,
 } from "next/font/google";
 import { VercelMetrics } from "@/components/analytics/VercelMetrics";
@@ -9,18 +8,9 @@ import { MarketingPixels } from "@/components/analytics/MarketingPixels";
 import { getAppUrl } from "@/lib/app-url";
 import "./globals.css";
 
-const cormorantSerif = Cormorant_Garamond({
-  variable: "--font-cormorant",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const jakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -57,7 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es-AR"
-      className={`${cormorantSerif.variable} ${jakartaSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-paper font-sans text-ink selection:bg-chocolate selection:text-paper">
         {children}

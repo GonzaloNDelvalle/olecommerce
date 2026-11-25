@@ -23,15 +23,15 @@ export function OutfitsSection({ outfits }: { outfits: OutfitDTO[] }) {
   const go = (delta: number) => setIndex((current) => (current + delta + count) % count);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-14">
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-cream lg:aspect-[5/6]">
+    <div className="grid lg:grid-cols-2">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-cream lg:aspect-auto lg:min-h-[90svh]">
         {outfits.map((item, i) => (
           <Image
             key={item.id}
             src={item.imageUrl}
             alt={i === index ? `Outfit ${item.title}` : ""}
             fill
-            sizes="(max-width: 1024px) 100vw, 58vw"
+            sizes="(max-width: 1024px) 100vw, 50vw"
             className={cn(
               "object-cover transition-opacity duration-500",
               i === index ? "opacity-100" : "opacity-0"
@@ -40,10 +40,10 @@ export function OutfitsSection({ outfits }: { outfits: OutfitDTO[] }) {
         ))}
       </div>
 
-      <div className="flex flex-col justify-center gap-8">
+      <div className="flex flex-col justify-center gap-8 px-4 py-10 sm:px-10 lg:px-16">
         <div className="flex items-end justify-between gap-4">
           <div className="flex flex-col gap-2">
-            <p className="eyebrow text-caramel">Look {String(index + 1).padStart(2, "0")}</p>
+            <p className="eyebrow text-chocolate">Look {String(index + 1).padStart(2, "0")}</p>
             <h3 className="display text-[clamp(28px,3vw,40px)] leading-tight text-ink">{outfit.title}</h3>
           </div>
           {count > 1 && (

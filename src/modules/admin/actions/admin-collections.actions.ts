@@ -43,7 +43,7 @@ const collectionSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(300, "Máximo 300 caracteres")
+    .max(90, "La bajada admite hasta 90 caracteres")
     .transform((value) => (value === "" ? null : value))
     .nullable(),
   isActive: z.boolean(),

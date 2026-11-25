@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/modules/content/site-content";
+import { getSiteTexts } from "@/modules/content/site-texts";
+import { fillText } from "@/modules/content/texts";
 import { CatalogView, CatalogSkeleton, type CatalogSearchParams } from "@/components/shop/CatalogView";
 import { Breadcrumbs } from "@/components/shop/Breadcrumbs";
 
@@ -21,9 +23,22 @@ export async function generateMetadata({
   };
 }
 
-async function CatalogEyebrow() {
-  const { collectionName, seasonLabel } = await getSiteContent();
-  return <>{[collectionName, seasonLabel].filter(Boolean).join(" · ")}</>;
+async function CatalogHeading() {
+  const [{ collectionName, seasonLabel }, texts] = await Promise.all([getSiteContent(), getSiteTexts()]);
+  const eyebrow = fillText(texts["shop.eyebrow"], { coleccion: collectionName, temporada: seasonLabel });
+  return (
+    <>
+      {eyebrow && <p className="eyebrow text-chocolate">{eyebrow}</p>}
+      <h1 className="display text-[clamp(64px,12vw,200px)] text-ink">{texts["shop.title"] || "Shop"}</h1>
+    </>
+  );
+}
+
+async function CatalogDescription() {
+  const texts = await getSiteTexts();
+  return texts["shop.description"] ? (
+    <p className="max-w-[520px] text-base leading-relaxed text-stone-700">{texts["shop.description"]}</p>
+  ) : null;
 }
 
 async function SearchHeading({ searchParams }: { searchParams: Promise<CatalogSearchParams> }) {
@@ -41,24 +56,21 @@ async function Catalog({ searchParams }: { searchParams: Promise<CatalogSearchPa
 
 export default function CatalogPage({ searchParams }: { searchParams: Promise<CatalogSearchParams> }) {
   return (
-    <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 sm:px-10">
+    <main className="mx-auto w-full max-w-none px-4 pt-6 sm:px-10">
       <Breadcrumbs crumbs={[{ name: "Inicio", path: "/" }, { name: "Shop" }]} />
 
       <header className="grid gap-6 pt-10 pb-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
         <div className="flex flex-col gap-3">
-          <p className="eyebrow text-chocolate">
-            <Suspense fallback={null}>
-              <CatalogEyebrow />
-            </Suspense>
-          </p>
-          <h1 className="display text-[clamp(56px,7vw,96px)] text-ink">Shop</h1>
+          <Suspense fallback={<div className="h-32" />}>
+            <CatalogHeading />
+          </Suspense>
           <Suspense fallback={null}>
             <SearchHeading searchParams={searchParams} />
           </Suspense>
         </div>
-        <p className="max-w-[520px] text-base leading-relaxed text-stone-700">
-          Prendas pensadas para durar: géneros nobles, cortes amplios y una paleta tierra que combina entre sí.
-        </p>
+        <Suspense fallback={null}>
+          <CatalogDescription />
+        </Suspense>
       </header>
 
       <Suspense fallback={<CatalogSkeleton />}>

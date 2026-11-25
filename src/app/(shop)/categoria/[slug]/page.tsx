@@ -82,7 +82,7 @@ export default function CategoryPage({
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-[1440px] px-4 pt-24 sm:px-10">
+        <main className="mx-auto w-full max-w-none px-4 pt-24 sm:px-10">
           <CatalogSkeleton />
         </main>
       }
@@ -105,7 +105,7 @@ async function CategoryContent({
   const { category, parent, children } = found;
 
   return (
-    <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 sm:px-10">
+    <main className="mx-auto w-full max-w-none px-4 pt-6 sm:px-10">
       <Breadcrumbs
         crumbs={[
           { name: "Inicio", path: "/" },
@@ -121,7 +121,7 @@ async function CategoryContent({
             <span className="tabular">{category.productsCount}</span>{" "}
             {plural(category.productsCount, "producto", "productos")}
           </p>
-          <h1 className="display text-[clamp(56px,7vw,96px)] text-ink">{category.name}</h1>
+          <h1 className="display break-words text-[clamp(48px,9vw,160px)] text-ink">{category.name}</h1>
         </div>
         {category.description && (
           <p className="max-w-[520px] text-base leading-relaxed text-stone-700">{category.description}</p>

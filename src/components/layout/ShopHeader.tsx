@@ -99,7 +99,7 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
         className="sticky top-0 z-50 px-3 pt-3 sm:px-6 lg:px-10"
         style={{ viewTransitionName: "site-header" }}
       >
-        <div className="relative mx-auto max-w-[1360px]">
+        <div className="relative">
           <div className="relative flex h-14 items-center justify-between rounded-full px-1.5 sm:h-16 sm:pr-3 sm:pl-3 lg:pl-7">
             {/* Capa extra de tinte al scrollear: solo se anima su opacidad */}
             <span

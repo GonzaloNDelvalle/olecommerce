@@ -612,6 +612,15 @@ model SiteContent {
   @@map("site_content")
 }
 
+// Textos editables de la tienda (clave -> valor). Los valores por defecto están en el código.
+model SiteText {
+  key       String   @id @db.VarChar(80)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_texts")
+}
+
 // Mensajes de la barra de anuncios (envío gratis, cuotas, campañas)
 model AnnouncementMessage {
   id        String    @id @default(uuid()) @db.Uuid

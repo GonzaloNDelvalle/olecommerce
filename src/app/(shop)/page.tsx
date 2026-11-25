@@ -9,6 +9,8 @@ import {
   getFeaturedProducts,
 } from "@/modules/products/queries";
 import { getSiteContent } from "@/modules/content/site-content";
+import { getSiteTexts } from "@/modules/content/site-texts";
+import { fillText, type SiteTexts } from "@/modules/content/texts";
 import { NewsletterForm } from "@/modules/newsletter/NewsletterForm";
 import { HeroCarousel } from "@/components/shop/home/HeroCarousel";
 import { CategoryTiles } from "@/components/shop/home/CategoryTiles";
@@ -46,17 +48,26 @@ async function FeaturedSection({ imageIds }: { imageIds: string[] }) {
   return <FeaturedCarousel products={products} />;
 }
 
-async function CollectionsSection() {
+/** Encabezado de sección: título chico en chocolate y título grande (editables). */
+function SectionHeading({ id, eyebrow, title }: { id: string; eyebrow: string; title: string }) {
+  return (
+    <div className="flex flex-col gap-2.5 px-4 pt-16 pb-8 sm:px-10 lg:pt-24 lg:pb-10">
+      {eyebrow && (
+        <Reveal as="p" className="eyebrow text-chocolate">
+          {eyebrow}
+        </Reveal>
+      )}
+      <RevealLines id={id} lines={[title]} className="display text-[clamp(48px,8vw,128px)] text-ink" />
+    </div>
+  );
+}
+
+async function CollectionsSection({ texts }: { texts: SiteTexts }) {
   const collections = await getActiveCollections();
   if (collections.length === 0) return null;
   return (
-    <section aria-labelledby="collections-title" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-10 lg:py-28">
-      <div className="mb-8 flex flex-col gap-2.5 sm:mb-10">
-        <Reveal as="p" className="eyebrow text-chocolate">
-          Explorá por colección
-        </Reveal>
-        <RevealLines id="collections-title" lines={["Colecciones"]} className="display text-[clamp(40px,4.5vw,56px)] text-ink" />
-      </div>
+    <section aria-labelledby="collections-title">
+      <SectionHeading id="collections-title" eyebrow={texts["home.collections.eyebrow"]} title={texts["home.collections.title"]} />
       <Reveal variant="stagger">
         <CategoryTiles categories={collections} hrefFor={collectionHref} />
       </Reveal>
@@ -64,27 +75,21 @@ async function CollectionsSection() {
   );
 }
 
-async function OutfitsBlock() {
+async function OutfitsBlock({ texts }: { texts: SiteTexts }) {
   const outfits = await getActiveOutfits();
   if (outfits.length === 0) return null;
   return (
     <section aria-labelledby="outfits-title" className="bg-cream">
-      <div className="mx-auto max-w-[1440px] px-4 py-20 sm:px-10 lg:py-28">
-        <div className="mb-8 flex flex-col gap-2.5 sm:mb-12">
-          <Reveal as="p" className="eyebrow text-caramel">
-            Shop the look
-          </Reveal>
-          <RevealLines id="outfits-title" lines={["Outfits para armar"]} className="display text-[clamp(40px,4.5vw,56px)] text-ink" />
-        </div>
-        <OutfitsSection outfits={outfits} />
-      </div>
+      <SectionHeading id="outfits-title" eyebrow={texts["home.outfits.eyebrow"]} title={texts["home.outfits.title"]} />
+      <OutfitsSection outfits={outfits} />
     </section>
   );
 }
 
 export default async function HomePage() {
-  const content = await getSiteContent();
-  
+  const [content, texts] = await Promise.all([getSiteContent(), getSiteTexts()]);
+  const wildcards = { coleccion: content.collectionName, temporada: content.seasonLabel };
+
   return (
     <main>
       {/* 1. HERO — carrusel de 3 imágenes a pantalla completa (editable en /admin/contenido).
@@ -94,13 +99,13 @@ export default async function HomePage() {
         {/* Velo para que el texto claro siempre sea legible sobre la foto */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/35 to-ink/80" />
 
-        <div className="pointer-events-none relative z-10 mx-auto flex h-full max-w-[1100px] flex-col items-center justify-end gap-6 px-4 pb-[12svh] text-center [text-shadow:0_2px_24px_rgba(21,17,14,0.45)] sm:px-10">
+        <div className="pointer-events-none relative z-10 mx-auto flex h-full max-w-none flex-col items-center justify-end gap-6 px-4 pb-[12svh] text-center [text-shadow:0_2px_24px_rgba(21,17,14,0.45)] sm:px-10">
           {content.heroEyebrow && (
             <p className={`eyebrow text-cream ${heroIn}`}>{content.heroEyebrow}</p>
           )}
           <h1
             id="hero-title"
-            className={`display text-[clamp(56px,10vw,140px)] leading-[0.95] text-paper ${heroIn} [animation-delay:100ms]`}
+            className={`display text-[clamp(44px,10vw,168px)] leading-[0.92] text-paper ${heroIn} [animation-delay:100ms]`}
           >
             {content.heroTitle}
           </h1>
@@ -111,7 +116,7 @@ export default async function HomePage() {
           )}
           <div className={`pointer-events-auto flex w-full flex-col justify-center sm:w-auto ${heroIn} [animation-delay:300ms]`}>
             <Link href="/productos" className={buttonVariants({ variant: "glass", size: "lg" })}>
-              Ver todo
+              {texts["home.hero.button"] || "Ver todo"}
               <ArrowRight className="size-[18px]" strokeWidth={1.8} aria-hidden="true" />
             </Link>
           </div>
@@ -120,19 +125,23 @@ export default async function HomePage() {
 
       {/* 2. DESTACADOS — carrusel 3D arrastrable */}
       <section aria-labelledby="featured-title" className="overflow-hidden bg-cream">
-        <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-20 sm:px-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:py-28">
+        <div className="mx-auto grid max-w-none gap-10 px-4 py-20 sm:px-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center lg:py-28">
           <div className="flex flex-col gap-5">
-            <Reveal as="p" className="eyebrow text-caramel">
-              Selección {content.seasonLabel}
-            </Reveal>
+            {texts["home.featured.eyebrow"] && (
+              <Reveal as="p" className="eyebrow text-chocolate">
+                {fillText(texts["home.featured.eyebrow"], wildcards)}
+              </Reveal>
+            )}
             <RevealLines
               id="featured-title"
-              lines={[content.collectionName]}
-              className="display text-[clamp(44px,5.5vw,72px)] text-ink"
+              lines={[fillText(texts["home.featured.title"], wildcards)]}
+              className="display text-[clamp(44px,5.5vw,88px)] break-words text-ink"
             />
-            <Reveal as="p" className="max-w-[360px] text-base leading-relaxed text-stone-700">
-              Las piezas que eligimos de la temporada. Arrastrá para recorrerlas.
-            </Reveal>
+            {texts["home.featured.description"] && (
+              <Reveal as="p" className="max-w-[360px] text-base leading-relaxed text-stone-700">
+                {fillText(texts["home.featured.description"], wildcards)}
+              </Reveal>
+            )}
           </div>
           <Suspense fallback={<div className="h-[520px]" />}>
             <FeaturedSection imageIds={content.featuredImageIds} />
@@ -149,7 +158,7 @@ export default async function HomePage() {
             mobileVideoUrl={content.campaignMobileVideoUrl}
           />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink/0 from-40% to-ink/60" />
-          <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-[1440px] flex-col gap-4 px-4 pb-8 text-paper sm:px-10 sm:pb-14">
+          <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-none flex-col gap-4 px-4 pb-8 text-paper sm:px-10 sm:pb-14">
             {content.campaignEyebrow && <Reveal as="p" className="eyebrow text-sand">{content.campaignEyebrow}</Reveal>}
             <RevealLines
               id="campaign-title"
@@ -162,31 +171,31 @@ export default async function HomePage() {
 
       {/* 4. COLECCIONES — mosaico 2×3 */}
       <Suspense fallback={<div className="h-[600px]" />}>
-        <CollectionsSection />
+        <CollectionsSection texts={texts} />
       </Suspense>
 
       {/* 5. SHOP THE LOOK — outfits con sus productos */}
       <Suspense fallback={null}>
-        <OutfitsBlock />
+        <OutfitsBlock texts={texts} />
       </Suspense>
 
       {/* 6. NEWSLETTER — editable en /admin/contenido */}
       {content.newsletterEnabled && (
-        <section aria-labelledby="newsletter-title" className="bg-chocolate text-paper">
-          <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-20 sm:px-10 lg:grid-cols-2 lg:items-center lg:py-24">
+        <section aria-labelledby="newsletter-title" className="bg-bone text-chocolate">
+          <div className="grid gap-10 px-4 py-20 sm:px-10 lg:grid-cols-2 lg:items-center lg:py-28">
             <div className="flex flex-col gap-4">
-              {content.newsletterEyebrow && <p className="eyebrow text-sand">{content.newsletterEyebrow}</p>}
+              {content.newsletterEyebrow && <p className="eyebrow text-chocolate">{content.newsletterEyebrow}</p>}
               <RevealLines
                 id="newsletter-title"
                 lines={[content.newsletterTitle]}
-                className="display max-w-[16ch] text-[clamp(40px,4.5vw,56px)] text-paper"
+                className="display max-w-[18ch] text-[clamp(40px,5vw,80px)] text-chocolate"
               />
               {content.newsletterText && (
-                <p className="max-w-[440px] text-base leading-relaxed text-cream">{content.newsletterText}</p>
+                <p className="max-w-[520px] text-base leading-relaxed whitespace-pre-line text-stone-700">{content.newsletterText}</p>
               )}
             </div>
-            <Reveal>
-              <NewsletterForm buttonLabel={content.newsletterButtonLabel} />
+            <Reveal className="lg:justify-self-end lg:w-full lg:max-w-xl">
+              <NewsletterForm buttonLabel={content.newsletterButtonLabel} legalText={texts["home.newsletter.legal"]} />
             </Reveal>
           </div>
         </section>

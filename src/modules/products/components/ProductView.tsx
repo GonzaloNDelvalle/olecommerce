@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Minus, Plus, Ruler } from "lucide-react";
 import { trackAddToCart } from "@/lib/analytics";
 import type { ProductDetailDTO } from "@/modules/products/types";
+import { textLines, type SiteTexts } from "@/modules/content/texts";
 import { useCartStore } from "@/store/cart.store";
 import { ProductGallery, type GalleryImage } from "@/modules/products/components/ProductGallery";
 import { ShippingCalculator } from "@/modules/products/components/ShippingCalculator";
@@ -28,12 +29,14 @@ interface ProductViewProps {
   transferDiscount: number;
   /** Cuotas sin interés que se muestran bajo el precio (0 = no mostrar). */
   installments: number;
+  /** Textos editables desde /admin/textos. */
+  texts: SiteTexts;
 }
 
 const summaryClass =
   "flex cursor-pointer list-none items-center justify-between py-[18px] text-[15px] font-semibold text-ink [&::-webkit-details-marker]:hidden";
 
-export function ProductView({ product, transferDiscount, installments }: ProductViewProps) {
+export function ProductView({ product, transferDiscount, installments, texts }: ProductViewProps) {
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
 
@@ -339,18 +342,16 @@ export function ProductView({ product, transferDiscount, installments }: Product
         <ShippingCalculator variantId={variant?.id ?? product.variants[0]?.id ?? null} quantity={qty} />
 
         <div className="grid grid-cols-3 gap-2 text-[13px] text-stone-700">
-          <div className="flex min-w-0 flex-col gap-1 bg-cream p-3">
-            <span className="font-semibold text-ink">Envíos</span>
-            <span>a todo el país</span>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1 bg-cream p-3">
-            <span className="font-semibold text-ink">Cambios</span>
-            <span>30 días sin cargo</span>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1 bg-cream p-3">
-            <span className="font-semibold text-ink">Devolución</span>
-            <span>10 días para arrepentirte</span>
-          </div>
+          {([1, 2, 3] as const).map((n) => {
+            const title = texts[`product.perk${n}.title`];
+            const text = texts[`product.perk${n}.text`];
+            return title || text ? (
+              <div key={n} className="flex min-w-0 flex-col gap-1 bg-cream p-3">
+                <span className="font-semibold text-ink">{title}</span>
+                <span>{text}</span>
+              </div>
+            ) : null;
+          })}
         </div>
 
         <div className="border-t border-stone-200">
@@ -369,11 +370,11 @@ export function ProductView({ product, transferDiscount, installments }: Product
             <dl className="flex flex-col gap-3 pb-5 text-[15px] leading-relaxed text-stone-700">
               <div>
                 <dt className="font-semibold text-ink">Composición</dt>
-                <dd>{product.composition || "Géneros seleccionados, confeccionados en talleres de Buenos Aires."}</dd>
+                <dd>{product.composition || texts["product.composition.default"]}</dd>
               </div>
               <div>
                 <dt className="font-semibold text-ink">Cuidado</dt>
-                <dd>{product.careGuide || "Lavar a mano con agua fría o limpieza en seco. No usar secadora. Planchar del revés a baja temperatura."}</dd>
+                <dd>{product.careGuide || texts["product.care.default"]}</dd>
               </div>
             </dl>
           </details>
@@ -415,12 +416,13 @@ export function ProductView({ product, transferDiscount, installments }: Product
           </details>
           <details className="group border-b border-stone-200">
             <summary className={summaryClass}>
-              Envíos y cambios <span aria-hidden="true" className="text-lg group-open:hidden">+</span>
+              {texts["product.shipping.title"]} <span aria-hidden="true" className="text-lg group-open:hidden">+</span>
               <span aria-hidden="true" className="hidden text-lg group-open:inline">−</span>
             </summary>
             <div className="flex flex-col gap-2.5 pb-5 text-[15px] leading-relaxed text-stone-700">
-              <p>Despachamos a todo el país en 24 a 48 h hábiles desde que se acredita el pago.</p>
-              <p>Tenés 30 días desde que recibís el pedido para cambiar talle o prenda, sin cargo en el primer cambio.</p>
+              {textLines(texts["product.shipping.text"]).map((line) => (
+                <p key={line}>{line}</p>
+              ))}
             </div>
           </details>
         </div>
