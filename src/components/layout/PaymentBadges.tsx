@@ -1,4 +1,5 @@
 import { Banknote } from "lucide-react";
+import { PAYMENT_LOGOS } from "@/components/layout/payment-logos";
 
 /**
  * Medios de pago del pie, cada uno en su "tarjetita", en un gris apagado para
@@ -10,22 +11,13 @@ const card =
 export function PaymentBadges() {
   return (
     <ul className="flex flex-wrap gap-2">
-      <li className={card}>
-        <span aria-hidden="true" className="text-[15px] font-extrabold tracking-tight italic">
-          VISA
-        </span>
-        <span className="sr-only">Visa</span>
-      </li>
-      <li className={card}>
-        <svg viewBox="0 0 36 22" className="h-5 w-8" fill="currentColor" aria-hidden="true">
-          <circle cx="13" cy="11" r="10" />
-          <circle cx="23" cy="11" r="10" fillOpacity="0.55" />
-        </svg>
-        <span className="sr-only">Mastercard</span>
-      </li>
-      <li className={card}>
-        <span className="text-[12px] leading-none font-bold tracking-tight">mercado pago</span>
-      </li>
+      {PAYMENT_LOGOS.map((logo) => (
+        <li key={logo.label} className={card}>
+          <svg viewBox={logo.viewBox} className={logo.className} fill="currentColor" role="img" aria-label={logo.label}>
+            <path d={logo.path} />
+          </svg>
+        </li>
+      ))}
       <li className={card}>
         <Banknote className="size-5" strokeWidth={1.8} aria-hidden="true" />
         <span className="sr-only">Efectivo o transferencia</span>

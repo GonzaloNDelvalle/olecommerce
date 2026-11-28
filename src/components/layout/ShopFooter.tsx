@@ -51,6 +51,8 @@ export function ShopFooter({
   ].filter((social): social is Social => social !== null);
 
   const address = texts["footer.address"];
+  // Solo enlaces https: el valor se edita desde el admin
+  const mapUrl = texts["footer.addressUrl"].startsWith("https://") ? texts["footer.addressUrl"] : null;
 
   return (
     <footer className="bg-espresso text-cream">
@@ -101,9 +103,24 @@ export function ShopFooter({
           {address && (
             <div className="flex flex-col gap-3">
               {texts["footer.addressTitle"] && <h2 className={headingClass}>{texts["footer.addressTitle"]}</h2>}
-              <address className="flex items-start gap-2 text-cream not-italic">
-                <MapPin className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-                <span>{address}</span>
+              <address className="text-cream not-italic">
+                {mapUrl ? (
+                  <a
+                    href={mapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex items-start gap-2 py-1 transition-colors hover:text-paper"
+                  >
+                    <MapPin className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                    <span className="underline-offset-4 group-hover:underline">{address}</span>
+                    <span className="sr-only">(abre Google Maps)</span>
+                  </a>
+                ) : (
+                  <span className="inline-flex items-start gap-2 py-1">
+                    <MapPin className="mt-0.5 size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                    {address}
+                  </span>
+                )}
               </address>
             </div>
           )}

@@ -76,7 +76,8 @@ export const TEXT_DEFINITIONS = {
   "footer.socialTitle": short(FOOTER, "Título de las redes", "Seguinos", 30),
   "footer.paymentsTitle": short(FOOTER, "Título de los medios de pago", "Medios de pago", 40),
   "footer.addressTitle": short(FOOTER, "Título de la ubicación", "Visitanos", 30),
-  "footer.address": short(FOOTER, "Dirección del local", "Leandro N. Alem 657, Local 2", 160),
+  "footer.address": short(FOOTER, "Dirección del local", "Leandro N. Alem 657, Local 2. Monte Grande, Bs.As", 160),
+  "footer.addressUrl": short(FOOTER, "Link de Google Maps (https://…)", "https://maps.app.goo.gl/JAJCQxiceXWrzzLCA", 200),
   "footer.secure": short(FOOTER, "Línea inferior: seguridad", "Compra segura · Datos protegidos", 80),
 
   "shop.eyebrow": short(SHOP, "Título chico", "{coleccion} · {temporada}"),
