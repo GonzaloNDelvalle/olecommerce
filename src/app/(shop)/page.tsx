@@ -149,7 +149,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 3. CAMPAÑA — solo video en loop, con volanta y título (sin botones) */}
+      {/* 3. CAMPAÑA — solo video en loop, con título (sin botones) */}
       {content.campaignEnabled && (content.campaignVideoUrl || content.campaignMobileVideoUrl) && (
         <section aria-labelledby="campaign-title" className="relative h-[85svh] min-h-[560px] overflow-hidden bg-espresso">
           <CampaignMedia
@@ -159,11 +159,6 @@ export default async function HomePage() {
           />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink/0 from-40% to-ink/60" />
           <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-none flex-col gap-4 px-4 pb-8 text-paper sm:px-10 sm:pb-14">
-            {content.campaignEyebrow && (
-              <Reveal as="p" className="eyebrow w-fit bg-bone px-2.5 py-1 text-chocolate">
-                {content.campaignEyebrow}
-              </Reveal>
-            )}
             <RevealLines
               id="campaign-title"
               lines={[content.campaignTitle]}

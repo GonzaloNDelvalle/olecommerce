@@ -41,7 +41,6 @@ const HERO_FIELDS: TextField[] = [
 ];
 
 const CAMPAIGN_FIELDS: TextField[] = [
-  { name: "campaignEyebrow", label: "Volanta", placeholder: "Campaña FW'26", maxLength: 120 },
   { name: "campaignTitle", label: "Título", placeholder: "Hecho para durar", maxLength: 80 },
 ];
 
@@ -178,7 +177,7 @@ export function SiteContentForm({
 
       <AdminCard
         title="Campaña (video)"
-        description="Un video a pantalla completa que se repite en loop, con la volanta y el título encima. Podés subir uno horizontal para escritorio y otro vertical para celulares; si falta uno, se usa el otro."
+        description="Un video a pantalla completa que se repite en loop, con el título encima. Podés subir uno horizontal para escritorio y otro vertical para celulares; si falta uno, se usa el otro."
       >
         <label className="mb-5 inline-flex items-center gap-2 text-sm text-stone-700">
           <input
