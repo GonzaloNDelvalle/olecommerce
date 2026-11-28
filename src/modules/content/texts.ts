@@ -74,7 +74,10 @@ export const TEXT_DEFINITIONS = {
   ),
   "footer.helpTitle": short(FOOTER, "Título de la columna de ayuda", "Ayuda", 30),
   "footer.socialTitle": short(FOOTER, "Título de las redes", "Seguinos", 30),
-  "footer.bottom": short(FOOTER, "Línea inferior", "Envíos a todo el país · Mercado Pago y transferencia", 120),
+  "footer.paymentsTitle": short(FOOTER, "Título de los medios de pago", "Medios de pago", 40),
+  "footer.addressTitle": short(FOOTER, "Título de la ubicación", "Visitanos", 30),
+  "footer.address": short(FOOTER, "Dirección del local", "Leandro N. Alem 657, Local 2", 160),
+  "footer.secure": short(FOOTER, "Línea inferior: seguridad", "Compra segura · Datos protegidos", 80),
 
   "shop.eyebrow": short(SHOP, "Título chico", "{coleccion} · {temporada}"),
   "shop.title": short(SHOP, "Título", "Shop", 40),

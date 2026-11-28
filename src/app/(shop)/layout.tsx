@@ -66,15 +66,10 @@ export default async function ShopLayout({ children }: { children: ReactNode }) 
         <ShopFooter
           collectionName={content.collectionName}
           seasonLabel={content.seasonLabel}
-          about={texts["footer.about"]}
-          helpTitle={texts["footer.helpTitle"]}
-          socialTitle={texts["footer.socialTitle"]}
-          bottomLine={texts["footer.bottom"]}
+          texts={texts}
           instagramUrl={settings.instagramUrl}
           tiktokUrl={settings.tiktokUrl}
           facebookUrl={settings.facebookUrl}
-          whatsappNumber={settings.whatsappNumber}
-          supportEmail={settings.supportEmail}
         />
 
         <CartDrawer
