@@ -22,6 +22,7 @@ const CONSUMER_DEFENSE_URL = "https://autogestion.produccion.gob.ar/consumidores
 
 const linkClass = "inline-block py-1 text-cream transition-colors duration-150 hover:text-paper";
 const headingClass = "eyebrow text-paper";
+const legalLinkClass = "inline-block py-2 underline underline-offset-4 transition-colors hover:text-paper";
 
 const HELP_LINKS: NavLink[] = [
   { href: "/contacto", label: "Contacto" },
@@ -124,19 +125,14 @@ export function ShopFooter({
           © <CurrentYear /> OL. Indumenti · Argentina
         </p>
 
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-5 xl:justify-self-end">
-          <a
-            href={CONSUMER_DEFENSE_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-4 transition-colors hover:text-paper"
-          >
+        <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-2.5 xl:justify-self-end">
+          <a href={CONSUMER_DEFENSE_URL} target="_blank" rel="noreferrer" className={legalLinkClass}>
             Defensa de las y los consumidores
           </a>
-          <Link
-            href="/arrepentimiento"
-            className="pressable inline-flex h-11 items-center rounded-full border-2 border-paper px-5 font-extrabold text-paper transition-colors hover:bg-paper hover:text-ink"
-          >
+          <span aria-hidden="true" className="hidden sm:inline">
+            ·
+          </span>
+          <Link href="/arrepentimiento" className={legalLinkClass}>
             Botón de arrepentimiento
           </Link>
         </div>
