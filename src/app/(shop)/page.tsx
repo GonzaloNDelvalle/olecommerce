@@ -51,13 +51,13 @@ async function FeaturedSection({ imageIds }: { imageIds: string[] }) {
 /** Encabezado de sección: título chico en chocolate y título grande (editables). */
 function SectionHeading({ id, eyebrow, title }: { id: string; eyebrow: string; title: string }) {
   return (
-    <div className="flex flex-col gap-2.5 px-4 pt-16 pb-8 sm:px-10 lg:pt-24 lg:pb-10">
+    <div className="flex flex-col gap-2.5 px-4 pt-14 pb-7 sm:px-10 lg:pt-16 lg:pb-8">
       {eyebrow && (
         <Reveal as="p" className="eyebrow text-chocolate">
           {eyebrow}
         </Reveal>
       )}
-      <RevealLines id={id} lines={[title]} className="display text-[clamp(48px,8vw,128px)] text-ink" />
+      <RevealLines id={id} lines={[title]} className="display text-[clamp(32px,4vw,60px)] text-ink" />
     </div>
   );
 }
@@ -105,7 +105,7 @@ export default async function HomePage() {
           )}
           <h1
             id="hero-title"
-            className={`display text-[clamp(44px,10vw,168px)] leading-[0.92] text-paper ${heroIn} [animation-delay:100ms]`}
+            className={`display text-[clamp(40px,6vw,92px)] leading-[0.95] text-paper ${heroIn} [animation-delay:100ms]`}
           >
             {content.heroTitle}
           </h1>
@@ -135,7 +135,7 @@ export default async function HomePage() {
             <RevealLines
               id="featured-title"
               lines={[fillText(texts["home.featured.title"], wildcards)]}
-              className="display text-[clamp(44px,5.5vw,88px)] break-words text-ink"
+              className="display text-[clamp(32px,4vw,60px)] break-words text-ink"
             />
             {texts["home.featured.description"] && (
               <Reveal as="p" className="max-w-[360px] text-base leading-relaxed text-stone-700">
@@ -159,11 +159,15 @@ export default async function HomePage() {
           />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-ink/0 from-40% to-ink/60" />
           <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-none flex-col gap-4 px-4 pb-8 text-paper sm:px-10 sm:pb-14">
-            {content.campaignEyebrow && <Reveal as="p" className="eyebrow text-sand">{content.campaignEyebrow}</Reveal>}
+            {content.campaignEyebrow && (
+              <Reveal as="p" className="eyebrow w-fit bg-bone px-2.5 py-1 text-chocolate">
+                {content.campaignEyebrow}
+              </Reveal>
+            )}
             <RevealLines
               id="campaign-title"
               lines={[content.campaignTitle]}
-              className="display max-w-[12ch] text-[clamp(52px,8vw,104px)] text-paper"
+              className="display max-w-[16ch] text-[clamp(32px,4.5vw,64px)] text-paper"
             />
           </div>
         </section>
@@ -188,7 +192,7 @@ export default async function HomePage() {
               <RevealLines
                 id="newsletter-title"
                 lines={[content.newsletterTitle]}
-                className="display max-w-[18ch] text-[clamp(40px,5vw,80px)] text-chocolate"
+                className="display max-w-[20ch] text-[clamp(28px,3vw,48px)] text-chocolate"
               />
               {content.newsletterText && (
                 <p className="max-w-[520px] text-base leading-relaxed whitespace-pre-line text-stone-700">{content.newsletterText}</p>

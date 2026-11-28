@@ -18,6 +18,7 @@ import { productHref } from "@/modules/products/urls";
 import { formatARS } from "@/lib/format";
 import { SPRING } from "@/lib/motion";
 import { cn } from "@/lib/cn";
+import { useAutoAdvance } from "@/hooks/use-auto-advance";
 
 /** Distancia horizontal entre cards; también es la escala del arrastre 1:1. */
 const STEP = 260;
@@ -113,6 +114,9 @@ export function FeaturedCarousel({ products }: { products: ProductListItemDTO[] 
     animate(position, target, SPRING);
   };
 
+  const ref = useRef<HTMLDivElement>(null);
+  const pauseProps = useAutoAdvance(ref, products.length, active, goTo);
+
   const onPan = (_: PointerEvent, info: PanInfo) => {
     if (Math.abs(info.offset.x) > 4) draggedRef.current = true;
     // Fricción en los extremos en vez de un tope seco
@@ -133,7 +137,7 @@ export function FeaturedCarousel({ products }: { products: ProductListItemDTO[] 
   if (products.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={ref} {...pauseProps} className="flex flex-col gap-6">
       <motion.div
         className="relative h-[470px] cursor-grab touch-pan-y [perspective:1600px] active:cursor-grabbing sm:h-[520px] lg:[clip-path:inset(-10%_-100vw_-10%_0)]"
         onPan={onPan}
@@ -181,7 +185,7 @@ export function FeaturedCarousel({ products }: { products: ProductListItemDTO[] 
         >
           <ArrowRight className="size-[18px]" strokeWidth={1.8} />
         </button>
-        <span className="tabular ml-3 text-sm text-stone-600" aria-live="polite">
+        <span className="tabular ml-3 text-sm text-stone-600">
           {String(active + 1).padStart(2, "0")} / {String(products.length).padStart(2, "0")}
         </span>
       </div>

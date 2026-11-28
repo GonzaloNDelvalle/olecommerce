@@ -23,8 +23,8 @@ interface ShopFooterProps {
   supportEmail: string;
 }
 
-const linkClass = "inline-block py-1 text-cream transition-colors duration-150 hover:text-sand";
-const headingClass = "eyebrow text-sand";
+const linkClass = "inline-block py-1 text-cream transition-colors duration-150 hover:text-paper";
+const headingClass = "eyebrow text-paper";
 
 const HELP_LINKS: NavLink[] = [
   { href: "/contacto", label: "Contacto" },
@@ -75,7 +75,7 @@ export function ShopFooter({
           <p className="eyebrow text-stone-400">{[collectionName, seasonLabel].filter(Boolean).join(" · ")}</p>
           <a
             href={`mailto:${supportEmail}`}
-            className="mt-1 text-sm text-cream underline-offset-4 transition-colors hover:text-sand hover:underline [overflow-wrap:anywhere]"
+            className="mt-1 text-sm text-cream underline-offset-4 transition-colors hover:text-paper hover:underline [overflow-wrap:anywhere]"
           >
             {supportEmail}
           </a>
@@ -101,7 +101,7 @@ export function ShopFooter({
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className="inline-flex size-11 items-center justify-center rounded-full border border-sand/30 text-cream transition-colors duration-150 hover:border-sand hover:text-sand"
+                    className="inline-flex size-11 items-center justify-center rounded-full border border-cream/30 text-cream transition-colors duration-150 hover:border-paper hover:text-paper"
                   >
                     <Icon className="size-5 shrink-0" />
                   </a>
@@ -112,7 +112,7 @@ export function ShopFooter({
         )}
       </div>
 
-      <div className="mx-auto flex max-w-none flex-col gap-3 border-t border-sand/20 px-4 py-6 text-[13px] text-stone-300 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+      <div className="mx-auto flex max-w-none flex-col gap-3 border-t border-cream/20 px-4 py-6 text-[13px] text-stone-300 sm:flex-row sm:items-center sm:justify-between sm:px-10">
         <p>
           © <CurrentYear /> OL. Indumenti · Argentina
         </p>

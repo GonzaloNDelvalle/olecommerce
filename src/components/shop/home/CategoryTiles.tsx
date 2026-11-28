@@ -86,7 +86,7 @@ export function CategoryTiles({ categories, hrefFor }: { categories: TileItem[];
                   category.coverImageUrl ? "text-paper" : "text-ink"
                 )}
               >
-                <span className="display text-[clamp(26px,4vw,64px)] break-words">{category.name}</span>
+                <span className="display text-[clamp(22px,2.4vw,36px)] break-words">{category.name}</span>
                 {category.description && (
                   <span className="grid transition-[grid-template-rows,opacity] duration-500 ease-[var(--ease-out)] [@media(hover:hover)]:grid-rows-[0fr] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:grid-rows-[1fr] [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-visible:grid-rows-[1fr] [@media(hover:hover)]:group-focus-visible:opacity-100">
                     <span className="overflow-hidden">

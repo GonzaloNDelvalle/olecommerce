@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/cn";
+import { AUTO_ADVANCE_MS } from "@/hooks/use-auto-advance";
 
-const INTERVAL_MS = 6000;
 
 /**
  * Carrusel de fondo del banner principal: hasta 3 imágenes que se funden entre
@@ -23,7 +23,7 @@ export function HeroCarousel({ images, alt }: { images: string[]; alt: string })
     const timer = window.setInterval(() => {
       if (document.hidden) return;
       setActive((current) => (current + 1) % count);
-    }, INTERVAL_MS);
+    }, AUTO_ADVANCE_MS);
     // Reinicia el reloj al elegir manualmente: la imagen elegida no se va enseguida
     return () => window.clearInterval(timer);
   }, [count, active]);

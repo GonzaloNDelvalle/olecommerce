@@ -15,7 +15,7 @@ const MIN_ITEMS_PER_HALF = 8;
 function Message({ message }: { message: AnnouncementDTO }) {
   const link = message.linkUrl && isSafeAnnouncementLink(message.linkUrl) ? message.linkUrl : null;
   return link ? (
-    <Link href={link} className="underline-offset-4 transition-colors hover:text-sand hover:underline">
+    <Link href={link} className="underline-offset-4 transition-colors hover:text-paper hover:underline">
       {message.text}
     </Link>
   ) : (

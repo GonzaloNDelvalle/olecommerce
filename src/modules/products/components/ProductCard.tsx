@@ -114,7 +114,7 @@ export function ProductCard({ product, priority = false, sizes, transferDiscount
         )}
         <p className="text-[13px] text-stone-600">
           {product.category.name}
-          {product.collection && <span className="text-caramel"> · {product.collection.name}</span>}
+          {product.collection && <span className="text-chocolate"> · {product.collection.name}</span>}
         </p>
       </div>
     </article>
