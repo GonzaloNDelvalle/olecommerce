@@ -43,7 +43,7 @@ function CheckoutHeader() {
           <ArrowLeft className="size-4" strokeWidth={1.8} aria-hidden="true" />
           <span className="hidden sm:inline">Seguir comprando</span>
         </Link>
-        <Link href="/" className="display text-[34px] font-semibold tracking-normal text-ink">
+        <Link href="/" className="display text-[34px] font-bold tracking-normal text-ink">
           OL.
         </Link>
         <span className="inline-flex items-center gap-1.5 text-[13px] text-stone-600">
@@ -184,7 +184,7 @@ function ShopHeaderInner({ navLinks, announcements, announcementRotateSeconds }:
             </div>
 
             {/* Centro */}
-            <Link href="/" aria-label="OL. Indumenti, inicio" className="display relative text-[30px] font-semibold tracking-normal text-ink sm:text-[34px]">
+            <Link href="/" aria-label="OL. Indumenti, inicio" className="display relative text-[30px] font-bold tracking-normal text-ink sm:text-[34px]">
               OL.
             </Link>
 

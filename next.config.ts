@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   cacheComponents: true,
+  experimental: {
+    // Sin caché de Turbopack en disco: reutilizaba una versión vieja de globals.css
+    // (el sitio publicado quedaba con colores y tipografía anteriores).
+    turbopackFileSystemCacheForDev: false,
+    turbopackFileSystemCacheForBuild: false,
+  },
   partialPrefetching: true,
   serverExternalPackages: [
     "ws",

@@ -86,7 +86,7 @@ async function OrderConfirmationContent({
         <header className="text-center pb-8 border-b border-stone-200">
           <Link
             href="/"
-            className="display text-4xl font-semibold tracking-normal text-ink inline-block hover:text-chocolate transition-colors"
+            className="display text-4xl font-bold tracking-normal text-ink inline-block hover:text-chocolate transition-colors"
           >
             OL.
           </Link>

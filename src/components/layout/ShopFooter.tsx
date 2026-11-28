@@ -66,7 +66,7 @@ export function ShopFooter({
     <footer className="bg-espresso text-cream">
       <div className="mx-auto grid max-w-none grid-cols-2 gap-x-6 gap-y-12 px-4 pt-16 pb-12 sm:px-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] lg:pt-20">
         <div className="col-span-2 flex flex-col gap-4 lg:col-span-1">
-          <Link href="/" className="display text-5xl font-semibold tracking-normal text-cream">
+          <Link href="/" className="display text-5xl font-bold tracking-normal text-cream">
             OL.
           </Link>
           <p className="max-w-xs text-sm leading-relaxed text-stone-300">
